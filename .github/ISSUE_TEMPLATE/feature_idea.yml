@@ -1,0 +1,27 @@
+name: Feature idea
+description: Something the app should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Describe the problem, not the solution. We'll work out how to build it together.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve, and for whom?
+      placeholder: "e.g. Beginners don't know how much protein they need, so they guess."
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: How would we know it's working?
+      description: What could a user do, or see, once this exists?
+      placeholder: "e.g. After onboarding, the user sees a daily protein target based on their weight and goal."
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Examples from other apps, research, sketches, links.
