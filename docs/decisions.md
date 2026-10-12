@@ -33,7 +33,7 @@ One FastAPI application, split into modules by domain (`profiles`, `nutrition`, 
 
 ## 3. Frontend: Flutter, mobile first
 
-**Status:** Provisional, 2026-10-07. Revisit after the onboarding screen is built (see `plans/setup.md`).
+**Status:** Provisional, 2026-10-07. Revisit after the onboarding screen is built (see #12).
 
 **Options considered:** Flutter, React Native (Expo), mobile-first React web app
 
@@ -64,7 +64,7 @@ One FastAPI application, split into modules by domain (`profiles`, `nutrition`, 
 - Every host supports it, so it doesn't lock us in.
 - The `pgvector` extension can store embeddings for the future coach, so we may not need a separate vector database.
 
-Locally it runs in Docker. Schema changes go through migrations (see `plans/setup.md`), never manual edits.
+Locally it runs in Docker. Schema changes go through migrations, never manual edits.
 
 ---
 
