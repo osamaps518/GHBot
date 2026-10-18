@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ghbot
+      POSTGRES_PASSWORD: ghbot_local
+      POSTGRES_DB: ghbot
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghbot -d ghbot"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  test-db:
+    image: postgres:18
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: ghbot_test
+      POSTGRES_PASSWORD: ghbot_test
+      POSTGRES_DB: ghbot_test
+    ports:
+      - "127.0.0.1:${TEST_POSTGRES_PORT:-5433}:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghbot_test -d ghbot_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres_data:
