@@ -10,6 +10,7 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/) (tested wi
 ```bash
 uv sync --locked
 cp .env.example .env
+uv run --locked alembic upgrade head
 uv run --locked uvicorn ghbot.main:create_app --factory --reload
 ```
 
@@ -44,12 +45,15 @@ export TEST_DATABASE_URL=postgresql+psycopg://ghbot_test:ghbot_test@127.0.0.1:54
 uv run --locked pytest --cov
 ```
 
-The test database has separate credentials, uses port 5433 (override with
+The test service has separate credentials, uses port 5433 (override with
 `TEST_POSTGRES_PORT`), and stores data in memory. Stopping its container discards
-its data. Tests require an explicit URL whose database name ends in `_test`;
-never point it at development or production data. Missing or unavailable
-PostgreSQL fails the integration suite. To run only HTTP/configuration checks,
-use `uv run --locked pytest -m 'not integration'`.
+its data. Tests require an explicit URL whose database name ends in `_test` and
+a role with `CREATEDB` permission (the Compose test role has it). The suite creates
+a uniquely named empty database, runs Alembic to head, and drops only that generated
+database on teardown. It never migrates the database named in `TEST_DATABASE_URL`.
+Never point this URL at development or production infrastructure. Missing or
+unavailable PostgreSQL fails the integration suite. To run only HTTP/configuration
+checks, use `uv run --locked pytest -m 'not integration'`.
 
 The app owns one finite async pool (five connections, no overflow), disposed at
 shutdown. `Database.session()` and the `SessionDependency` request dependency
@@ -58,6 +62,39 @@ Future write services must complete `async with session.begin():` before returni
 success. Each concurrent task needs its own session. `expire_on_commit=False`
 avoids implicit post-commit loading; fetch relationships explicitly when models
 arrive. Add real domain modules when their issues introduce behavior.
+
+## Migrations
+
+Run migrations explicitly from `backend/`, using the same `DATABASE_URL` as the
+app. Neither imports nor API startup create tables or run migrations.
+
+```bash
+uv run --locked alembic upgrade head
+uv run --locked alembic current
+uv run --locked alembic check
+```
+
+Revision `0001` is an empty baseline: it establishes migration history without
+adding a business table. Issue #6 owns the first users table. The migration test
+checks the expected single head, a repeated upgrade, downgrade to base, re-upgrade,
+and metadata drift on a disposable database. This proves the wiring; later schema
+issues must test their own tables, constraints, and data transformations.
+
+When introducing a domain model:
+
+1. Inherit from `ghbot.database.Base` in that domain's module.
+2. Import the models in `migrations/env.py` so they enter the shared metadata.
+3. Apply existing migrations, then run
+   `uv run --locked alembic revision --autogenerate -m "Describe the schema change"`.
+4. Review the generated upgrade and downgrade, including data loss and constraint
+   names. Autogeneration cannot infer every intended change.
+5. Run `uv run --locked ruff check --fix migrations` and
+   `uv run --locked ruff format migrations`, upgrade, check metadata, and test on
+   disposable PostgreSQL. Commit the model and reviewed migration together.
+
+Do not use `Base.metadata.create_all()`, stamp revisions to bypass execution, or
+edit shared database schemas manually. Run downgrades only on disposable data
+during verification; future migrations may remove data.
 
 ## Checks
 
