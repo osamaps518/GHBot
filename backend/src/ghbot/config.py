@@ -21,4 +21,8 @@ class Settings(BaseSettings):
             raise ValueError(message) from None
         if url.drivername != "postgresql+psycopg" or not url.host or not url.database:
             raise ValueError(message)
+        if "dbname" in url.query:
+            raise ValueError("Specify the database in the URL path, not a dbname query")
+        if url.port is not None and not 1 <= url.port <= 65535:
+            raise ValueError("Database port must be between 1 and 65535")
         return value

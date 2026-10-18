@@ -19,8 +19,11 @@ def test_missing_database_configuration_prevents_startup(monkeypatch, tmp_path):
         "not-a-url-private-password",
         "sqlite:///private-password",
         "postgresql+psycopg://user:private-password@localhost:invalid/ghbot",
+        "postgresql+psycopg://user:private-password@localhost:65536/ghbot",
+        "postgresql+psycopg://user:private-password@localhost:0/ghbot",
         "postgresql+psycopg://user:private-password@localhost/",
         "postgresql+psycopg://user:private-password@/ghbot",
+        "postgresql+psycopg://user:private-password@localhost/ghbot_test?dbname=ghbot",
     ],
 )
 def test_invalid_database_configuration_fails_without_exposing_secrets(
