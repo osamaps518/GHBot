@@ -1,11 +1,21 @@
 # Backend
 
-Python 3.14, FastAPI, and uv. Run the commands below from `backend/`.
+Python 3.14, FastAPI, PostgreSQL 18, and uv. Commands are run from `backend/`
+unless a different directory is specified.
 
 ## Install and run
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) (tested with
-0.13.1) and Python 3.14. uv can install Python if it is missing.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) 0.13.1 (the
+version used in CI) and Docker with Compose. uv can install Python 3.14 if it is
+missing. On Windows, use WSL2 for the documented asyncio/Psycopg setup.
+
+Start PostgreSQL **from the repository root**:
+
+```bash
+docker compose up -d --wait
+```
+
+Then enter `backend/`:
 
 ```bash
 uv sync --locked
@@ -18,15 +28,15 @@ Open <http://127.0.0.1:8000/health> for process liveness,
 <http://127.0.0.1:8000/docs> for interactive API documentation, and
 <http://127.0.0.1:8000/openapi.json> for the API schema.
 
-Start PostgreSQL 18 from the repository root with `docker compose up -d --wait`.
 The API runs on the host for IDE debugging. The development database uses a named
 volume. The default port is 5432, bound only to `127.0.0.1`. If it is taken, use
 `POSTGRES_PORT=55432 docker compose up -d --wait` and change the port in
 `backend/.env` too. The Compose credentials are for local development only.
 
 `DATABASE_URL` is required and must use `postgresql+psycopg://` with an explicit
-host and database. Environment variables override the `.env` file in the current
-directory. Missing or invalid settings fail at app construction without printing
+host and database; query parameters cannot override the database name. Environment
+variables override the `.env` file in the current directory. Missing or invalid
+settings fail at app construction without printing
 the supplied URL. Health is process liveness only: it does not query PostgreSQL,
 and startup creates a lazy connection pool without requiring a live database.
 
@@ -107,3 +117,34 @@ uv run --locked pytest --cov
 
 Commit `pyproject.toml` and `uv.lock` together when changing dependencies.
 `--locked` rejects an outdated lockfile instead of silently updating it.
+
+The Backend GitHub Actions workflow runs these checks on backend PRs, pushes to
+`main`, and manual dispatches. Its PostgreSQL service uses the same major version
+as Compose. The full pytest run includes migration verification and prints
+coverage without a minimum. mypy is strict for application code; its Pydantic
+plugin understands that settings fields can be supplied by the environment.
+
+## Troubleshooting and shutdown
+
+- **Port already in use:** set `POSTGRES_PORT` or `TEST_POSTGRES_PORT` on the
+  Compose command and update the corresponding connection URL. Separate worktrees
+  can use `docker compose -p ghbot-my-worktree ...` plus different host ports to
+  isolate their containers and development volumes.
+- **Missing or invalid `database_url`:** run from `backend/`, copy `.env.example`
+  to `.env`, and check for an overriding `DATABASE_URL` in your shell. These errors
+  occur before serving requests. Never put real credentials in committed files.
+- **Health succeeds but database commands fail:** health only tests the process.
+  Run `docker compose ps` and `docker compose logs db` from the repository root,
+  check the URL/port, and run `uv run --locked alembic upgrade head` from `backend/`.
+- **Integration tests fail during setup:** start `test-db`, export
+  `TEST_DATABASE_URL`, and verify its role can create databases. A separate
+  generated database per run prevents collisions; test fixture resources are
+  function-scoped so app, client, and sessions share the asyncio event loop.
+- **Lockfile is stale:** make an intentional dependency update with `uv add` or
+  `uv lock`, review `uv.lock`, and commit it with `pyproject.toml`.
+
+Stop the API with Ctrl+C. From the repository root, `docker compose stop` keeps
+development data; `docker compose --profile test stop test-db` discards the
+in-memory test data. `docker compose --profile test down` removes the project's
+containers and network while preserving the named development volume. Adding
+`--volumes` would delete development data, so do that only for an intentional reset.
