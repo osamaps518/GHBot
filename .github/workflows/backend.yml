@@ -4,15 +4,7 @@ on:
   pull_request:
     paths:
       - "backend/**"
-      - "compose.yaml"
       - ".github/workflows/backend.yml"
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "compose.yaml"
-      - ".github/workflows/backend.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,40 +17,36 @@ jobs:
       run:
         working-directory: backend
     env:
-      TEST_DATABASE_URL: postgresql+psycopg://ghbot_test:ghbot_test@127.0.0.1:5432/ghbot_test
+      DATABASE_URL: postgresql+psycopg://ghbot:ghbot_local@127.0.0.1:5432/ghbot
     services:
       postgres:
         image: postgres:18
         env:
-          POSTGRES_USER: ghbot_test
-          POSTGRES_PASSWORD: ghbot_test
-          POSTGRES_DB: ghbot_test
+          POSTGRES_USER: ghbot
+          POSTGRES_PASSWORD: ghbot_local
+          POSTGRES_DB: ghbot
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ghbot_test -d ghbot_test"
+          --health-cmd "pg_isready -U ghbot -d ghbot"
           --health-interval 2s
-          --health-timeout 5s
           --health-retries 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           version: "0.13.1"
-          working-directory: backend
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-      - name: Install Python from .python-version
-        run: uv python install
       - name: Install locked dependencies
         run: uv sync --locked
       - name: Lint
-        run: uv run --locked ruff check .
+        run: uv run ruff check .
       - name: Check formatting
-        run: uv run --locked ruff format --check .
+        run: uv run ruff format --check .
       - name: Type check
-        run: uv run --locked mypy
-      - name: Test HTTP, PostgreSQL, and migration round trip with coverage
-        run: uv run --locked pytest --cov
+        run: uv run mypy
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+      - name: Check models match migrations
+        run: uv run alembic check
+      - name: Test with coverage
+        run: uv run pytest --cov=ghbot

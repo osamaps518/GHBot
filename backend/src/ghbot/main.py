@@ -2,25 +2,28 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from ghbot.config import Settings
-from ghbot.database import Database
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    settings = settings or Settings()
+def create_app() -> FastAPI:
+    settings = Settings()
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncIterator[dict[str, Database]]:
-        database = Database(settings)
-        try:
-            yield {"database": database}
-        finally:
-            await database.close()
+    async def lifespan(
+        app: FastAPI,
+    ) -> AsyncIterator[dict[str, async_sessionmaker[AsyncSession]]]:
+        # The engine connects lazily, so the app starts even if Postgres is down.
+        engine = create_async_engine(settings.database_url.get_secret_value())
+        # Without expire_on_commit=False, reading a field after commit would
+        # trigger a hidden query, which async SQLAlchemy can't do.
+        yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
+        await engine.dispose()
 
     app = FastAPI(title="GHBot", lifespan=lifespan)
 
-    @app.get("/health", tags=["health"])
+    @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
