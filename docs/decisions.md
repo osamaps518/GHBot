@@ -113,3 +113,21 @@ Not needed for the first version (basic CRUD). We decide when we build the coach
 - One database session per request. It never commits by itself: code that writes data commits explicitly.
 - Migrations run on purpose (`alembic upgrade head`), never when the app starts.
 - `/health` only says the API process is running. It doesn't check the database.
+
+---
+
+## 9. Development sign-in
+
+**Status:** Accepted, 2026-10-20 (#6)
+
+Use **PyJWT** to issue and verify HS256 tokens with `sub`, `iat` and a 15-minute
+`exp`, signed with `DEV_JWT_SECRET`. This exercises token verification locally
+while the production provider remains deferred (see #5).
+
+`ENVIRONMENT` is required, with no default. Until a real provider exists, the app
+refuses to start unless it is `development`; only then is `/dev/token` mounted.
+
+`AuthProvider` has one method: verify a token and return its subject, or raise.
+`get_current_user` maps that subject to our `users` table, creating the row on
+first use. A unique `auth_subject` and `ON CONFLICT DO NOTHING` handle simultaneous
+first requests. Our IDs are UUIDv7; future tables reference these IDs.
