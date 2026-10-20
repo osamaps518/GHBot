@@ -9,6 +9,8 @@ from ghbot.config import Settings
 
 def create_app() -> FastAPI:
     settings = Settings()
+    if settings.environment != "development":
+        raise ValueError("Dev sign-in is only available in development")
 
     @asynccontextmanager
     async def lifespan(

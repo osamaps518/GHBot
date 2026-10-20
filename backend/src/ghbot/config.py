@@ -7,3 +7,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
     database_url: SecretStr
+    environment: str
