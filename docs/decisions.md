@@ -93,3 +93,23 @@ Candidates to compare when the time comes: Supabase, Neon, Railway, Render, Fly.
 **Status:** Deferred, 2026-10-07
 
 Not needed for the first version (basic CRUD). We decide when we build the coach. Current direction to revisit then: retrieval over a vetted research library, a model-agnostic wrapper so providers can be swapped, and choosing the model by running our own evaluation question set against candidates.
+
+---
+
+## 8. Backend tools and database rules
+
+**Status:** Accepted, 2026-10-19 (#5)
+
+**Tools**
+- **uv** for dependencies, with the lockfile committed. Poetry was considered.
+- **SQLAlchemy 2** for database access and **Alembic** for migrations. **Psycopg 3** is the Postgres driver; asyncpg was the alternative, but Psycopg also works without async (handy for scripts).
+- **pydantic-settings** reads config from environment variables or `backend/.env`.
+- **Ruff** for lint and formatting, **mypy** (strict) for types, **pytest** with coverage.
+- Python 3.14 and PostgreSQL 18, the same versions locally and in CI.
+
+**Async database access**, chosen over plain (sync) SQLAlchemy, so a request waiting on the database doesn't hold up a thread. The trade-off: async SQLAlchemy can't load related data behind the scenes, so queries must load what they need explicitly.
+
+**Rules**
+- One database session per request. It never commits by itself: code that writes data commits explicitly.
+- Migrations run on purpose (`alembic upgrade head`), never when the app starts.
+- `/health` only says the API process is running. It doesn't check the database.

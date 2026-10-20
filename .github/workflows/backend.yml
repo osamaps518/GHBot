@@ -1,0 +1,52 @@
+name: Backend
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+psycopg://ghbot:ghbot_local@127.0.0.1:5432/ghbot
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ghbot
+          POSTGRES_PASSWORD: ghbot_local
+          POSTGRES_DB: ghbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ghbot -d ghbot"
+          --health-interval 2s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check .
+      - name: Check formatting
+        run: uv run ruff format --check .
+      - name: Type check
+        run: uv run mypy
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+      - name: Check models match migrations
+        run: uv run alembic check
+      - name: Test with coverage
+        run: uv run pytest --cov=ghbot
