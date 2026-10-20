@@ -56,3 +56,36 @@ def test_valid_token_returns_our_user_id(client):
     assert response.status_code == 200
     assert set(response.json()) == {"id"}
     assert UUID(response.json()["id"]).version == 7
+
+
+@pytest.mark.parametrize(
+    "authorization", [None, "Basic credentials", "Bearer", "Bearer not-a-jwt"]
+)
+def test_missing_or_malformed_credentials_get_401(client, authorization):
+    headers = {} if authorization is None else {"Authorization": authorization}
+
+    response = client.get("/me", headers=headers)
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+@pytest.mark.parametrize("invalid", ["expired", "wrong-signature", "missing-expiry"])
+def test_invalid_tokens_get_the_same_401(client, invalid):
+    now = int(datetime.now(UTC).timestamp())
+    claims = {"sub": str(uuid4()), "iat": now, "exp": now + 900}
+    secret = "test-secret-for-dev-sign-in-only-32-bytes"
+    if invalid == "expired":
+        claims["exp"] = now - 1
+    elif invalid == "wrong-signature":
+        secret = "different-secret-for-dev-sign-in-only-32-bytes"
+    else:
+        del claims["exp"]
+    token = jwt.encode(claims, secret, algorithm="HS256")
+
+    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+    assert response.headers["WWW-Authenticate"] == "Bearer"
