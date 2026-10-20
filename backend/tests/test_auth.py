@@ -1,8 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from threading import Barrier
 from uuid import UUID, uuid4
 
 import jwt
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from ghbot.main import create_app
@@ -89,3 +92,47 @@ def test_invalid_tokens_get_the_same_401(client, invalid):
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
     assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+def test_subject_keeps_its_user_id_across_app_restarts():
+    subject = str(uuid4())
+    with TestClient(create_app()) as first_client:
+        token = first_client.post("/dev/token", json={"subject": subject}).json()
+        first = first_client.get(
+            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
+        )
+        assert first.status_code == 200
+
+    with TestClient(create_app()) as restarted_client:
+        token = restarted_client.post("/dev/token", json={"subject": subject}).json()
+        returning = restarted_client.get(
+            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
+        )
+        other_token = restarted_client.post(
+            "/dev/token", json={"subject": str(uuid4())}
+        ).json()
+        other = restarted_client.get(
+            "/me", headers={"Authorization": f"Bearer {other_token['access_token']}"}
+        )
+
+    assert returning.status_code == other.status_code == 200
+    assert returning.json() == first.json()
+    assert other.json()["id"] != first.json()["id"]
+
+
+def test_concurrent_first_requests_share_one_user(client):
+    token = client.post("/dev/token", json={"subject": str(uuid4())}).json()
+    start = Barrier(4)
+
+    def get_me():
+        start.wait(timeout=10)
+        return client.get(
+            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(get_me) for _ in range(4)]
+        responses = [future.result(timeout=10) for future in futures]
+
+    assert all(response.status_code == 200 for response in responses)
+    assert len({response.json()["id"] for response in responses}) == 1
