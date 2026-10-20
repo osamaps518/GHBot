@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from ghbot.auth.provider import DevAuthProvider
+from ghbot.auth.routes import create_dev_router
 from ghbot.config import Settings
 
 
@@ -24,6 +26,8 @@ def create_app() -> FastAPI:
         await engine.dispose()
 
     app = FastAPI(title="GHBot", lifespan=lifespan)
+    provider = DevAuthProvider(settings.dev_jwt_secret.get_secret_value())
+    app.include_router(create_dev_router(provider))
 
     @app.get("/health")
     async def health() -> dict[str, str]:

@@ -1,3 +1,6 @@
+from datetime import UTC, datetime
+
+import jwt
 import pytest
 from pydantic import ValidationError
 
@@ -24,3 +27,19 @@ def test_dev_auth_requires_an_explicit_environment(monkeypatch, tmp_path):
         item["loc"] == ("environment",) and item["type"] == "missing"
         for item in error.value.errors()
     )
+
+
+def test_dev_token_is_signed_and_short_lived(client):
+    response = client.post("/dev/token", json={"subject": "alice"})
+
+    assert response.status_code == 200
+    assert response.json()["token_type"] == "bearer"
+    claims = jwt.decode(
+        response.json()["access_token"],
+        "test-secret-for-dev-sign-in-only-32-bytes",
+        algorithms=["HS256"],
+        options={"require": ["sub", "iat", "exp"]},
+    )
+    assert claims["sub"] == "alice"
+    assert claims["iat"] <= datetime.now(UTC).timestamp() < claims["exp"]
+    assert claims["exp"] - claims["iat"] == 15 * 60

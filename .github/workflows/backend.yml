@@ -19,6 +19,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://ghbot:ghbot_local@127.0.0.1:5432/ghbot
       ENVIRONMENT: development
+      DEV_JWT_SECRET: ci-only-dev-sign-in-secret-at-least-32-bytes
     services:
       postgres:
         image: postgres:18

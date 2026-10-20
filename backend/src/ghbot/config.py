@@ -8,3 +8,4 @@ class Settings(BaseSettings):
 
     database_url: SecretStr
     environment: str
+    dev_jwt_secret: SecretStr
