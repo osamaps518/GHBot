@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from ghbot.auth.provider import DevAuthProvider
-from ghbot.auth.routes import create_dev_router
+from ghbot.auth.routes import create_dev_router, router
 from ghbot.config import Settings
 
 
@@ -27,6 +27,8 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="GHBot", lifespan=lifespan)
     provider = DevAuthProvider(settings.dev_jwt_secret.get_secret_value())
+    app.state.auth_provider = provider
+    app.include_router(router)
     app.include_router(create_dev_router(provider))
 
     @app.get("/health")

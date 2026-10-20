@@ -1,6 +1,17 @@
 from datetime import UTC, datetime, timedelta
+from typing import Protocol, cast
 
 import jwt
+
+
+class InvalidToken(ValueError):
+    """The provider could not verify the token."""
+
+
+class AuthProvider(Protocol):
+    def verify_token(self, token: str) -> str:
+        """Return the provider's user ID, or raise InvalidToken."""
+        ...
 
 
 class DevAuthProvider:
@@ -14,3 +25,15 @@ class DevAuthProvider:
             self._secret,
             algorithm="HS256",
         )
+
+    def verify_token(self, token: str) -> str:
+        try:
+            claims = jwt.decode(
+                token,
+                self._secret,
+                algorithms=["HS256"],
+                options={"require": ["sub", "iat", "exp"]},
+            )
+        except (jwt.InvalidTokenError, TypeError, ValueError) as error:
+            raise InvalidToken from error
+        return cast(str, claims["sub"])
