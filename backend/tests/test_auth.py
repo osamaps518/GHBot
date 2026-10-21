@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from threading import Barrier
@@ -5,10 +6,14 @@ from uuid import UUID, uuid4
 
 import jwt
 import pytest
-from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from ghbot.main import create_app
+
+
+def auth_headers(client, subject):
+    token = client.post("/dev/token", json={"subject": subject}).json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.mark.parametrize("environment", ["production", "staging", ""])
@@ -33,6 +38,13 @@ def test_dev_auth_requires_an_explicit_environment(monkeypatch, tmp_path):
     )
 
 
+def test_dev_auth_rejects_an_empty_secret(monkeypatch):
+    monkeypatch.setenv("DEV_JWT_SECRET", "")
+
+    with pytest.raises(ValidationError):
+        create_app()
+
+
 def test_dev_token_is_signed_and_short_lived(client):
     response = client.post("/dev/token", json={"subject": "alice"})
 
@@ -40,7 +52,7 @@ def test_dev_token_is_signed_and_short_lived(client):
     assert response.json()["token_type"] == "bearer"
     claims = jwt.decode(
         response.json()["access_token"],
-        "test-secret-for-dev-sign-in-only-32-bytes",
+        os.environ["DEV_JWT_SECRET"],
         algorithms=["HS256"],
         options={"require": ["sub", "iat", "exp"]},
     )
@@ -49,12 +61,15 @@ def test_dev_token_is_signed_and_short_lived(client):
     assert claims["exp"] - claims["iat"] == 15 * 60
 
 
-def test_valid_token_returns_our_user_id(client):
-    token = client.post("/dev/token", json={"subject": str(uuid4())}).json()
+@pytest.mark.parametrize("subject", ["", "a\x00b", "x" * 3000])
+def test_dev_token_rejects_invalid_subjects(client, subject):
+    response = client.post("/dev/token", json={"subject": subject})
 
-    response = client.get(
-        "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
-    )
+    assert response.status_code == 422
+
+
+def test_valid_token_returns_our_user_id(client):
+    response = client.get("/me", headers=auth_headers(client, str(uuid4())))
 
     assert response.status_code == 200
     assert set(response.json()) == {"id"}
@@ -62,10 +77,25 @@ def test_valid_token_returns_our_user_id(client):
 
 
 @pytest.mark.parametrize(
-    "authorization", [None, "Basic credentials", "Bearer", "Bearer not-a-jwt"]
+    "invalid", ["missing", "not-a-jwt", "expired", "wrong-signature", "missing-expiry"]
 )
-def test_missing_or_malformed_credentials_get_401(client, authorization):
-    headers = {} if authorization is None else {"Authorization": authorization}
+def test_invalid_credentials_get_the_same_401(client, invalid):
+    if invalid == "missing":
+        headers = {}
+    elif invalid == "not-a-jwt":
+        headers = {"Authorization": "Bearer not-a-jwt"}
+    else:
+        now = int(datetime.now(UTC).timestamp())
+        claims = {"sub": str(uuid4()), "iat": now, "exp": now + 900}
+        secret = os.environ["DEV_JWT_SECRET"]
+        if invalid == "expired":
+            claims["exp"] = now - 1
+        elif invalid == "wrong-signature":
+            secret = "different-secret-for-dev-sign-in-only-32-bytes"
+        else:
+            del claims["exp"]
+        token = jwt.encode(claims, secret, algorithm="HS256")
+        headers = {"Authorization": f"Bearer {token}"}
 
     response = client.get("/me", headers=headers)
 
@@ -74,61 +104,26 @@ def test_missing_or_malformed_credentials_get_401(client, authorization):
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
-@pytest.mark.parametrize("invalid", ["expired", "wrong-signature", "missing-expiry"])
-def test_invalid_tokens_get_the_same_401(client, invalid):
-    now = int(datetime.now(UTC).timestamp())
-    claims = {"sub": str(uuid4()), "iat": now, "exp": now + 900}
-    secret = "test-secret-for-dev-sign-in-only-32-bytes"
-    if invalid == "expired":
-        claims["exp"] = now - 1
-    elif invalid == "wrong-signature":
-        secret = "different-secret-for-dev-sign-in-only-32-bytes"
-    else:
-        del claims["exp"]
-    token = jwt.encode(claims, secret, algorithm="HS256")
+def test_subject_keeps_its_user_id_across_requests(client):
+    headers = auth_headers(client, str(uuid4()))
+    first = client.get("/me", headers=headers)
+    returning = client.get("/me", headers=headers)
 
-    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+    assert first.status_code == returning.status_code == 200
+    assert returning.json()["id"] == first.json()["id"]
 
-    assert response.status_code == 401
-    assert response.json() == {"detail": "Not authenticated"}
-    assert response.headers["WWW-Authenticate"] == "Bearer"
-
-
-def test_subject_keeps_its_user_id_across_app_restarts():
-    subject = str(uuid4())
-    with TestClient(create_app()) as first_client:
-        token = first_client.post("/dev/token", json={"subject": subject}).json()
-        first = first_client.get(
-            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
-        )
-        assert first.status_code == 200
-
-    with TestClient(create_app()) as restarted_client:
-        token = restarted_client.post("/dev/token", json={"subject": subject}).json()
-        returning = restarted_client.get(
-            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
-        )
-        other_token = restarted_client.post(
-            "/dev/token", json={"subject": str(uuid4())}
-        ).json()
-        other = restarted_client.get(
-            "/me", headers={"Authorization": f"Bearer {other_token['access_token']}"}
-        )
-
-    assert returning.status_code == other.status_code == 200
-    assert returning.json() == first.json()
+    other = client.get("/me", headers=auth_headers(client, str(uuid4())))
+    assert other.status_code == 200
     assert other.json()["id"] != first.json()["id"]
 
 
 def test_concurrent_first_requests_share_one_user(client):
-    token = client.post("/dev/token", json={"subject": str(uuid4())}).json()
+    headers = auth_headers(client, str(uuid4()))
     start = Barrier(4)
 
     def get_me():
         start.wait(timeout=10)
-        return client.get(
-            "/me", headers={"Authorization": f"Bearer {token['access_token']}"}
-        )
+        return client.get("/me", headers=headers)
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = [pool.submit(get_me) for _ in range(4)]

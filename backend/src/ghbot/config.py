@@ -1,4 +1,4 @@
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,4 +8,4 @@ class Settings(BaseSettings):
 
     database_url: SecretStr
     environment: str
-    dev_jwt_secret: SecretStr
+    dev_jwt_secret: SecretStr = Field(min_length=32)

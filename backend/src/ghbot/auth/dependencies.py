@@ -13,18 +13,13 @@ from ghbot.database import SessionDependency
 async def get_current_user(
     request: Request,
     session: SessionDependency,
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(HTTPBearer(auto_error=False))
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
 ) -> User:
     unauthorized = HTTPException(
         status_code=401,
         detail="Not authenticated",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    if credentials is None:
-        raise unauthorized
-
     provider: AuthProvider = request.app.state.auth_provider
     try:
         subject = provider.verify_token(credentials.credentials)

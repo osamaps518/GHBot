@@ -34,6 +34,6 @@ class DevAuthProvider:
                 algorithms=["HS256"],
                 options={"require": ["sub", "iat", "exp"]},
             )
-        except (jwt.InvalidTokenError, TypeError, ValueError) as error:
+        except jwt.InvalidTokenError as error:
             raise InvalidToken from error
         return cast(str, claims["sub"])
