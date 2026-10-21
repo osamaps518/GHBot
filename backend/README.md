@@ -17,6 +17,10 @@ uv run uvicorn ghbot.main:create_app --factory --reload
 
 Then open <http://127.0.0.1:8000/docs>.
 
+For dev sign-in, call `POST /dev/token` there with `{"subject": "alice"}`, paste
+the `access_token` into **Authorize**, then call `GET /me`. Tokens last 15 minutes.
+The app requires `ENVIRONMENT=development` and `DEV_JWT_SECRET` from `.env.example`.
+
 ## Checks
 
 CI runs these on every PR that changes `backend/`. The tests need Postgres running.
@@ -25,6 +29,8 @@ CI runs these on every PR that changes `backend/`. The tests need Postgres runni
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
+uv run alembic upgrade head
+uv run alembic check
 uv run pytest --cov=ghbot
 ```
 

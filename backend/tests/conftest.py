@@ -4,6 +4,12 @@ from fastapi.testclient import TestClient
 from ghbot.main import create_app
 
 
+@pytest.fixture(autouse=True)
+def development_environment(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    monkeypatch.setenv("DEV_JWT_SECRET", "test-secret-for-dev-sign-in-only-32-bytes")
+
+
 @pytest.fixture
 def app():
     return create_app()

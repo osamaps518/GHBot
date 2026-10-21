@@ -5,10 +5,10 @@ from alembic import context
 from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from ghbot.auth import models  # noqa: F401 -- register the users table for Alembic
 from ghbot.config import Settings
 from ghbot.database import Base
 
-# Import each domain's models here when they exist, so autogenerate sees them.
 target_metadata = Base.metadata
 
 if context.config.config_file_name is not None:
