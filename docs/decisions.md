@@ -131,3 +131,17 @@ refuses to start unless it is `development`; only then is `/dev/token` mounted.
 `get_current_user` maps that subject to our `users` table, creating the row on
 first use. A unique `auth_subject` and `ON CONFLICT DO NOTHING` handle simultaneous
 first requests. Our IDs are UUIDv7; future tables reference these IDs.
+
+---
+
+## 10. Module layout
+
+**Status:** Accepted, 2026-10-21 (#6)
+
+Each module's `__init__.py` is its public API: it re-exports what other code may
+use, lists it in `__all__`, and says in its docstring what each name is for. Other
+modules and `main.py` import only from the package (`from ghbot.auth import
+CurrentUser`), never from its files. Inside a module, files import each other
+directly.
+
+A module's routes live in `router.py`.
