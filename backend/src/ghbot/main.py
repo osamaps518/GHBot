@@ -4,8 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from ghbot.auth.provider import DevAuthProvider
-from ghbot.auth.router import create_dev_router, router
+from ghbot.auth import DevAuthProvider, create_dev_router, router
 from ghbot.config import Settings
 
 
