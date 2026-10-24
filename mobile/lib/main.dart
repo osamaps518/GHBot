@@ -27,9 +27,9 @@ class GhbotApp extends StatelessWidget {
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // English if the phone is in English, Arabic otherwise: Flutter falls
-      // back to the first entry when no language matches.
-      supportedLocales: const [Locale('ar'), Locale('en')],
+      // Flutter matches the phone's ordered preferences, then falls back to
+      // the first entry when none match.
+      supportedLocales: const [Locale('en'), Locale('ar')],
       home: HomeScreen(client: client, apiBaseUrl: apiBaseUrl),
     );
   }

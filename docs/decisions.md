@@ -150,7 +150,7 @@ A module's routes live in `router.py`.
 
 ## 11. Mobile app setup
 
-**Status:** Accepted, 2026-10-24 (#7)
+**Status:** Superseded, 2026-10-24 by #12 for the language rule; other setup choices remain accepted.
 
 - **Android only.** Neither of us has a Mac. iOS can be added later with `flutter create --platforms=ios .`.
 - **Flutter 3.47.7, pinned without a version manager.** The same version is in `pubspec.yaml`, CI and `mobile/README.md`.
@@ -158,3 +158,13 @@ A module's routes live in `router.py`.
 - **Language rule:** English if the phone is in English, Arabic otherwise. Arabic is first in `supportedLocales`, and Flutter's default resolution falls back to the first entry. No in-app switch yet (question 9 in #8).
 - **Backend address from `mobile/config.json`,** passed with `--dart-define-from-file` and not committed, like `backend/.env`. The app refuses to start without it instead of guessing a default.
 - **Plain HTTP only in debug builds,** set in the debug Android manifest, so release builds can't talk to the backend unencrypted.
+
+---
+
+## 12. Mobile language selection
+
+**Status:** Accepted, 2026-10-24 (#7)
+
+Use the phone's ordered language preferences to select the first supported language, Arabic or English. If none matches or the list is empty, use English. Keep Flutter's default locale resolution with English first in `supportedLocales`; no custom callback is needed. Arabic stays the ARB template, which does not set the runtime fallback. An in-app switch remains deferred (question 9 in #8).
+
+The earlier Arabic fallback was considered, but it would show Arabic when the phone prefers an unsupported language. The trade-off is that these phones now show English.

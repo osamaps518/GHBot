@@ -25,21 +25,71 @@ TextDirection _direction(WidgetTester tester) =>
 
 void main() {
   group('language', () {
-    for (final locale in const [Locale('ar'), Locale('fr')]) {
-      testWidgets('$locale phone shows Arabic, right to left', (tester) async {
-        tester.platformDispatcher.localesTestValue = [locale];
-        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    testWidgets('Arabic phone shows Arabic, right to left', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('ar')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-        await _pumpApp(tester, _healthy);
+      await _pumpApp(tester, _healthy);
 
-        final arabic = lookupAppLocalizations(const Locale('ar'));
-        expect(find.text(arabic.backendReached), findsOneWidget);
-        expect(_direction(tester), TextDirection.rtl);
-      });
-    }
+      final arabic = lookupAppLocalizations(const Locale('ar'));
+      expect(find.text(arabic.backendReached), findsOneWidget);
+      expect(_direction(tester), TextDirection.rtl);
+    });
 
     testWidgets('English phone shows English, left to right', (tester) async {
       tester.platformDispatcher.localesTestValue = [const Locale('en', 'US')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester, _healthy);
+
+      final english = lookupAppLocalizations(const Locale('en'));
+      expect(find.text(english.backendReached), findsOneWidget);
+      expect(_direction(tester), TextDirection.ltr);
+    });
+
+    testWidgets('French-only phone falls back to English', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('fr')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester, _healthy);
+
+      final english = lookupAppLocalizations(const Locale('en'));
+      expect(find.text(english.backendReached), findsOneWidget);
+      expect(_direction(tester), TextDirection.ltr);
+    });
+
+    testWidgets('French then Arabic phone shows Arabic', (tester) async {
+      tester.platformDispatcher.localesTestValue = const [
+        Locale('fr', 'FR'),
+        Locale('ar'),
+      ];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester, _healthy);
+
+      final arabic = lookupAppLocalizations(const Locale('ar'));
+      expect(find.text(arabic.backendReached), findsOneWidget);
+      expect(_direction(tester), TextDirection.rtl);
+    });
+
+    testWidgets('French then English phone shows English', (tester) async {
+      tester.platformDispatcher.localesTestValue = const [
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
+      ];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester, _healthy);
+
+      final english = lookupAppLocalizations(const Locale('en'));
+      expect(find.text(english.backendReached), findsOneWidget);
+      expect(_direction(tester), TextDirection.ltr);
+    });
+
+    testWidgets('no phone language preferences falls back to English', (
+      tester,
+    ) async {
+      tester.platformDispatcher.localesTestValue = [];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
       await _pumpApp(tester, _healthy);

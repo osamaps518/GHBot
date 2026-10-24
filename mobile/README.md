@@ -35,7 +35,7 @@ Debug builds allow plain HTTP for this. Release builds don't.
 ## Text and layout
 
 - No user-facing text in Dart code. Add each string to `lib/l10n/app_ar.arb` and `lib/l10n/app_en.arb`, then use it through `AppLocalizations.of(context)!`. `flutter pub get` or `flutter run` regenerates the Dart files next to them.
-- The app is in English if the phone is in English, and in Arabic otherwise.
+- The app uses the first supported language (English or Arabic) in the phone's ordered preferences. If none matches or the list is empty, it uses English.
 - Arabic is right to left. Use start/end (`EdgeInsetsDirectional`, `AlignmentDirectional`), never left/right.
 
 ## Checks
