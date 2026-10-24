@@ -153,7 +153,7 @@ A module's routes live in `router.py`.
 **Status:** Accepted, 2026-10-24 (#7)
 
 - **Android only.** Neither of us has a Mac. iOS can be added later with `flutter create --platforms=ios .`.
-- **Flutter 3.47.7, pinned without a version manager.** The same version is in `pubspec.yaml`, CI and `mobile/README.md`. Different versions can format code differently, so a pinned version keeps the CI format check from failing on code that passed locally. FVM was considered; one pinned version is enough for two people.
+- **Flutter 3.47.7, pinned without a version manager.** The same version is in `pubspec.yaml`, CI and `mobile/README.md`.
 - **Translations with Flutter's built-in `gen-l10n`.** Arabic (`app_ar.arb`) is the template, English sits alongside. No user-facing text in Dart code.
 - **Language rule:** English if the phone is in English, Arabic otherwise. Arabic is first in `supportedLocales`, and Flutter's default resolution falls back to the first entry. No in-app switch yet (question 9 in #8).
 - **Backend address from `mobile/config.json`,** passed with `--dart-define-from-file` and not committed, like `backend/.env`. The app refuses to start without it instead of guessing a default.
