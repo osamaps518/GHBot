@@ -11,10 +11,12 @@ final _healthy = MockClient((request) async {
   return http.Response('{"status": "ok"}', 200);
 });
 
-Future<void> _pumpApp(WidgetTester tester, http.Client client) async {
-  await tester.pumpWidget(
-    GhbotApp(client: client, apiBaseUrl: 'http://backend.test'),
-  );
+Future<void> _pumpApp(
+  WidgetTester tester,
+  http.Client client, {
+  String apiBaseUrl = 'http://backend.test',
+}) async {
+  await tester.pumpWidget(GhbotApp(client: client, apiBaseUrl: apiBaseUrl));
   await tester.pumpAndSettle();
 }
 
@@ -55,6 +57,19 @@ void main() {
     testWidgets('shows reached when /health answers', (tester) async {
       await _pumpApp(tester, _healthy);
 
+      expect(find.text(english.backendReached), findsOneWidget);
+    });
+
+    testWidgets('trailing slash in base URL reaches /health', (tester) async {
+      final requestedUrls = <Uri>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url);
+        return http.Response('', request.url.path == '/health' ? 200 : 404);
+      });
+
+      await _pumpApp(tester, client, apiBaseUrl: 'http://backend.test/');
+
+      expect(requestedUrls, [Uri.parse('http://backend.test/health')]);
       expect(find.text(english.backendReached), findsOneWidget);
     });
 

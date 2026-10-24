@@ -25,8 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _checkHealth() async {
     try {
+      final baseUrl = widget.apiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
       final response = await widget.client
-          .get(Uri.parse('${widget.apiBaseUrl}/health'))
+          .get(Uri.parse('$baseUrl/health'))
           // Without a timeout, an unreachable address can spin for minutes.
           .timeout(const Duration(seconds: 5));
       return response.statusCode == 200;
