@@ -13,4 +13,4 @@ Rules for AI coding agents working on GHBot.
 - Short and plain. Decisions go in docs/decisions.md, in the same style as existing entries.
 
 ## Before a PR
-- Run the checks in backend/README.md.
+- Run the checks in the README of each part you changed (backend/README.md, mobile/README.md).
