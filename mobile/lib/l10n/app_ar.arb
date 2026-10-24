@@ -1,0 +1,12 @@
+{
+  "@@locale": "ar",
+  "appTitle": "GHBot",
+  "backendReached": "تم الوصول إلى الخادم",
+  "@backendReached": {
+    "description": "Shown when the backend's /health endpoint answered."
+  },
+  "backendNotReached": "تعذّر الوصول إلى الخادم",
+  "@backendNotReached": {
+    "description": "Shown when the request to the backend's /health endpoint failed."
+  }
+}
