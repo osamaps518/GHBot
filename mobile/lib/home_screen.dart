@@ -1,0 +1,54 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import 'l10n/app_localizations.dart';
+
+/// Shows whether the backend's `/health` answered.
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.client, required this.apiBaseUrl});
+
+  final http.Client client;
+  final String apiBaseUrl;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final Future<bool> _reached;
+
+  @override
+  void initState() {
+    super.initState();
+    _reached = _checkHealth();
+  }
+
+  Future<bool> _checkHealth() async {
+    try {
+      final response = await widget.client
+          .get(Uri.parse('${widget.apiBaseUrl}/health'))
+          // Without a timeout, an unreachable address can spin for minutes.
+          .timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } on Exception {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      body: Center(
+        child: FutureBuilder<bool>(
+          future: _reached,
+          builder: (context, snapshot) => switch (snapshot.data) {
+            null => const CircularProgressIndicator(),
+            true => Text(l10n.backendReached),
+            false => Text(l10n.backendNotReached),
+          },
+        ),
+      ),
+    );
+  }
+}
