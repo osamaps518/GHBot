@@ -1,0 +1,6 @@
+{
+  "@@locale": "en",
+  "appTitle": "GHBot",
+  "backendReached": "Backend reached",
+  "backendNotReached": "Backend not reached"
+}
