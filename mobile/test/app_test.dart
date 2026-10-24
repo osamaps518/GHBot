@@ -82,5 +82,21 @@ void main() {
 
       expect(find.text(english.backendNotReached), findsOneWidget);
     });
+
+    testWidgets('malformed backend address stops showing progress', (
+      tester,
+    ) async {
+      final client = MockClient(
+        (request) async => throw ArgumentError('Invalid URL'),
+      );
+
+      await tester.pumpWidget(
+        GhbotApp(client: client, apiBaseUrl: 'backend.test'),
+      );
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(find.text(english.backendNotReached), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
   });
 }

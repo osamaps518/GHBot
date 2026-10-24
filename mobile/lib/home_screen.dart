@@ -43,10 +43,15 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Center(
         child: FutureBuilder<bool>(
           future: _reached,
-          builder: (context, snapshot) => switch (snapshot.data) {
-            null => const CircularProgressIndicator(),
-            true => Text(l10n.backendReached),
-            false => Text(l10n.backendNotReached),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const CircularProgressIndicator();
+            }
+            return Text(
+              snapshot.data == true
+                  ? l10n.backendReached
+                  : l10n.backendNotReached,
+            );
           },
         ),
       ),
