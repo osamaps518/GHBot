@@ -1,4 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+from threading import Barrier
 from uuid import uuid4
 
 import pytest
@@ -145,3 +147,33 @@ def test_get_keeps_saved_profile_after_user_turns_81(app, client, auth_headers):
 
     assert response.status_code == 200
     assert response.json() == profile
+
+
+@pytest.mark.parametrize("method", ["get", "put"])
+@pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer invalid"}])
+def test_profile_endpoints_require_valid_token(client, method, headers):
+    request = getattr(client, method)
+    response = request(
+        "/me/profile", headers=headers, **({"json": PROFILE} if method == "put" else {})
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
+def test_concurrent_first_saves_share_one_profile(client, auth_headers):
+    headers = auth_headers(str(uuid4()))
+    start = Barrier(2)
+    first = {**PROFILE, "weight_kg": 61.5}
+    second = {**PROFILE, "weight_kg": 72.5}
+
+    def save(profile):
+        start.wait(timeout=10)
+        return client.put("/me/profile", headers=headers, json=profile)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(save, profile) for profile in (first, second)]
+        responses = [future.result(timeout=10) for future in futures]
+
+    assert sorted(response.status_code for response in responses) == [200, 201]
+    assert client.get("/me/profile", headers=headers).json() in (first, second)
