@@ -150,10 +150,7 @@ def test_get_keeps_saved_profile_after_user_turns_81(app, client, auth_headers):
 @pytest.mark.parametrize("method", ["get", "put"])
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer invalid"}])
 def test_profile_endpoints_require_valid_token(client, method, headers):
-    request = getattr(client, method)
-    response = request(
-        "/me/profile", headers=headers, **({"json": PROFILE} if method == "put" else {})
-    )
+    response = client.request(method, "/me/profile", headers=headers, json=PROFILE)
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
