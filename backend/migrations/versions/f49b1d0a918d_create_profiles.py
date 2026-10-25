@@ -23,8 +23,8 @@ def upgrade() -> None:
         sa.Column("birth_year", sa.Integer(), nullable=False),
         sa.Column("birth_month", sa.Integer(), nullable=False),
         sa.Column("sex", sa.Text(), nullable=False),
-        sa.Column("height_cm", sa.Float(precision=53), nullable=False),
-        sa.Column("weight_kg", sa.Float(precision=53), nullable=False),
+        sa.Column("height_cm", sa.Double(), nullable=False),
+        sa.Column("weight_kg", sa.Double(), nullable=False),
         sa.Column("activity_level", sa.Text(), nullable=False),
         sa.Column("goal", sa.Text(), nullable=False),
         sa.ForeignKeyConstraint(
