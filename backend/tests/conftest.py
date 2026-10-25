@@ -4,6 +4,17 @@ from fastapi.testclient import TestClient
 from ghbot.main import create_app
 
 
+@pytest.fixture
+def auth_headers(client):
+    def headers(subject):
+        token = client.post("/dev/token", json={"subject": subject}).json()[
+            "access_token"
+        ]
+        return {"Authorization": f"Bearer {token}"}
+
+    return headers
+
+
 @pytest.fixture(autouse=True)
 def development_environment(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "development")

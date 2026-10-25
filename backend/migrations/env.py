@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from ghbot.auth import models  # noqa: F401 -- register the users table for Alembic
 from ghbot.config import Settings
 from ghbot.database import Base
+from ghbot.profiles import models as profile_models  # noqa: F401 -- register profiles
 
 target_metadata = Base.metadata
 

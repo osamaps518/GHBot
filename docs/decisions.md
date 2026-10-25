@@ -168,3 +168,32 @@ A module's routes live in `router.py`.
 Use the phone's ordered language preferences to select the first supported language, Arabic or English. If none matches or the list is empty, use English. Keep Flutter's default locale resolution with English first in `supportedLocales`; no custom callback is needed. Arabic stays the ARB template, which does not set the runtime fallback. An in-app switch remains deferred (question 9 in #8).
 
 The earlier Arabic fallback was considered, but it would show Arabic when the phone prefers an unsupported language. The trade-off is that these phones now show English.
+
+---
+
+## 13. User profile storage
+
+**Status:** Accepted, 2026-10-25 (#9)
+
+Store each user's onboarding profile in a separate `profiles` table keyed by their
+user ID. A missing row means onboarding has not been completed. `PUT /me/profile`
+creates or fully replaces that row; `GET /me/profile` reads it for the signed-in
+user only.
+
+The API and database use English text codes for sex, activity level, and goal;
+the app translates their labels. Height and weight are stored in metric units as
+double-precision floats, with no fixed decimal rounding. Birth month and year
+are stored instead of a full date of birth to avoid collecting the day.
+
+Age is checked only when saving, using the last day of the birth month as the
+youngest possible birthday and the server's UTC date. Saved profiles remain
+readable after the user turns 81. Checks that need more than the request body
+(today's date, the database) return the same 422 shape as the request model,
+with their own `type` code.
+
+We considered putting profile fields on `users`, but that is the auth module's
+identity table. Native Postgres enums would need a hand-written migration for
+each new code, and fixed-decimal storage would round numbers from the app. A
+full birth date would collect an unnecessary day; setting the day to 1 would
+make it look like a real birthday. The youngest-possible age rule can reject
+someone who is already 18 until the last day of their birth month.
