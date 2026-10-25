@@ -3,6 +3,7 @@ from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -58,7 +59,16 @@ async def put_profile(
         - ((today.month, today.day) < (body.birth_month, last_day))
     )
     if not 18 <= age <= 80:
-        raise HTTPException(status_code=422, detail="Age must be between 18 and 80")
+        raise RequestValidationError(
+            [
+                {
+                    "type": "age_out_of_range",
+                    "loc": ("body", "birth_year"),
+                    "msg": "Age must be between 18 and 80",
+                    "input": body.birth_year,
+                }
+            ]
+        )
 
     values = body.model_dump()
     created = await session.scalar(

@@ -187,4 +187,6 @@ are stored instead of a full date of birth to avoid collecting the day.
 
 Age is checked only when saving, using the last day of the birth month as the
 youngest possible birthday and the server's UTC date. Saved profiles remain
-readable after the user turns 81.
+readable after the user turns 81. Checks that need more than the request body
+(today's date, the database) return the same 422 shape as the request model,
+with their own `type` code.

@@ -72,7 +72,9 @@ def test_profiles_are_private_to_each_user(client, auth_headers):
         pytest.param({**PROFILE, "birth_month": 0}, id="birth_month=0"),
         pytest.param({**PROFILE, "birth_month": 13}, id="birth_month=13"),
         pytest.param({**PROFILE, "sex": "other"}, id="sex=other"),
-        pytest.param({**PROFILE, "activity_level": "active"}, id="activity_level=active"),
+        pytest.param(
+            {**PROFILE, "activity_level": "active"}, id="activity_level=active"
+        ),
         pytest.param({**PROFILE, "goal": "bulk"}, id="goal=bulk"),
         pytest.param(
             {k: v for k, v in PROFILE.items() if k != "birth_year"},
@@ -157,6 +159,8 @@ def test_age_is_checked_at_save_using_last_day_of_birth_month(
     if expected == 201:
         assert response.json() == profile
     else:
+        assert response.json()["detail"][0]["type"] == "age_out_of_range"
+        assert response.json()["detail"][0]["loc"] == ["body", "birth_year"]
         assert client.get("/me/profile", headers=headers).status_code == 404
 
 
