@@ -107,6 +107,32 @@ def test_range_limits_are_accepted(client, auth_headers, profile):
 
 
 @pytest.mark.parametrize(
+    ("field", "code"),
+    [
+        ("sex", "male"),
+        ("sex", "female"),
+        ("activity_level", "sedentary"),
+        ("activity_level", "lightly_active"),
+        ("activity_level", "moderately_active"),
+        ("activity_level", "very_active"),
+        ("activity_level", "extremely_active"),
+        ("goal", "lose"),
+        ("goal", "maintain"),
+        ("goal", "gain"),
+    ],
+)
+def test_agreed_choice_codes_are_accepted(client, auth_headers, field, code):
+    profile = {**PROFILE, field: code}
+
+    response = client.put(
+        "/me/profile", headers=auth_headers(str(uuid4())), json=profile
+    )
+
+    assert response.status_code == 201
+    assert response.json()[field] == code
+
+
+@pytest.mark.parametrize(
     ("today", "birth_year", "birth_month", "expected"),
     [
         (date(2026, 10, 25), 2008, 10, 422),  # Could still be 17.
