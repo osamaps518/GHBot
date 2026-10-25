@@ -62,29 +62,27 @@ def test_profiles_are_private_to_each_user(client, auth_headers):
 
 
 @pytest.mark.parametrize(
-    ("field", "value"),
+    "invalid",
     [
-        ("height_cm", 129.9),
-        ("height_cm", 220.1),
-        ("weight_kg", 34.9),
-        ("weight_kg", 250.1),
-        ("weight_kg", 251),
-        ("birth_month", 0),
-        ("birth_month", 13),
-        ("sex", "other"),
-        ("activity_level", "active"),
-        ("goal", "bulk"),
-        ("birth_year", None),
+        pytest.param({**PROFILE, "height_cm": 129.9}, id="height_cm=129.9"),
+        pytest.param({**PROFILE, "height_cm": 220.1}, id="height_cm=220.1"),
+        pytest.param({**PROFILE, "weight_kg": 34.9}, id="weight_kg=34.9"),
+        pytest.param({**PROFILE, "weight_kg": 250.1}, id="weight_kg=250.1"),
+        pytest.param({**PROFILE, "weight_kg": 251}, id="weight_kg=251"),
+        pytest.param({**PROFILE, "birth_month": 0}, id="birth_month=0"),
+        pytest.param({**PROFILE, "birth_month": 13}, id="birth_month=13"),
+        pytest.param({**PROFILE, "sex": "other"}, id="sex=other"),
+        pytest.param({**PROFILE, "activity_level": "active"}, id="activity_level=active"),
+        pytest.param({**PROFILE, "goal": "bulk"}, id="goal=bulk"),
+        pytest.param(
+            {k: v for k, v in PROFILE.items() if k != "birth_year"},
+            id="birth_year=missing",
+        ),
     ],
 )
-def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, field, value):
+def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, invalid):
     headers = auth_headers(str(uuid4()))
     assert client.put("/me/profile", headers=headers, json=PROFILE).status_code == 201
-    invalid = {**PROFILE}
-    if value is None:
-        del invalid[field]
-    else:
-        invalid[field] = value
 
     response = client.put("/me/profile", headers=headers, json=invalid)
 
