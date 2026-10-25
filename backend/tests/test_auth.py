@@ -11,11 +11,6 @@ from pydantic import ValidationError
 from ghbot.main import create_app
 
 
-def auth_headers(client, subject):
-    token = client.post("/dev/token", json={"subject": subject}).json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
-
-
 @pytest.mark.parametrize("environment", ["production", "staging", ""])
 def test_dev_auth_refuses_other_environments(monkeypatch, environment):
     monkeypatch.setenv("ENVIRONMENT", environment)
@@ -68,8 +63,8 @@ def test_dev_token_rejects_invalid_subjects(client, subject):
     assert response.status_code == 422
 
 
-def test_valid_token_returns_our_user_id(client):
-    response = client.get("/me", headers=auth_headers(client, str(uuid4())))
+def test_valid_token_returns_our_user_id(client, auth_headers):
+    response = client.get("/me", headers=auth_headers(str(uuid4())))
 
     assert response.status_code == 200
     assert set(response.json()) == {"id"}
@@ -104,21 +99,21 @@ def test_invalid_credentials_get_the_same_401(client, invalid):
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
-def test_subject_keeps_its_user_id_across_requests(client):
-    headers = auth_headers(client, str(uuid4()))
+def test_subject_keeps_its_user_id_across_requests(client, auth_headers):
+    headers = auth_headers(str(uuid4()))
     first = client.get("/me", headers=headers)
     returning = client.get("/me", headers=headers)
 
     assert first.status_code == returning.status_code == 200
     assert returning.json()["id"] == first.json()["id"]
 
-    other = client.get("/me", headers=auth_headers(client, str(uuid4())))
+    other = client.get("/me", headers=auth_headers(str(uuid4())))
     assert other.status_code == 200
     assert other.json()["id"] != first.json()["id"]
 
 
-def test_concurrent_first_requests_share_one_user(client):
-    headers = auth_headers(client, str(uuid4()))
+def test_concurrent_first_requests_share_one_user(client, auth_headers):
+    headers = auth_headers(str(uuid4()))
     start = Barrier(4)
 
     def get_me():
