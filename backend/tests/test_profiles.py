@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+import pytest
+
 PROFILE = {
     "birth_year": 1998,
     "birth_month": 4,
@@ -52,3 +54,50 @@ def test_profiles_are_private_to_each_user(client, auth_headers):
     assert client.put("/me/profile", headers=bob, json=bob_profile).status_code == 201
     assert client.get("/me/profile", headers=alice).json() == PROFILE
     assert client.get("/me/profile", headers=bob).json() == bob_profile
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("height_cm", 129.9),
+        ("height_cm", 220.1),
+        ("weight_kg", 34.9),
+        ("weight_kg", 250.1),
+        ("weight_kg", 251),
+        ("birth_month", 0),
+        ("birth_month", 13),
+        ("sex", "other"),
+        ("activity_level", "active"),
+        ("goal", "bulk"),
+        ("birth_year", None),
+    ],
+)
+def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, field, value):
+    headers = auth_headers(str(uuid4()))
+    assert client.put("/me/profile", headers=headers, json=PROFILE).status_code == 201
+    invalid = {**PROFILE}
+    if value is None:
+        del invalid[field]
+    else:
+        invalid[field] = value
+
+    response = client.put("/me/profile", headers=headers, json=invalid)
+
+    assert response.status_code == 422
+    assert client.get("/me/profile", headers=headers).json() == PROFILE
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        {**PROFILE, "birth_month": 1, "height_cm": 130, "weight_kg": 35},
+        {**PROFILE, "birth_month": 12, "height_cm": 220, "weight_kg": 250},
+    ],
+)
+def test_range_limits_are_accepted(client, auth_headers, profile):
+    response = client.put(
+        "/me/profile", headers=auth_headers(str(uuid4())), json=profile
+    )
+
+    assert response.status_code == 201
+    assert response.json() == profile

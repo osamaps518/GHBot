@@ -1,7 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 
@@ -12,10 +12,10 @@ from ghbot.profiles.models import Profile
 
 class ProfileBody(BaseModel):
     birth_year: int
-    birth_month: int
+    birth_month: int = Field(ge=1, le=12)
     sex: Literal["male", "female"]
-    height_cm: float
-    weight_kg: float
+    height_cm: float = Field(ge=130, le=220)
+    weight_kg: float = Field(ge=35, le=250)
     activity_level: Literal[
         "sedentary",
         "lightly_active",
