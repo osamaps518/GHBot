@@ -1,6 +1,8 @@
-from typing import Literal
+from calendar import monthrange
+from datetime import UTC, date, datetime
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -29,6 +31,10 @@ class ProfileBody(BaseModel):
 router = APIRouter(prefix="/me/profile")
 
 
+def utc_today() -> date:
+    return datetime.now(UTC).date()
+
+
 @router.get("")
 async def get_profile(user: CurrentUser, session: SessionDependency) -> ProfileBody:
     profile = await session.get(Profile, user.id)
@@ -39,8 +45,21 @@ async def get_profile(user: CurrentUser, session: SessionDependency) -> ProfileB
 
 @router.put("")
 async def put_profile(
-    body: ProfileBody, user: CurrentUser, session: SessionDependency, response: Response
+    body: ProfileBody,
+    user: CurrentUser,
+    session: SessionDependency,
+    response: Response,
+    today: Annotated[date, Depends(utc_today)],
 ) -> ProfileBody:
+    last_day = monthrange(today.year, body.birth_month)[1]
+    age = (
+        today.year
+        - body.birth_year
+        - ((today.month, today.day) < (body.birth_month, last_day))
+    )
+    if not 18 <= age <= 80:
+        raise HTTPException(status_code=422, detail="Age must be between 18 and 80")
+
     values = body.model_dump()
     created = await session.scalar(
         insert(Profile)
