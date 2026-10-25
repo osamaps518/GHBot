@@ -190,3 +190,10 @@ youngest possible birthday and the server's UTC date. Saved profiles remain
 readable after the user turns 81. Checks that need more than the request body
 (today's date, the database) return the same 422 shape as the request model,
 with their own `type` code.
+
+We considered putting profile fields on `users`, but that is the auth module's
+identity table. Native Postgres enums would need a hand-written migration for
+each new code, and fixed-decimal storage would round numbers from the app. A
+full birth date would collect an unnecessary day; setting the day to 1 would
+make it look like a real birthday. The youngest-possible age rule can reject
+someone who is already 18 until the last day of their birth month.
