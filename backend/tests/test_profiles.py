@@ -160,6 +160,7 @@ def test_age_is_checked_at_save_using_last_day_of_birth_month(
         assert response.json() == profile
     else:
         assert response.json()["detail"][0]["type"] == "age_out_of_range"
+        assert response.json()["detail"][0]["msg"] == "Age must be between 18 and 100"
         assert response.json()["detail"][0]["loc"] == ["body", "birth_year"]
         assert client.get("/me/profile", headers=headers).status_code == 404
 
