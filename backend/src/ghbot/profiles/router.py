@@ -38,8 +38,8 @@ def utc_today() -> date:
 
 def age_on_date(birth_year: int, birth_month: int, today: date) -> int:
     last_day = monthrange(today.year, birth_month)[1]
-    return today.year - birth_year - (
-        (today.month, today.day) < (birth_month, last_day)
+    return (
+        today.year - birth_year - ((today.month, today.day) < (birth_month, last_day))
     )
 
 

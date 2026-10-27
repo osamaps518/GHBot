@@ -2,7 +2,7 @@ from datetime import date
 from uuid import uuid4
 
 from ghbot.profiles.router import utc_today
-from ghbot.targets.calculation import calculate_targets
+from ghbot.targets import calculate_targets
 
 
 def test_maintaining_weight_uses_rounded_calories_and_macros():

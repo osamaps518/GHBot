@@ -1,7 +1,4 @@
-"""Saved onboarding profiles.
-
-For app wiring, router provides GET and PUT /me/profile.
-"""
+"""Public profiles API: Profile storage, age_on_date, utc_today, and router."""
 
 from ghbot.profiles.models import Profile
 from ghbot.profiles.router import age_on_date, router, utc_today

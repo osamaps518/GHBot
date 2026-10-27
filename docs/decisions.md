@@ -206,3 +206,14 @@ someone who is already 18 until the last day of their birth month.
 
 `PUT /me/profile` accepts ages 18–100. The upper limit only catches typos such as
 a birth year of 1900. Ahmad's range is 13–100; ages 13–17 wait for teen mode (#22).
+
+---
+
+## 15. Daily targets
+
+**Status:** Accepted, 2026-10-26 (#10)
+
+Calculate targets from the saved profile on each request, without storing them,
+because age changes over time. Use exact decimal arithmetic with half-up
+rounding. Calculate carbohydrates from the rounded protein and fat grams. The
+agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GHBot/issues/8).

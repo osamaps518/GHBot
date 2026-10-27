@@ -1,5 +1,8 @@
 """Calculate daily calories and macros from an onboarding profile."""
 
+# The agreed calculation writes all Decimal constants as strings.
+# ruff: noqa: FURB157
+
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TypedDict
 
@@ -58,16 +61,12 @@ def calculate_targets(
     calories = _nearest_ten(max(proposed, minimum))
 
     height_m = height / Decimal("100")
-    protein_weight = (
-        Decimal("25") * height_m**2
-        if weight / height_m**2 >= Decimal("30")
-        else weight
-    )
+    protein_weight = weight
+    if weight / height_m**2 >= Decimal("30"):
+        protein_weight = Decimal("25") * height_m**2
     protein_g = _whole(Decimal("2.2") * protein_weight)
     fat_g = _whole(Decimal(calories) * Decimal("0.2") / Decimal("9"))
-    carbs = (
-        Decimal(calories) - Decimal(protein_g * 4) - Decimal(fat_g * 9)
-    ) / Decimal("4")
+    carbs = Decimal(calories - protein_g * 4 - fat_g * 9) / Decimal("4")
     if carbs < 0:
         raise ValueError("Calculated carbohydrates cannot be negative")
 
