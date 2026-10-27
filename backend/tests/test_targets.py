@@ -67,6 +67,19 @@ def test_maintaining_weight_uses_rounded_calories_and_macros():
     }
 
 
+def test_ties_round_half_up():
+    targets = calculate_targets("male", 31, 80, 182, "sedentary", "maintain")
+
+    assert targets == {
+        "calories": 2150,
+        "protein_g": 176,
+        "fat_g": 48,
+        "carbs_g": 254,
+        "maintenance_calories": 2150,
+        "at_minimum": False,
+    }
+
+
 def test_get_targets_without_profile_returns_404(client, auth_headers):
     response = client.get("/me/targets", headers=auth_headers(str(uuid4())))
 
