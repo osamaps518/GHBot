@@ -36,6 +36,13 @@ def utc_today() -> date:
     return datetime.now(UTC).date()
 
 
+def age_on_date(birth_year: int, birth_month: int, today: date) -> int:
+    last_day = monthrange(today.year, birth_month)[1]
+    return today.year - birth_year - (
+        (today.month, today.day) < (birth_month, last_day)
+    )
+
+
 @router.get("")
 async def get_profile(user: CurrentUser, session: SessionDependency) -> ProfileBody:
     profile = await session.get(Profile, user.id)
@@ -52,12 +59,7 @@ async def put_profile(
     response: Response,
     today: Annotated[date, Depends(utc_today)],
 ) -> ProfileBody:
-    last_day = monthrange(today.year, body.birth_month)[1]
-    age = (
-        today.year
-        - body.birth_year
-        - ((today.month, today.day) < (body.birth_month, last_day))
-    )
+    age = age_on_date(body.birth_year, body.birth_month, today)
     if not 18 <= age <= 100:
         raise RequestValidationError(
             [
