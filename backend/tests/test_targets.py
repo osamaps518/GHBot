@@ -1,8 +1,56 @@
 from datetime import date
 from uuid import uuid4
 
+import pytest
+
 from ghbot.profiles.router import utc_today
 from ghbot.targets import calculate_targets
+
+
+@pytest.mark.parametrize(
+    "profile, expected",
+    [
+        pytest.param(
+            ("male", 30, 80, 180, "moderately_active", "lose"),
+            (2210, 176, 49, 266, False),
+            id="A-standard-deficit",
+        ),
+        pytest.param(
+            ("female", 25, 60, 165, "lightly_active", "maintain"),
+            (1850, 132, 41, 238, False),
+            id="B-female-formula",
+        ),
+        pytest.param(
+            ("female", 45, 52, 155, "sedentary", "lose"),
+            (1200, 114, 27, 125, True),
+            id="C-minimum",
+        ),
+        pytest.param(
+            ("male", 22, 70, 175, "very_active", "gain"),
+            (3200, 154, 71, 486, False),
+            id="D-surplus",
+        ),
+        pytest.param(
+            ("male", 35, 120, 175, "sedentary", "lose"),
+            (2040, 168, 45, 241, False),
+            id="E-reference-weight",
+        ),
+    ],
+)
+def test_agreed_worked_examples(profile, expected):
+    targets = calculate_targets(*profile)
+
+    assert (
+        targets["calories"],
+        targets["protein_g"],
+        targets["fat_g"],
+        targets["carbs_g"],
+        targets["at_minimum"],
+    ) == expected
+    macro_calories = (
+        targets["protein_g"] * 4 + targets["fat_g"] * 9 + targets["carbs_g"] * 4
+    )
+    assert abs(macro_calories - targets["calories"]) <= 5
 
 
 def test_maintaining_weight_uses_rounded_calories_and_macros():
