@@ -3,6 +3,7 @@
 For app wiring, router provides GET and PUT /me/profile.
 """
 
+from ghbot.profiles.models import Profile
 from ghbot.profiles.router import router
 
-__all__ = ["router"]
+__all__ = ["Profile", "router"]
