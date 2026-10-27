@@ -140,9 +140,9 @@ def test_agreed_choice_codes_are_accepted(client, auth_headers, field, code):
         (date(2026, 10, 25), 2008, 10, 422),  # Could still be 17.
         (date(2026, 10, 25), 2008, 9, 201),
         (date(2026, 10, 31), 2008, 10, 201),  # Exactly 18.
-        (date(2026, 10, 31), 1946, 10, 201),  # Exactly 80.
-        (date(2026, 10, 25), 1945, 11, 201),  # Still 80.
-        (date(2026, 10, 31), 1945, 10, 422),  # Now 81.
+        (date(2026, 10, 31), 1926, 10, 201),  # Exactly 100.
+        (date(2026, 10, 25), 1925, 11, 201),  # Still 100.
+        (date(2026, 10, 31), 1925, 10, 422),  # Now 101.
         (date(2026, 10, 25), 2026, 11, 422),  # Future birth month.
     ],
 )
@@ -164,10 +164,10 @@ def test_age_is_checked_at_save_using_last_day_of_birth_month(
         assert client.get("/me/profile", headers=headers).status_code == 404
 
 
-def test_get_keeps_saved_profile_after_user_turns_81(app, client, auth_headers):
+def test_get_keeps_saved_profile_after_user_turns_101(app, client, auth_headers):
     app.dependency_overrides[utc_today] = lambda: date(2026, 10, 25)
     headers = auth_headers(str(uuid4()))
-    profile = {**PROFILE, "birth_year": 1945, "birth_month": 11}
+    profile = {**PROFILE, "birth_year": 1925, "birth_month": 11}
     assert client.put("/me/profile", headers=headers, json=profile).status_code == 201
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 30)
 
