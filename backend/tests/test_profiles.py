@@ -1,3 +1,5 @@
+import json
+import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from threading import Barrier
@@ -90,6 +92,47 @@ def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, invali
 
     assert response.status_code == 422
     assert client.get("/me/profile", headers=headers).json() == PROFILE
+
+
+@pytest.mark.parametrize(
+    ("height_cm", "sent"),
+    [(math.nan, "NaN"), (math.inf, "Infinity"), (-math.inf, "-Infinity")],
+)
+def test_non_finite_number_gives_422(client, auth_headers, height_cm, sent):
+    headers = auth_headers(str(uuid4()))
+    # json= in the test client refuses NaN and Infinity, so send the raw text.
+    body = json.dumps({**PROFILE, "height_cm": height_cm})
+
+    response = client.put(
+        "/me/profile",
+        headers={**headers, "Content-Type": "application/json"},
+        content=body,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "height_cm"]
+    assert response.json()["detail"][0]["input"] == sent
+    assert client.get("/me/profile", headers=headers).status_code == 404
+
+
+def test_non_finite_numbers_nested_in_error_input_give_422(client):
+    response = client.post(
+        "/dev/token",
+        headers={"Content-Type": "application/json"},
+        content='{"subject":{"nested":[NaN,Infinity,-Infinity,1.5]}}',
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "type": "string_type",
+                "loc": ["body", "subject"],
+                "msg": "Input should be a valid string",
+                "input": {"nested": ["NaN", "Infinity", "-Infinity", 1.5]},
+            }
+        ]
+    }
 
 
 @pytest.mark.parametrize(
