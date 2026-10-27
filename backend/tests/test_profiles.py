@@ -115,6 +115,26 @@ def test_non_finite_number_gives_422(client, auth_headers, height_cm, sent):
     assert client.get("/me/profile", headers=headers).status_code == 404
 
 
+def test_non_finite_numbers_nested_in_error_input_give_422(client):
+    response = client.post(
+        "/dev/token",
+        headers={"Content-Type": "application/json"},
+        content='{"subject":{"nested":[NaN,Infinity,-Infinity,1.5]}}',
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "type": "string_type",
+                "loc": ["body", "subject"],
+                "msg": "Input should be a valid string",
+                "input": {"nested": ["NaN", "Infinity", "-Infinity", 1.5]},
+            }
+        ]
+    }
+
+
 @pytest.mark.parametrize(
     "profile",
     [
