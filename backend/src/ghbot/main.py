@@ -1,7 +1,12 @@
+import json
+import math
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from ghbot.auth import DevAuthProvider, create_dev_router, router
@@ -31,6 +36,18 @@ def create_app() -> FastAPI:
     app.include_router(router)
     app.include_router(profiles_router)
     app.include_router(create_dev_router(provider))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        # Same as FastAPI's default, except NaN and Infinity, which the JSON
+        # parser accepts but JSON can't hold. json.dumps gives the text sent.
+        errors = jsonable_encoder(
+            exc.errors(),
+            custom_encoder={float: lambda x: x if math.isfinite(x) else json.dumps(x)},
+        )
+        return JSONResponse(status_code=422, content={"detail": errors})
 
     @app.get("/health")
     async def health() -> dict[str, str]:
