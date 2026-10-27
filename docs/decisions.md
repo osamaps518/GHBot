@@ -173,7 +173,7 @@ The earlier Arabic fallback was considered, but it would show Arabic when the ph
 
 ## 13. User profile storage
 
-**Status:** Accepted, 2026-10-25 (#9)
+**Status:** Superseded, 2026-10-26 by 14 for the age limit; other choices remain accepted.
 
 Store each user's onboarding profile in a separate `profiles` table keyed by their
 user ID. A missing row means onboarding has not been completed. `PUT /me/profile`
@@ -197,3 +197,12 @@ each new code, and fixed-decimal storage would round numbers from the app. A
 full birth date would collect an unnecessary day; setting the day to 1 would
 make it look like a real birthday. The youngest-possible age rule can reject
 someone who is already 18 until the last day of their birth month.
+
+---
+
+## 14. Profile age limit
+
+**Status:** Accepted, 2026-10-26 (#32)
+
+`PUT /me/profile` accepts ages 18–100. The upper limit only catches typos such as
+a birth year of 1900. Ahmad's range is 13–100; ages 13–17 wait for teen mode (#22).
