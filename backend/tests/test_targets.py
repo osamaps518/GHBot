@@ -12,27 +12,27 @@ from ghbot.targets import calculate_targets
     [
         pytest.param(
             ("male", 30, 80, 180, "moderately_active", "lose"),
-            (2210, 176, 49, 266, False),
+            (2210, 176, 49, 266, 2760, False),
             id="A-standard-deficit",
         ),
         pytest.param(
             ("female", 25, 60, 165, "lightly_active", "maintain"),
-            (1850, 132, 41, 238, False),
+            (1850, 132, 41, 238, 1850, False),
             id="B-female-formula",
         ),
         pytest.param(
             ("female", 45, 52, 155, "sedentary", "lose"),
-            (1200, 114, 27, 125, True),
+            (1200, 114, 27, 125, 1320, True),
             id="C-minimum",
         ),
         pytest.param(
             ("male", 22, 70, 175, "very_active", "gain"),
-            (3200, 154, 71, 486, False),
+            (3200, 154, 71, 486, 2910, False),
             id="D-surplus",
         ),
         pytest.param(
             ("male", 35, 120, 175, "sedentary", "lose"),
-            (2040, 168, 45, 241, False),
+            (2040, 168, 45, 241, 2550, False),
             id="E-reference-weight",
         ),
     ],
@@ -45,6 +45,7 @@ def test_agreed_worked_examples(profile, expected):
         targets["protein_g"],
         targets["fat_g"],
         targets["carbs_g"],
+        targets["maintenance_calories"],
         targets["at_minimum"],
     ) == expected
     macro_calories = (
