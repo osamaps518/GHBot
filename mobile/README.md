@@ -38,6 +38,15 @@ Debug builds allow plain HTTP for this. Release builds don't.
 - The app uses the first supported language (English or Arabic) in the phone's ordered preferences. If none matches or the list is empty, it uses English.
 - Arabic is right to left. Use start/end (`EdgeInsetsDirectional`, `AlignmentDirectional`), never left/right.
 
+## Theme
+
+The app's look (option D4, see `docs/decisions.md`) lives in `lib/theme.dart`, in light and dark.
+
+- Take colors from `Theme.of(context).colorScheme`, and the targets card and macro colors from `TargetsColors.of(context)`.
+- Take text styles from `Theme.of(context).textTheme`.
+- No hex colors, `TextStyle(...)` or font names in screens.
+- When a screen needs a widget the theme doesn't style yet, add its look to `lib/theme.dart` in the same PR.
+
 ## Checks
 
 CI runs these on every PR that changes `mobile/`.

@@ -217,3 +217,27 @@ Calculate targets from the saved profile on each request, without storing them,
 because age changes over time. Use exact decimal arithmetic with half-up
 rounding. Calculate carbohydrates from the rounded protein and fat grams. The
 agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GHBot/issues/8).
+
+---
+
+## 16. App look
+
+**Status:** Accepted, 2026-10-31 (#40)
+
+The app uses option D4, charcoal and tangerine, in light and dark, following the
+phone's setting. The theme lives in `mobile/lib/theme.dart`; screens take colors
+and text styles from it instead of hardcoding them. Colors Material has no role
+for (the daily calories card and the three macros) are in a `TargetsColors`
+theme extension.
+
+The font is Rubik, which covers Arabic and English and has Western digits. It is
+included in the app, so text looks the same without a connection. Flutter's
+font weights don't drive a variable font, so the app includes three static
+weights (400, 500, 600) cut from Rubik's official variable font.
+
+We compared a [first round of looks](https://claude.ai/artifact/UGWE7vaMuokCjzQ5SWtoVk),
+then [option D in four palettes](https://claude.ai/artifact/TwvW9yF1VGMXTpqwUvvhNZ):
+plum and coral, forest and lime, cobalt and sky, charcoal and tangerine. We chose D4.
+The `google_fonts` package was skipped because it downloads fonts at runtime by
+default. Option pickers keep Material's check mark on the chosen option, which
+can wrap long labels in a three-option picker.
