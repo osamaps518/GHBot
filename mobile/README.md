@@ -15,7 +15,13 @@ flutter pub get
 flutter run --dart-define-from-file=config.json
 ```
 
-Start the backend first (see `backend/README.md`). The home screen says whether the app reached the backend's `/health`.
+Start the backend first (see `backend/README.md`). On first run:
+
+1. Type any name on the sign-in screen. The same name gets you back to the same account, even after a reinstall.
+2. Fill in your details and tap **Calculate my targets**.
+3. Next time, the app opens straight on your targets. **Edit my info** changes your details.
+
+To start over as a new user, clear the app's data or uninstall it, then sign in with a new name.
 
 ## Config
 

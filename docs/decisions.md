@@ -240,3 +240,24 @@ then [option D in four palettes](https://claude.ai/artifact/TwvW9yF1VGMXTpqwUvvh
 plum and coral, forest and lime, cobalt and sky, charcoal and tangerine. We chose D4.
 The `google_fonts` package was skipped because it downloads fonts at runtime by
 default. 
+
+---
+
+## 17. Mobile dev sign-in
+
+**Status:** Accepted, 2026-10-31 (#11)
+
+Until a real sign-in provider exists, the app asks for a name and uses it as the
+token subject for `POST /dev/token`. It stores the name with `shared_preferences`,
+not the token, because tokens last 15 minutes. It gets a new token at every start,
+and on a 401 it gets a new one and retries the call once. Typing the same name
+after a reinstall gets you back to the same user. There is no sign-out.
+
+One API client class (`mobile/lib/api.dart`) owns the token and every backend
+call; screens never see headers or URLs. When the real provider comes, only the
+sign-in screen and that class change.
+
+Storing the token was considered, but it would expire between most app starts
+and need the refresh logic anyway. The trade-off is one extra request at each
+start, and anyone who knows a name can sign in as that user, which is fine for a
+development build only.
