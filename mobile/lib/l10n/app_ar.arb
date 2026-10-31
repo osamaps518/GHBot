@@ -1,12 +1,125 @@
 {
   "@@locale": "ar",
   "appTitle": "GHBot",
-  "backendReached": "تم الوصول إلى الخادم",
-  "@backendReached": {
-    "description": "Shown when the backend's /health endpoint answered."
+  "signInTitle": "تسجيل الدخول",
+  "signInBody": "هذه نسخة للتطوير. اكتب اسمًا، ونفس الاسم يرجّعك لنفس الحساب.",
+  "@signInBody": {
+    "description": "Dev sign-in screen: the name is the account, there is no password."
   },
-  "backendNotReached": "تعذّر الوصول إلى الخادم",
-  "@backendNotReached": {
-    "description": "Shown when the request to the backend's /health endpoint failed."
-  }
+  "signInName": "الاسم",
+  "continueButton": "متابعة",
+  "profileTitle": "معلوماتك",
+  "profileSubtitle": "نستخدمها لحساب أهدافك اليومية.",
+  "birthMonth": "شهر الميلاد",
+  "birthYear": "سنة الميلاد",
+  "monthName": "{month, select, 1{كانون الثاني} 2{شباط} 3{آذار} 4{نيسان} 5{أيار} 6{حزيران} 7{تموز} 8{آب} 9{أيلول} 10{تشرين الأول} 11{تشرين الثاني} 12{كانون الأول} other{}}",
+  "@monthName": {
+    "description": "Month names in the birth month picker, Levantine names.",
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "description": "The month number, 1 to 12."
+      }
+    }
+  },
+  "sex": "الجنس",
+  "sexMale": "ذكر",
+  "sexFemale": "أنثى",
+  "sexHint": "نستخدمه فقط لتقدير احتياجك من الطاقة.",
+  "@sexHint": {
+    "description": "Under the sex field, from #8 answer 6."
+  },
+  "height": "الطول (سم)",
+  "weight": "الوزن (كغ)",
+  "activityLevel": "مستوى النشاط",
+  "activityChoose": "اختر مستواك",
+  "activityName": "{level, select, sedentary{قليل الحركة} lightly_active{نشاط خفيف} moderately_active{نشاط متوسط} very_active{نشاط عالٍ} extremely_active{نشاط عالٍ جدًا} other{}}",
+  "@activityName": {
+    "placeholders": {
+      "level": {
+        "type": "String",
+        "description": "The activity level code from the backend."
+      }
+    }
+  },
+  "activityDescription": "{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع شغل بدني} other{}}",
+  "@activityDescription": {
+    "description": "One line under each activity level, from #8 answer 10.",
+    "placeholders": {
+      "level": {
+        "type": "String",
+        "description": "The activity level code from the backend."
+      }
+    }
+  },
+  "activityHint": "إن لم تكن متأكدًا، اختر المستوى الأقل.",
+  "@activityHint": {
+    "description": "Under the activity level field, from #8 answer 10."
+  },
+  "goal": "الهدف",
+  "goalName": "{goal, select, lose{خسارة الوزن} maintain{المحافظة} gain{زيادة الوزن} other{}}",
+  "@goalName": {
+    "placeholders": {
+      "goal": {
+        "type": "String",
+        "description": "The goal code from the backend."
+      }
+    }
+  },
+  "calculateButton": "احسب أهدافي",
+  "errorChooseOne": "اختر واحدًا.",
+  "errorHeight": "أدخل طولًا بين 130 و220 سم.",
+  "errorWeight": "أدخل وزنًا بين 35 و250 كغ.",
+  "errorAge": "لازم يكون عمرك بين 18 و100 سنة.",
+  "errorCheckDetails": "تحقّق من معلوماتك وحاول مرة ثانية.",
+  "@errorCheckDetails": {
+    "description": "Shown when the server rejects the form for a reason the app didn't check."
+  },
+  "errorConnection": "تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة ثانية.",
+  "@errorConnection": {
+    "description": "Connection failure or timeout. Doesn't say 'no internet': a down server looks the same."
+  },
+  "errorGeneral": "صار خطأ. حاول مرة ثانية.",
+  "retry": "أعد المحاولة",
+  "targetsTitle": "أهدافك اليومية",
+  "caloriesPerDay": "سعرة حرارية في اليوم",
+  "protein": "بروتين",
+  "carbs": "كربوهيدرات",
+  "fat": "دهون",
+  "gramsUnit": "غ",
+  "shareOfCalories": "{percent}% من السعرات",
+  "@shareOfCalories": {
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "description": "Whole percent with Western digits."
+      }
+    }
+  },
+  "howWeCalculated": "كيف حسبنا هذا",
+  "maintenanceCalories": "سعرات المحافظة على وزنك",
+  "goalRow": "{goal, select, lose{هدف خسارة الوزن} maintain{هدف المحافظة على الوزن} gain{هدف زيادة الوزن} other{}}",
+  "@goalRow": {
+    "placeholders": {
+      "goal": {
+        "type": "String",
+        "description": "The goal code from the backend."
+      }
+    }
+  },
+  "goalAdjustment": "{goal, select, lose{أقل بـ 20%} maintain{بدون تغيير} gain{أكثر بـ 10%} other{}}",
+  "@goalAdjustment": {
+    "description": "How the goal changes maintenance calories.",
+    "placeholders": {
+      "goal": {
+        "type": "String",
+        "description": "The goal code from the backend."
+      }
+    }
+  },
+  "minimumNote": "حدّدنا هدفك عند الحد الأدنى الآمن. إذا بدك سعرات أقل، احكِ مع طبيب أو أخصائي تغذية.",
+  "@minimumNote": {
+    "description": "Shown when the target was raised to the minimum, from #8 answer 13."
+  },
+  "editMyInfo": "تعديل معلوماتي"
 }

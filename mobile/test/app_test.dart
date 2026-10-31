@@ -1,28 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ghbot/home_screen.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
-import 'package:ghbot/main.dart';
+import 'package:ghbot/sign_in_screen.dart';
 import 'package:ghbot/theme.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 
-final _healthy = MockClient((request) async {
-  expect(request.url, Uri.parse('http://backend.test/health'));
-  return http.Response('{"status": "ok"}', 200);
-});
+import 'fake_backend.dart';
 
-Future<void> _pumpApp(
-  WidgetTester tester,
-  http.Client client, {
-  String apiBaseUrl = 'http://backend.test',
-}) async {
-  await tester.pumpWidget(GhbotApp(client: client, apiBaseUrl: apiBaseUrl));
-  await tester.pumpAndSettle();
-}
+// A fresh install opens on the sign-in screen.
+Future<void> _pumpApp(WidgetTester tester) => pumpApp(tester, FakeBackend());
 
 TextDirection _direction(WidgetTester tester) =>
-    Directionality.of(tester.element(find.byType(HomeScreen)));
+    Directionality.of(tester.element(find.byType(SignInScreen)));
 
 void main() {
   group('language', () {
@@ -30,10 +18,10 @@ void main() {
       tester.platformDispatcher.localesTestValue = [const Locale('ar')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final arabic = lookupAppLocalizations(const Locale('ar'));
-      expect(find.text(arabic.backendReached), findsOneWidget);
+      expect(find.text(arabic.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.rtl);
     });
 
@@ -41,10 +29,10 @@ void main() {
       tester.platformDispatcher.localesTestValue = [const Locale('en', 'US')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.backendReached), findsOneWidget);
+      expect(find.text(english.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
 
@@ -52,10 +40,10 @@ void main() {
       tester.platformDispatcher.localesTestValue = [const Locale('fr')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.backendReached), findsOneWidget);
+      expect(find.text(english.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
 
@@ -66,10 +54,10 @@ void main() {
       ];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final arabic = lookupAppLocalizations(const Locale('ar'));
-      expect(find.text(arabic.backendReached), findsOneWidget);
+      expect(find.text(arabic.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.rtl);
     });
 
@@ -80,10 +68,10 @@ void main() {
       ];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.backendReached), findsOneWidget);
+      expect(find.text(english.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
 
@@ -93,10 +81,10 @@ void main() {
       tester.platformDispatcher.localesTestValue = [];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester, _healthy);
+      await _pumpApp(tester);
 
       final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.backendReached), findsOneWidget);
+      expect(find.text(english.signInTitle), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
   });
@@ -109,62 +97,12 @@ void main() {
         tester.platformDispatcher.platformBrightnessTestValue = brightness;
         addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
 
-        await _pumpApp(tester, _healthy);
+        await _pumpApp(tester);
 
-        final theme = Theme.of(tester.element(find.byType(HomeScreen)));
+        final theme = Theme.of(tester.element(find.byType(SignInScreen)));
         expect(theme.colorScheme.brightness, brightness);
         expect(theme.extension<TargetsColors>(), isNotNull);
       });
     }
-  });
-
-  // Tests run with an English (en_US) phone by default.
-  group('health check', () {
-    final english = lookupAppLocalizations(const Locale('en'));
-
-    testWidgets('shows reached when /health answers', (tester) async {
-      await _pumpApp(tester, _healthy);
-
-      expect(find.text(english.backendReached), findsOneWidget);
-    });
-
-    testWidgets('trailing slash in base URL reaches /health', (tester) async {
-      final requestedUrls = <Uri>[];
-      final client = MockClient((request) async {
-        requestedUrls.add(request.url);
-        return http.Response('', request.url.path == '/health' ? 200 : 404);
-      });
-
-      await _pumpApp(tester, client, apiBaseUrl: 'http://backend.test/');
-
-      expect(requestedUrls, [Uri.parse('http://backend.test/health')]);
-      expect(find.text(english.backendReached), findsOneWidget);
-    });
-
-    testWidgets('shows not reached when the request fails', (tester) async {
-      final failing = MockClient(
-        (request) async => throw http.ClientException('Connection refused'),
-      );
-
-      await _pumpApp(tester, failing);
-
-      expect(find.text(english.backendNotReached), findsOneWidget);
-    });
-
-    testWidgets('malformed backend address stops showing progress', (
-      tester,
-    ) async {
-      final client = MockClient(
-        (request) async => throw ArgumentError('Invalid URL'),
-      );
-
-      await tester.pumpWidget(
-        GhbotApp(client: client, apiBaseUrl: 'backend.test'),
-      );
-      await tester.pump(const Duration(seconds: 6));
-
-      expect(find.text(english.backendNotReached), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-    });
   });
 }

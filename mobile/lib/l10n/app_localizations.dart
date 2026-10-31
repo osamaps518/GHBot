@@ -104,17 +104,269 @@ abstract class AppLocalizations {
   /// **'GHBot'**
   String get appTitle;
 
-  /// Shown when the backend's /health endpoint answered.
+  /// No description provided for @signInTitle.
   ///
   /// In ar, this message translates to:
-  /// **'تم الوصول إلى الخادم'**
-  String get backendReached;
+  /// **'تسجيل الدخول'**
+  String get signInTitle;
 
-  /// Shown when the request to the backend's /health endpoint failed.
+  /// Dev sign-in screen: the name is the account, there is no password.
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر الوصول إلى الخادم'**
-  String get backendNotReached;
+  /// **'هذه نسخة للتطوير. اكتب اسمًا، ونفس الاسم يرجّعك لنفس الحساب.'**
+  String get signInBody;
+
+  /// No description provided for @signInName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get signInName;
+
+  /// No description provided for @continueButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get continueButton;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلوماتك'**
+  String get profileTitle;
+
+  /// No description provided for @profileSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نستخدمها لحساب أهدافك اليومية.'**
+  String get profileSubtitle;
+
+  /// No description provided for @birthMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهر الميلاد'**
+  String get birthMonth;
+
+  /// No description provided for @birthYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة الميلاد'**
+  String get birthYear;
+
+  /// Month names in the birth month picker, Levantine names.
+  ///
+  /// In ar, this message translates to:
+  /// **'{month, select, 1{كانون الثاني} 2{شباط} 3{آذار} 4{نيسان} 5{أيار} 6{حزيران} 7{تموز} 8{آب} 9{أيلول} 10{تشرين الأول} 11{تشرين الثاني} 12{كانون الأول} other{}}'**
+  String monthName(String month);
+
+  /// No description provided for @sex.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجنس'**
+  String get sex;
+
+  /// No description provided for @sexMale.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكر'**
+  String get sexMale;
+
+  /// No description provided for @sexFemale.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنثى'**
+  String get sexFemale;
+
+  /// Under the sex field, from #8 answer 6.
+  ///
+  /// In ar, this message translates to:
+  /// **'نستخدمه فقط لتقدير احتياجك من الطاقة.'**
+  String get sexHint;
+
+  /// No description provided for @height.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطول (سم)'**
+  String get height;
+
+  /// No description provided for @weight.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوزن (كغ)'**
+  String get weight;
+
+  /// No description provided for @activityLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى النشاط'**
+  String get activityLevel;
+
+  /// No description provided for @activityChoose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مستواك'**
+  String get activityChoose;
+
+  /// No description provided for @activityName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{level, select, sedentary{قليل الحركة} lightly_active{نشاط خفيف} moderately_active{نشاط متوسط} very_active{نشاط عالٍ} extremely_active{نشاط عالٍ جدًا} other{}}'**
+  String activityName(String level);
+
+  /// One line under each activity level, from #8 answer 10.
+  ///
+  /// In ar, this message translates to:
+  /// **'{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع شغل بدني} other{}}'**
+  String activityDescription(String level);
+
+  /// Under the activity level field, from #8 answer 10.
+  ///
+  /// In ar, this message translates to:
+  /// **'إن لم تكن متأكدًا، اختر المستوى الأقل.'**
+  String get activityHint;
+
+  /// No description provided for @goal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف'**
+  String get goal;
+
+  /// No description provided for @goalName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{goal, select, lose{خسارة الوزن} maintain{المحافظة} gain{زيادة الوزن} other{}}'**
+  String goalName(String goal);
+
+  /// No description provided for @calculateButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'احسب أهدافي'**
+  String get calculateButton;
+
+  /// No description provided for @errorChooseOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر واحدًا.'**
+  String get errorChooseOne;
+
+  /// No description provided for @errorHeight.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل طولًا بين 130 و220 سم.'**
+  String get errorHeight;
+
+  /// No description provided for @errorWeight.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل وزنًا بين 35 و250 كغ.'**
+  String get errorWeight;
+
+  /// No description provided for @errorAge.
+  ///
+  /// In ar, this message translates to:
+  /// **'لازم يكون عمرك بين 18 و100 سنة.'**
+  String get errorAge;
+
+  /// Shown when the server rejects the form for a reason the app didn't check.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحقّق من معلوماتك وحاول مرة ثانية.'**
+  String get errorCheckDetails;
+
+  /// Connection failure or timeout. Doesn't say 'no internet': a down server looks the same.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة ثانية.'**
+  String get errorConnection;
+
+  /// No description provided for @errorGeneral.
+  ///
+  /// In ar, this message translates to:
+  /// **'صار خطأ. حاول مرة ثانية.'**
+  String get errorGeneral;
+
+  /// No description provided for @retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد المحاولة'**
+  String get retry;
+
+  /// No description provided for @targetsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهدافك اليومية'**
+  String get targetsTitle;
+
+  /// No description provided for @caloriesPerDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة حرارية في اليوم'**
+  String get caloriesPerDay;
+
+  /// No description provided for @protein.
+  ///
+  /// In ar, this message translates to:
+  /// **'بروتين'**
+  String get protein;
+
+  /// No description provided for @carbs.
+  ///
+  /// In ar, this message translates to:
+  /// **'كربوهيدرات'**
+  String get carbs;
+
+  /// No description provided for @fat.
+  ///
+  /// In ar, this message translates to:
+  /// **'دهون'**
+  String get fat;
+
+  /// No description provided for @gramsUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'غ'**
+  String get gramsUnit;
+
+  /// No description provided for @shareOfCalories.
+  ///
+  /// In ar, this message translates to:
+  /// **'{percent}% من السعرات'**
+  String shareOfCalories(String percent);
+
+  /// No description provided for @howWeCalculated.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف حسبنا هذا'**
+  String get howWeCalculated;
+
+  /// No description provided for @maintenanceCalories.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرات المحافظة على وزنك'**
+  String get maintenanceCalories;
+
+  /// No description provided for @goalRow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{goal, select, lose{هدف خسارة الوزن} maintain{هدف المحافظة على الوزن} gain{هدف زيادة الوزن} other{}}'**
+  String goalRow(String goal);
+
+  /// How the goal changes maintenance calories.
+  ///
+  /// In ar, this message translates to:
+  /// **'{goal, select, lose{أقل بـ 20%} maintain{بدون تغيير} gain{أكثر بـ 10%} other{}}'**
+  String goalAdjustment(String goal);
+
+  /// Shown when the target was raised to the minimum, from #8 answer 13.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّدنا هدفك عند الحد الأدنى الآمن. إذا بدك سعرات أقل، احكِ مع طبيب أو أخصائي تغذية.'**
+  String get minimumNote;
+
+  /// No description provided for @editMyInfo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل معلوماتي'**
+  String get editMyInfo;
 }
 
 class _AppLocalizationsDelegate

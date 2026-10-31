@@ -83,6 +83,8 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
     focusedBorder: border(colors.primary, 2),
     errorBorder: border(colors.error, 2),
     focusedErrorBorder: border(colors.error, 2),
+    // Height and weight sit side by side; their errors need a second line.
+    errorMaxLines: 2,
   );
 
   const buttonSize = Size(64, 54);
@@ -139,6 +141,17 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    // The macro bars on the targets screen. Each bar's color is its macro's.
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      linearMinHeight: 8,
+      linearTrackColor: colors.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(999),
+    ),
+    // "How we calculated this" sits in a card, so no divider lines.
+    expansionTileTheme: const ExpansionTileThemeData(
+      shape: Border(),
+      collapsedShape: Border(),
     ),
     // The "no connection" message. Its colors already come from the inverse
     // roles in the color scheme.
