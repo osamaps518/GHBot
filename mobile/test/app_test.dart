@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/home_screen.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/main.dart';
+import 'package:ghbot/theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -98,6 +99,23 @@ void main() {
       expect(find.text(english.backendReached), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
+  });
+
+  group('theme', () {
+    for (final brightness in Brightness.values) {
+      testWidgets('follows the phone in ${brightness.name} mode', (
+        tester,
+      ) async {
+        tester.platformDispatcher.platformBrightnessTestValue = brightness;
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
+        await _pumpApp(tester, _healthy);
+
+        final theme = Theme.of(tester.element(find.byType(HomeScreen)));
+        expect(theme.colorScheme.brightness, brightness);
+        expect(theme.extension<TargetsColors>(), isNotNull);
+      });
+    }
   });
 
   // Tests run with an English (en_US) phone by default.

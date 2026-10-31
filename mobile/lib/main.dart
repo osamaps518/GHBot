@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
+import 'theme.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
@@ -30,6 +31,9 @@ class GhbotApp extends StatelessWidget {
       // Flutter matches the phone's ordered preferences, then falls back to
       // the first entry when none match.
       supportedLocales: const [Locale('en'), Locale('ar')],
+      // With both set, the app follows the phone's light or dark setting.
+      theme: lightTheme,
+      darkTheme: darkTheme,
       home: HomeScreen(client: client, apiBaseUrl: apiBaseUrl),
     );
   }
