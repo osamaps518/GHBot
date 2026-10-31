@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/main.dart';
+import 'package:ghbot/profile_form_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,23 @@ Future<void> _choose(WidgetTester tester, String field, String option) async {
   await tester.tap(find.text(option).last);
   await tester.pumpAndSettle();
 }
+
+/// The backend's answer to a `PUT /me/profile` with an age out of range.
+http.Response? _rejectAge(http.Request request) => request.method == 'PUT'
+    ? http.Response(
+        jsonEncode({
+          'detail': [
+            {
+              'type': 'age_out_of_range',
+              'loc': ['body', 'birth_year'],
+              'msg': 'Age must be between 18 and 100',
+              'input': 1900,
+            },
+          ],
+        }),
+        422,
+      )
+    : null;
 
 /// Types into a field and rebuilds, so buttons see the new text.
 Future<void> _type(WidgetTester tester, Finder field, String text) async {
@@ -134,21 +152,7 @@ void main() {
       tester,
     ) async {
       final backend = await openForm(tester);
-      backend.intercept = (request) => request.method == 'PUT'
-          ? http.Response(
-              jsonEncode({
-                'detail': [
-                  {
-                    'type': 'age_out_of_range',
-                    'loc': ['body', 'birth_year'],
-                    'msg': 'Age must be between 18 and 100',
-                    'input': 1900,
-                  },
-                ],
-              }),
-              422,
-            )
-          : null;
+      backend.intercept = _rejectAge;
 
       await _fillForm(tester, english);
       await _tapText(tester, english.calculateButton);
@@ -174,6 +178,68 @@ void main() {
       expect(find.text('2210'), findsOneWidget);
       final put = backend.requestsTo('PUT', '/me/profile').last;
       expect(jsonDecode(put.body), savedProfile());
+    });
+  });
+
+  group('Back from Edit while saving', () {
+    // Opens Edit, starts a save the backend holds, and goes back.
+    Future<FakeBackend> leaveDuringSave(WidgetTester tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _tapText(tester, english.editMyInfo);
+      backend.holdSave = Completer();
+      await tester.tap(find.text(english.calculateButton));
+      await tester.pump();
+      await tester.pageBack();
+      // Settles: a pending request schedules no frames.
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfileFormScreen), findsNothing);
+      return backend;
+    }
+
+    testWidgets('a save that finishes later leaves a new edit form open', (
+      tester,
+    ) async {
+      final backend = await leaveDuringSave(tester);
+      await _tapText(tester, english.editMyInfo);
+
+      backend.holdSave!.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.profileTitle), findsOneWidget);
+    });
+
+    for (final (failure, fail) in [
+      ('age error', (FakeBackend backend) => backend.intercept = _rejectAge),
+      ('connection error', (FakeBackend backend) => backend.offline = true),
+    ]) {
+      testWidgets('a $failure that comes later is dropped', (tester) async {
+        final backend = await leaveDuringSave(tester);
+
+        fail(backend);
+        backend.holdSave!.complete();
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text(english.errorConnection), findsNothing);
+        expect(find.text(english.editMyInfo), findsOneWidget);
+      });
+    }
+
+    testWidgets('a connection error shown on the form goes with it', (
+      tester,
+    ) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _tapText(tester, english.editMyInfo);
+      backend.offline = true;
+      await _tapText(tester, english.calculateButton);
+      expect(find.text(english.retry), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.retry), findsNothing);
     });
   });
 

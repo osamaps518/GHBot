@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -33,6 +34,10 @@ class FakeBackend {
   /// Answers a request before the normal routes when it returns a response.
   http.Response? Function(http.Request request)? intercept;
 
+  /// While set, `PUT /me/profile` waits for it before answering, so a test
+  /// can act while a save is pending.
+  Completer<void>? holdSave;
+
   final _validTokens = <String>{};
   var _tokensIssued = 0;
 
@@ -46,6 +51,7 @@ class FakeBackend {
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
+    if (request.method == 'PUT') await holdSave?.future;
     if (offline) throw http.ClientException('Connection refused');
     final intercepted = intercept?.call(request);
     if (intercepted != null) return intercepted;

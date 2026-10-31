@@ -101,7 +101,11 @@ class _GhbotAppState extends State<GhbotApp> {
           initial: _profile,
           onSubmit: (profile) async {
             await _save(profile);
-            _navigator.currentState!.pop();
+            // Back may have closed this form while it saved, and another
+            // may be open now. Close only this one.
+            if (context.mounted && ModalRoute.of(context)!.isCurrent) {
+              Navigator.pop(context);
+            }
           },
         ),
       ),

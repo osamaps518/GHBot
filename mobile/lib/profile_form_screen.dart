@@ -37,6 +37,9 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
   var _errors = <_Field, String>{};
   var _busy = false;
 
+  // The form's own snackbars, so they and their Retry go when it closes.
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
+
   @override
   void dispose() {
     _height.dispose();
@@ -89,7 +92,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
 
   Future<void> _submit() async {
     final l10n = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    final messenger = _messenger.currentState!..hideCurrentSnackBar();
     final errors = _validate(l10n);
     setState(() => _errors = errors);
     if (errors.isNotEmpty) return;
@@ -107,22 +110,29 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
           goal: _goal!,
         ),
       );
-    } on ValidationFailure catch (failure) {
-      if (failure.types.contains('age_out_of_range')) {
-        setState(
-          () => _errors = {
-            _Field.birthMonth: '',
-            _Field.birthYear: l10n.errorAge,
-          },
-        );
+    } on ApiFailure catch (failure) {
+      // Back may have closed this form while it saved.
+      if (!mounted) return;
+      switch (failure) {
+        case ValidationFailure(:final types):
+          if (types.contains('age_out_of_range')) {
+            setState(
+              () => _errors = {
+                _Field.birthMonth: '',
+                _Field.birthYear: l10n.errorAge,
+              },
+            );
+          }
+          if (types.any((type) => type != 'age_out_of_range')) {
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.errorCheckDetails)),
+            );
+          }
+        case ConnectionFailure():
+          messenger.showSnackBar(connectionSnackBar(l10n, onRetry: _submit));
+        case ServerFailure():
+          messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneral)));
       }
-      if (failure.types.any((type) => type != 'age_out_of_range')) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.errorCheckDetails)));
-      }
-    } on ConnectionFailure {
-      messenger.showSnackBar(connectionSnackBar(l10n, onRetry: _submit));
-    } on ApiFailure {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneral)));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -136,189 +146,197 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    return Scaffold(
-      appBar: widget.initial == null ? null : AppBar(),
-      body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            widget.initial == null ? 48 : 0,
-            20,
-            24,
-          ),
-          children: [
-            Text(l10n.profileTitle, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 2),
-            Text(
-              l10n.profileSubtitle,
-              style: theme.textTheme.bodyLarge!.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+    return ScaffoldMessenger(
+      key: _messenger,
+      child: Scaffold(
+        appBar: widget.initial == null ? null : AppBar(),
+        body: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              widget.initial == null ? 48 : 0,
+              20,
+              24,
             ),
-            const SizedBox(height: 16),
-            _Pair(
-              _Labeled(
-                label: l10n.birthMonth,
-                error: _errors.containsKey(_Field.birthMonth),
-                child: DropdownMenu<int>(
-                  key: const ValueKey('birthMonth'),
-                  initialSelection: _month,
-                  expandedInsets: EdgeInsets.zero,
-                  selectOnly: true,
-                  errorText: _errors[_Field.birthMonth],
-                  onSelected: (month) =>
-                      _changed(_Field.birthMonth, () => _month = month),
-                  dropdownMenuEntries: [
-                    for (var month = 1; month <= 12; month++)
-                      DropdownMenuEntry(
-                        value: month,
-                        label: l10n.monthName('$month'),
-                      ),
-                  ],
+            children: [
+              Text(l10n.profileTitle, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 2),
+              Text(
+                l10n.profileSubtitle,
+                style: theme.textTheme.bodyLarge!.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              _Labeled(
-                label: l10n.birthYear,
-                error: _errors.containsKey(_Field.birthYear),
-                child: DropdownMenu<int>(
-                  key: const ValueKey('birthYear'),
-                  initialSelection: _year,
-                  expandedInsets: EdgeInsets.zero,
-                  selectOnly: true,
-                  errorText: _errors[_Field.birthYear],
-                  onSelected: (year) =>
-                      _changed(_Field.birthYear, () => _year = year),
-                  dropdownMenuEntries: [
-                    // Ages 18 to 100. The oldest year only fits birth months
-                    // later in the year; the age check catches the others.
-                    for (
-                      var year = _today.year - 18;
-                      year >= _today.year - 101;
-                      year--
-                    )
-                      DropdownMenuEntry(value: year, label: '$year'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            _Labeled(
-              label: l10n.sex,
-              error: _errors.containsKey(_Field.sex),
-              errorText: _errors[_Field.sex],
-              hint: l10n.sexHint,
-              child: SegmentedButton<Sex>(
-                segments: [
-                  ButtonSegment(value: Sex.male, label: Text(l10n.sexMale)),
-                  ButtonSegment(value: Sex.female, label: Text(l10n.sexFemale)),
-                ],
-                selected: {?_sex},
-                emptySelectionAllowed: true,
-                showSelectedIcon: false,
-                expandedInsets: EdgeInsets.zero,
-                onSelectionChanged: (selected) {
-                  // Tapping the chosen option keeps it chosen.
-                  if (selected.isEmpty) return;
-                  _changed(_Field.sex, () => _sex = selected.single);
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            _Pair(
-              _Labeled(
-                label: l10n.height,
-                error: _errors.containsKey(_Field.height),
-                child: _NumberField(
-                  key: const ValueKey('height'),
-                  controller: _height,
-                  errorText: _errors[_Field.height],
-                  onChanged: () => _changed(_Field.height, () {}),
-                ),
-              ),
-              _Labeled(
-                label: l10n.weight,
-                error: _errors.containsKey(_Field.weight),
-                child: _NumberField(
-                  key: const ValueKey('weight'),
-                  controller: _weight,
-                  errorText: _errors[_Field.weight],
-                  onChanged: () => _changed(_Field.weight, () {}),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            _Labeled(
-              label: l10n.activityLevel,
-              error: _errors.containsKey(_Field.activityLevel),
-              hint: l10n.activityHint,
-              child: InputDecorator(
-                isEmpty: _activity == null,
-                decoration: InputDecoration(
-                  errorText: _errors[_Field.activityLevel],
-                  contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                    16,
-                    6,
-                    12,
-                    6,
-                  ),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<ActivityLevel>(
-                    key: const ValueKey('activityLevel'),
-                    value: _activity,
-                    isExpanded: true,
-                    itemHeight: null,
-                    borderRadius: BorderRadius.circular(16),
-                    hint: Text(l10n.activityChoose),
-                    onChanged: (level) =>
-                        _changed(_Field.activityLevel, () => _activity = level),
-                    items: [
-                      for (final level in ActivityLevel.values)
-                        DropdownMenuItem(
-                          value: level,
-                          child: _ActivityOption(level, muted: muted),
+              const SizedBox(height: 16),
+              _Pair(
+                _Labeled(
+                  label: l10n.birthMonth,
+                  error: _errors.containsKey(_Field.birthMonth),
+                  child: DropdownMenu<int>(
+                    key: const ValueKey('birthMonth'),
+                    initialSelection: _month,
+                    expandedInsets: EdgeInsets.zero,
+                    selectOnly: true,
+                    errorText: _errors[_Field.birthMonth],
+                    onSelected: (month) =>
+                        _changed(_Field.birthMonth, () => _month = month),
+                    dropdownMenuEntries: [
+                      for (var month = 1; month <= 12; month++)
+                        DropdownMenuEntry(
+                          value: month,
+                          label: l10n.monthName('$month'),
                         ),
                     ],
-                    selectedItemBuilder: (context) => [
-                      for (final level in ActivityLevel.values)
-                        _ActivityOption(level, muted: muted),
+                  ),
+                ),
+                _Labeled(
+                  label: l10n.birthYear,
+                  error: _errors.containsKey(_Field.birthYear),
+                  child: DropdownMenu<int>(
+                    key: const ValueKey('birthYear'),
+                    initialSelection: _year,
+                    expandedInsets: EdgeInsets.zero,
+                    selectOnly: true,
+                    errorText: _errors[_Field.birthYear],
+                    onSelected: (year) =>
+                        _changed(_Field.birthYear, () => _year = year),
+                    dropdownMenuEntries: [
+                      // Ages 18 to 100. The oldest year only fits birth months
+                      // later in the year; the age check catches the others.
+                      for (
+                        var year = _today.year - 18;
+                        year >= _today.year - 101;
+                        year--
+                      )
+                        DropdownMenuEntry(value: year, label: '$year'),
                     ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
-            _Labeled(
-              label: l10n.goal,
-              error: _errors.containsKey(_Field.goal),
-              errorText: _errors[_Field.goal],
-              child: SegmentedButton<Goal>(
-                segments: [
-                  for (final goal in Goal.values)
+              const SizedBox(height: 14),
+              _Labeled(
+                label: l10n.sex,
+                error: _errors.containsKey(_Field.sex),
+                errorText: _errors[_Field.sex],
+                hint: l10n.sexHint,
+                child: SegmentedButton<Sex>(
+                  segments: [
+                    ButtonSegment(value: Sex.male, label: Text(l10n.sexMale)),
                     ButtonSegment(
-                      value: goal,
-                      label: Text(l10n.goalName(goal.name)),
+                      value: Sex.female,
+                      label: Text(l10n.sexFemale),
                     ),
-                ],
-                selected: {?_goal},
-                emptySelectionAllowed: true,
-                showSelectedIcon: false,
-                expandedInsets: EdgeInsets.zero,
-                onSelectionChanged: (selected) {
-                  if (selected.isEmpty) return;
-                  _changed(_Field.goal, () => _goal = selected.single);
-                },
+                  ],
+                  selected: {?_sex},
+                  emptySelectionAllowed: true,
+                  showSelectedIcon: false,
+                  expandedInsets: EdgeInsets.zero,
+                  onSelectionChanged: (selected) {
+                    // Tapping the chosen option keeps it chosen.
+                    if (selected.isEmpty) return;
+                    _changed(_Field.sex, () => _sex = selected.single);
+                  },
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              _Pair(
+                _Labeled(
+                  label: l10n.height,
+                  error: _errors.containsKey(_Field.height),
+                  child: _NumberField(
+                    key: const ValueKey('height'),
+                    controller: _height,
+                    errorText: _errors[_Field.height],
+                    onChanged: () => _changed(_Field.height, () {}),
+                  ),
+                ),
+                _Labeled(
+                  label: l10n.weight,
+                  error: _errors.containsKey(_Field.weight),
+                  child: _NumberField(
+                    key: const ValueKey('weight'),
+                    controller: _weight,
+                    errorText: _errors[_Field.weight],
+                    onChanged: () => _changed(_Field.weight, () {}),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _Labeled(
+                label: l10n.activityLevel,
+                error: _errors.containsKey(_Field.activityLevel),
+                hint: l10n.activityHint,
+                child: InputDecorator(
+                  isEmpty: _activity == null,
+                  decoration: InputDecoration(
+                    errorText: _errors[_Field.activityLevel],
+                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      6,
+                      12,
+                      6,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<ActivityLevel>(
+                      key: const ValueKey('activityLevel'),
+                      value: _activity,
+                      isExpanded: true,
+                      itemHeight: null,
+                      borderRadius: BorderRadius.circular(16),
+                      hint: Text(l10n.activityChoose),
+                      onChanged: (level) => _changed(
+                        _Field.activityLevel,
+                        () => _activity = level,
+                      ),
+                      items: [
+                        for (final level in ActivityLevel.values)
+                          DropdownMenuItem(
+                            value: level,
+                            child: _ActivityOption(level, muted: muted),
+                          ),
+                      ],
+                      selectedItemBuilder: (context) => [
+                        for (final level in ActivityLevel.values)
+                          _ActivityOption(level, muted: muted),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _Labeled(
+                label: l10n.goal,
+                error: _errors.containsKey(_Field.goal),
+                errorText: _errors[_Field.goal],
+                child: SegmentedButton<Goal>(
+                  segments: [
+                    for (final goal in Goal.values)
+                      ButtonSegment(
+                        value: goal,
+                        label: Text(l10n.goalName(goal.name)),
+                      ),
+                  ],
+                  selected: {?_goal},
+                  emptySelectionAllowed: true,
+                  showSelectedIcon: false,
+                  expandedInsets: EdgeInsets.zero,
+                  onSelectionChanged: (selected) {
+                    if (selected.isEmpty) return;
+                    _changed(_Field.goal, () => _goal = selected.single);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: FilledButton(
-            onPressed: _busy ? null : _submit,
-            child: Text(l10n.calculateButton),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: FilledButton(
+              onPressed: _busy ? null : _submit,
+              child: Text(l10n.calculateButton),
+            ),
           ),
         ),
       ),
