@@ -279,6 +279,23 @@ void main() {
     expect(find.text(english.profileTitle), findsOneWidget);
   });
 
+  testWidgets('offline at startup shows the error, and Retry recovers', (
+    tester,
+  ) async {
+    final backend = FakeBackend()
+      ..profile = savedProfile()
+      ..offline = true;
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorConnection), findsOneWidget);
+    backend.offline = false;
+    await _tapText(tester, english.retry);
+
+    expect(find.text('2210'), findsOneWidget);
+    expect(find.text(english.signInTitle), findsNothing);
+  });
+
   testWidgets('explains a target raised to the minimum', (tester) async {
     // Worked example C from #8: female, 45, 52 kg, 155 cm, sedentary, lose.
     final backend = FakeBackend()
