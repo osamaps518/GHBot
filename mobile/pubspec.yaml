@@ -23,3 +23,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  # Static weights cut from Rubik's variable font: Flutter's FontWeight
+  # picks among declared files, but doesn't drive a variable font's axis.
+  fonts:
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-Regular.ttf
+        - asset: assets/fonts/Rubik-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Rubik-SemiBold.ttf
+          weight: 600
