@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
+import 'package:ghbot/main.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 import 'fake_backend.dart';
 
@@ -206,5 +211,26 @@ void main() {
 
     expect(find.text('1200'), findsOneWidget);
     expect(find.text(english.minimumNote), findsOneWidget);
+  });
+
+  testWidgets('a response that stalls after its headers times out', (
+    tester,
+  ) async {
+    final body = StreamController<List<int>>();
+    addTearDown(body.close);
+    // Headers arrive at once; the body never finishes.
+    final stalling = MockClient.streaming(
+      (request, _) async => http.StreamedResponse(body.stream, 200),
+    );
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.withData({'dev_subject': 'alice'});
+
+    await tester.pumpWidget(
+      GhbotApp(client: stalling, apiBaseUrl: 'http://backend.test'),
+    );
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pump();
+
+    expect(find.text(english.errorConnection), findsOneWidget);
   });
 }

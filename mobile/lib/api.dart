@@ -91,11 +91,12 @@ class Api {
       request.body = jsonEncode(body);
     }
     try {
-      final streamed = await _client
+      return await _client
           .send(request)
+          .then(http.Response.fromStream)
           // Without a timeout, an unreachable address can spin for minutes.
+          // It covers the body too: a stream can stall after its headers.
           .timeout(const Duration(seconds: 5));
-      return await http.Response.fromStream(streamed);
     } on TimeoutException {
       throw const ConnectionFailure();
     } on http.ClientException {
