@@ -239,5 +239,4 @@ We compared a [first round of looks](https://claude.ai/artifact/UGWE7vaMuokCjzQ5
 then [option D in four palettes](https://claude.ai/artifact/TwvW9yF1VGMXTpqwUvvhNZ):
 plum and coral, forest and lime, cobalt and sky, charcoal and tangerine. We chose D4.
 The `google_fonts` package was skipped because it downloads fonts at runtime by
-default. Option pickers keep Material's check mark on the chosen option, which
-can wrap long labels in a three-option picker.
+default. 
