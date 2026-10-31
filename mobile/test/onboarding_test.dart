@@ -260,6 +260,25 @@ void main() {
     expect(find.text(english.profileTitle), findsNothing);
   });
 
+  testWidgets('retries a 401 only once', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    await pumpApp(tester, backend, storedName: 'alice');
+    var puts = 0;
+    // A 401 that a new token doesn't fix. The 500 stops a retry loop, so
+    // the test fails instead of hanging.
+    backend.intercept = (request) => request.method == 'PUT'
+        ? http.Response('', ++puts <= 3 ? 401 : 500)
+        : null;
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.calculateButton);
+
+    expect(puts, 2);
+    expect(backend.requestsTo('POST', '/dev/token'), hasLength(2));
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.profileTitle), findsOneWidget);
+  });
+
   testWidgets('explains a target raised to the minimum', (tester) async {
     // Worked example C from #8: female, 45, 52 kg, 155 cm, sedentary, lose.
     final backend = FakeBackend()
