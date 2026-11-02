@@ -342,6 +342,27 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
     });
 
+    testWidgets('someone who turns 79 sees it after editing their info', (
+      tester,
+    ) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      expect(find.text('2210'), findsOneWidget);
+
+      await _tapText(tester, english.editMyInfo);
+      backend.targets = {...exampleTargets, 'above_tested_age': true};
+      await _tapText(tester, english.calculateButton);
+
+      expect(find.text(english.profileTitle), findsNothing);
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
     testWidgets('shows once: the next start goes straight to the targets', (
       tester,
     ) async {
