@@ -47,7 +47,7 @@ class _GhbotAppState extends State<GhbotApp> {
     baseUrl: widget.apiBaseUrl,
   );
   late final _session = AuthSession(_client);
-  late final _profiles = ProfilesApi(_client, _session);
+  late final _profilesApi = ProfilesApi(_client, _session);
   late final _targetsApi = TargetsApi(_client, _session);
   // "Edit my info" opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
@@ -80,7 +80,7 @@ class _GhbotAppState extends State<GhbotApp> {
     setState(() => _stage = _Stage.loading);
     try {
       final results = await Future.wait([
-        _profiles.getProfile(),
+        _profilesApi.getProfile(),
         _targetsApi.getTargets(),
       ]);
       final profile = results[0] as Profile?;
@@ -100,7 +100,7 @@ class _GhbotAppState extends State<GhbotApp> {
   }
 
   Future<void> _save(Profile profile) async {
-    await _profiles.putProfile(profile);
+    await _profilesApi.putProfile(profile);
     final targets = await _targetsApi.getTargets();
     if (targets == null) throw const ServerFailure(404);
     setState(() {
