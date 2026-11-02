@@ -17,7 +17,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get signInBody =>
-      'هذه نسخة للتطوير. اكتب اسمًا، ونفس الاسم يرجّعك لنفس الحساب.';
+      'هذه نسخة للتطوير. اكتب اسمًا، وسيعيدك الاسم نفسه إلى الحساب نفسه.';
 
   @override
   String get signInName => 'الاسم';
@@ -101,7 +101,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'lightly_active': 'تمرين خفيف 1 إلى 3 أيام في الأسبوع',
       'moderately_active': 'تمرين 3 إلى 5 أيام في الأسبوع',
       'very_active': 'تمرين قوي 6 إلى 7 أيام في الأسبوع',
-      'extremely_active': 'تمرين قوي كل يوم مع شغل بدني',
+      'extremely_active': 'تمرين قوي كل يوم مع عمل بدني',
       'other': '',
     });
     return '$_temp0';
@@ -137,17 +137,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorWeight => 'أدخل وزنًا بين 35 و250 كغ.';
 
   @override
-  String get errorAge => 'لازم يكون عمرك بين 18 و100 سنة.';
+  String get errorAge => 'يجب أن يكون عمرك بين 18 و100 سنة.';
 
   @override
-  String get errorCheckDetails => 'تحقّق من معلوماتك وحاول مرة ثانية.';
+  String get errorCheckDetails => 'تحقّق من معلوماتك وحاول مرة أخرى.';
 
   @override
   String get errorConnection =>
-      'تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة ثانية.';
+      'تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.';
 
   @override
-  String get errorGeneral => 'صار خطأ. حاول مرة ثانية.';
+  String get errorGeneral => 'حدث خطأ. حاول مرة أخرى.';
 
   @override
   String get retry => 'أعد المحاولة';
@@ -205,14 +205,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get minimumNote =>
-      'حدّدنا هدفك عند الحد الأدنى الآمن. إذا بدك سعرات أقل، احكِ مع طبيب أو أخصائي تغذية.';
+      'حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.';
 
   @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override
   String get ageWarning =>
-      'تقديراتنا للسعرات مجرّبة على بالغين لحد عمر 78 سنة، فممكن تكون أقل دقة إلك. لو سمحت احكِ مع طبيبك قبل ما تبدأ حمية أو برنامج تمارين جديد.';
+      'جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.';
 
   @override
   String get understandButton => 'فهمت';
