@@ -2,37 +2,19 @@ import 'package:http/http.dart' as http;
 
 import 'core/api_client.dart';
 export 'core/api_failure.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth/auth_session.dart';
 
-/// Talks to the backend. The only place that knows URLs, headers and tokens.
-///
-/// Dev sign-in (docs/decisions.md, 17): the name is the token subject. We
-/// store the name, not the token, because tokens last 15 minutes. A token is
-/// fetched on the first call after each start, and again on a 401.
+/// Transitional facade while profile and target calls move into modules.
 class Api {
   // Callers pass `client:`; a private named parameter keeps the field private.
   Api({required http.Client client, required String baseUrl})
     : _client = ApiClient(client: client, baseUrl: baseUrl);
 
   final ApiClient _client;
-  final _preferences = SharedPreferencesAsync();
-  static const _subjectKey = 'dev_subject';
+  late final AuthSession _session = AuthSession(_client);
 
-  String? _subject;
-  Future<String>? _token;
-
-  /// Loads the name from an earlier sign-in. False on a fresh install.
-  Future<bool> restoreSignIn() async {
-    _subject = await _preferences.getString(_subjectKey);
-    return _subject != null;
-  }
-
-  Future<void> signIn(String name) async {
-    final token = await _requestToken(name);
-    await _preferences.setString(_subjectKey, name);
-    _subject = name;
-    _token = Future.value(token);
-  }
+  Future<bool> restoreSignIn() => _session.restoreSignIn();
+  Future<void> signIn(String name) => _session.signIn(name);
 
   /// The saved profile, or null before onboarding.
   Future<Profile?> getProfile() async {
@@ -42,7 +24,9 @@ class Api {
   }
 
   Future<void> putProfile(Profile profile) async {
-    _client.decode(await _authorized('PUT', '/me/profile', body: profile.toJson()));
+    _client.decode(
+      await _authorized('PUT', '/me/profile', body: profile.toJson()),
+    );
   }
 
   /// Today's targets, or null before onboarding.
@@ -56,27 +40,7 @@ class Api {
     String method,
     String path, {
     Object? body,
-  }) async {
-    final token = _currentToken();
-    final response = await _client.send(method, path, body: body, token: await token);
-    if (response.statusCode != 401) return response;
-    // Calls made in parallel share one new token.
-    if (identical(_token, token)) _token = null;
-    return _client.send(method, path, body: body, token: await _currentToken());
-  }
-
-  Future<String> _currentToken() =>
-      _token ??= _requestToken(_subject!)
-          .catchError((Object error, StackTrace stack) {
-            _token = null;
-            Error.throwWithStackTrace(error, stack);
-          });
-
-  Future<String> _requestToken(String subject) async {
-    final response = await _client.send('POST', '/dev/token', body: {'subject': subject});
-    return _client.decode(response)['access_token'] as String;
-  }
-
+  }) => _session.sendAuthorized(method, path, body: body);
 }
 
 enum Sex { male, female }
