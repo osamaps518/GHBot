@@ -15,7 +15,13 @@ flutter pub get
 flutter run --dart-define-from-file=config.json
 ```
 
-Start the backend first (see `backend/README.md`). The home screen says whether the app reached the backend's `/health`.
+Start the backend first (see `backend/README.md`). On first run:
+
+1. Type any name on the sign-in screen. The same name gets you back to the same account, even after a reinstall.
+2. Fill in your details and tap **Calculate my targets**.
+3. Next time, the app opens straight on your targets. **Edit my info** changes your details.
+
+To start over as a new user, clear the app's data or uninstall it, then sign in with a new name.
 
 ## Config
 
@@ -40,12 +46,12 @@ Debug builds allow plain HTTP for this. Release builds don't.
 
 ## Theme
 
-The app's look (option D4, see `docs/decisions.md`) lives in `lib/theme.dart`, in light and dark.
+The app's look (option D4, see `docs/decisions.md`) lives in `lib/core/theme.dart`, in light and dark.
 
 - Take colors from `Theme.of(context).colorScheme`, and the targets card and macro colors from `TargetsColors.of(context)`.
 - Take text styles from `Theme.of(context).textTheme`.
 - No hex colors, `TextStyle(...)` or font names in screens.
-- When a screen needs a widget the theme doesn't style yet, add its look to `lib/theme.dart` in the same PR.
+- When a screen needs a widget the theme doesn't style yet, add its look to `lib/core/theme.dart` in the same PR.
 
 ## Checks
 
