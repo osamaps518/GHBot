@@ -254,7 +254,7 @@ and on a 401 it gets a new one and retries the call once. Typing the same name
 after a reinstall gets you back to the same user. There is no sign-out.
 
 The auth session in `mobile/lib/auth/` owns the token and authorized calls;
-screens never see headers or URLs. When the real provider comes, auth changes.
+screens never see headers or URLs. When the real provider comes, only `auth/` changes.
 
 Storing the token was considered, but it would expire between most app starts
 and need the refresh logic anyway. The trade-off is one extra request at each
