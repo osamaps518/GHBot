@@ -2,7 +2,7 @@
   "@@locale": "ar",
   "appTitle": "GHBot",
   "signInTitle": "تسجيل الدخول",
-  "signInBody": "هذه نسخة للتطوير. اكتب اسمًا، ونفس الاسم يرجّعك لنفس الحساب.",
+  "signInBody": "هذه نسخة للتطوير. اكتب اسمًا، وسيعيدك الاسم نفسه إلى الحساب نفسه.",
   "@signInBody": {
     "description": "Dev sign-in screen: the name is the account, there is no password."
   },
@@ -42,7 +42,7 @@
       }
     }
   },
-  "activityDescription": "{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع شغل بدني} other{}}",
+  "activityDescription": "{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع عمل بدني} other{}}",
   "@activityDescription": {
     "description": "One line under each activity level, from #8 answer 10.",
     "placeholders": {
@@ -70,16 +70,16 @@
   "errorChooseOne": "اختر واحدًا.",
   "errorHeight": "أدخل طولًا بين 130 و220 سم.",
   "errorWeight": "أدخل وزنًا بين 35 و250 كغ.",
-  "errorAge": "لازم يكون عمرك بين 18 و100 سنة.",
-  "errorCheckDetails": "تحقّق من معلوماتك وحاول مرة ثانية.",
+  "errorAge": "يجب أن يكون عمرك بين 18 و100 سنة.",
+  "errorCheckDetails": "تحقّق من معلوماتك وحاول مرة أخرى.",
   "@errorCheckDetails": {
     "description": "Shown when the server rejects the form for a reason the app didn't check."
   },
-  "errorConnection": "تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة ثانية.",
+  "errorConnection": "تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.",
   "@errorConnection": {
     "description": "Connection failure or timeout. Doesn't say 'no internet': a down server looks the same."
   },
-  "errorGeneral": "صار خطأ. حاول مرة ثانية.",
+  "errorGeneral": "حدث خطأ. حاول مرة أخرى.",
   "retry": "أعد المحاولة",
   "targetsTitle": "أهدافك اليومية",
   "caloriesPerDay": "سعرة حرارية في اليوم",
@@ -117,9 +117,14 @@
       }
     }
   },
-  "minimumNote": "حدّدنا هدفك عند الحد الأدنى الآمن. إذا بدك سعرات أقل، احكِ مع طبيب أو أخصائي تغذية.",
+  "minimumNote": "حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
   "@minimumNote": {
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
-  "editMyInfo": "تعديل معلوماتي"
+  "editMyInfo": "تعديل معلوماتي",
+  "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
+  "@ageWarning": {
+    "description": "Shown once, before the targets, to users older than 78, from #33."
+  },
+  "understandButton": "فهمت"
 }

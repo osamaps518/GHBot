@@ -209,4 +209,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editMyInfo => 'Edit my info';
+
+  @override
+  String get ageWarning =>
+      'Our calorie estimates were tested on adults up to age 78, so they may be less accurate for you. Please check with your doctor before starting a new diet or training plan.';
+
+  @override
+  String get understandButton => 'I understand';
 }

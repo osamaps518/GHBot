@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth/auth_session.dart';
 import 'auth/sign_in_screen.dart';
@@ -11,6 +12,7 @@ import 'l10n/app_localizations.dart';
 import 'profiles/profile.dart';
 import 'profiles/profile_form_screen.dart';
 import 'profiles/profiles_api.dart';
+import 'targets/age_warning_screen.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
 import 'targets/targets_screen.dart';
@@ -40,7 +42,8 @@ class GhbotApp extends StatefulWidget {
 enum _Stage { loading, signIn, onboarding, targets, failed }
 
 /// Picks the screen from what the app knows: no stored name → sign-in, no
-/// profile → onboarding, otherwise the targets.
+/// profile → onboarding, otherwise the targets. Users older than the formula
+/// was tested for see a warning before the targets, until they accept it.
 class _GhbotAppState extends State<GhbotApp> {
   late final _client = ApiClient(
     client: widget.client,
@@ -51,11 +54,15 @@ class _GhbotAppState extends State<GhbotApp> {
   late final _targetsApi = TargetsApi(_client, _session);
   // "Edit my info" opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
+  // Kept on the phone, so after a reinstall the warning shows once more.
+  final _preferences = SharedPreferencesAsync();
+  static const _ageWarningSeenKey = 'age_warning_seen';
 
   var _stage = _Stage.loading;
   Profile? _profile;
   Targets? _targets;
   Exception? _failure;
+  var _ageWarningSeen = false;
 
   @override
   void initState() {
@@ -64,6 +71,7 @@ class _GhbotAppState extends State<GhbotApp> {
   }
 
   Future<void> _start() async {
+    _ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
     if (await _session.restoreSignIn()) {
       await _load();
     } else {
@@ -110,6 +118,11 @@ class _GhbotAppState extends State<GhbotApp> {
     });
   }
 
+  Future<void> _acceptAgeWarning() async {
+    setState(() => _ageWarningSeen = true);
+    await _preferences.setBool(_ageWarningSeenKey, true);
+  }
+
   void _edit() {
     _navigator.currentState!.push(
       MaterialPageRoute<void>(
@@ -134,6 +147,8 @@ class _GhbotAppState extends State<GhbotApp> {
     ),
     _Stage.signIn => SignInScreen(onSubmit: _signIn),
     _Stage.onboarding => ProfileFormScreen(onSubmit: _save),
+    _Stage.targets when _targets!.aboveTestedAge && !_ageWarningSeen =>
+      AgeWarningScreen(onUnderstood: _acceptAgeWarning),
     _Stage.targets => TargetsScreen(
       profile: _profile!,
       targets: _targets!,

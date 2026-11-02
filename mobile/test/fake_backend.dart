@@ -17,6 +17,7 @@ const exampleTargets = {
   'carbs_g': 266,
   'maintenance_calories': 2760,
   'at_minimum': false,
+  'above_tested_age': false,
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, and targets.

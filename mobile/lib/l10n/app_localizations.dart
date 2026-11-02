@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// Dev sign-in screen: the name is the account, there is no password.
   ///
   /// In ar, this message translates to:
-  /// **'هذه نسخة للتطوير. اكتب اسمًا، ونفس الاسم يرجّعك لنفس الحساب.'**
+  /// **'هذه نسخة للتطوير. اكتب اسمًا، وسيعيدك الاسم نفسه إلى الحساب نفسه.'**
   String get signInBody;
 
   /// No description provided for @signInName.
@@ -215,7 +215,7 @@ abstract class AppLocalizations {
   /// One line under each activity level, from #8 answer 10.
   ///
   /// In ar, this message translates to:
-  /// **'{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع شغل بدني} other{}}'**
+  /// **'{level, select, sedentary{عمل مكتبي، وتمرين قليل أو بدون تمرين} lightly_active{تمرين خفيف 1 إلى 3 أيام في الأسبوع} moderately_active{تمرين 3 إلى 5 أيام في الأسبوع} very_active{تمرين قوي 6 إلى 7 أيام في الأسبوع} extremely_active{تمرين قوي كل يوم مع عمل بدني} other{}}'**
   String activityDescription(String level);
 
   /// Under the activity level field, from #8 answer 10.
@@ -263,25 +263,25 @@ abstract class AppLocalizations {
   /// No description provided for @errorAge.
   ///
   /// In ar, this message translates to:
-  /// **'لازم يكون عمرك بين 18 و100 سنة.'**
+  /// **'يجب أن يكون عمرك بين 18 و100 سنة.'**
   String get errorAge;
 
   /// Shown when the server rejects the form for a reason the app didn't check.
   ///
   /// In ar, this message translates to:
-  /// **'تحقّق من معلوماتك وحاول مرة ثانية.'**
+  /// **'تحقّق من معلوماتك وحاول مرة أخرى.'**
   String get errorCheckDetails;
 
   /// Connection failure or timeout. Doesn't say 'no internet': a down server looks the same.
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة ثانية.'**
+  /// **'تعذّر الاتصال. تحقّق من الإنترنت وحاول مرة أخرى.'**
   String get errorConnection;
 
   /// No description provided for @errorGeneral.
   ///
   /// In ar, this message translates to:
-  /// **'صار خطأ. حاول مرة ثانية.'**
+  /// **'حدث خطأ. حاول مرة أخرى.'**
   String get errorGeneral;
 
   /// No description provided for @retry.
@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// Shown when the target was raised to the minimum, from #8 answer 13.
   ///
   /// In ar, this message translates to:
-  /// **'حدّدنا هدفك عند الحد الأدنى الآمن. إذا بدك سعرات أقل، احكِ مع طبيب أو أخصائي تغذية.'**
+  /// **'حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.'**
   String get minimumNote;
 
   /// No description provided for @editMyInfo.
@@ -367,6 +367,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعديل معلوماتي'**
   String get editMyInfo;
+
+  /// Shown once, before the targets, to users older than 78, from #33.
+  ///
+  /// In ar, this message translates to:
+  /// **'جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.'**
+  String get ageWarning;
+
+  /// No description provided for @understandButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'فهمت'**
+  String get understandButton;
 }
 
 class _AppLocalizationsDelegate

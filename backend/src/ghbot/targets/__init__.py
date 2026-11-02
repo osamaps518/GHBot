@@ -6,8 +6,8 @@ Targets are calculated on every request and never stored. The rules come from
 For other modules:
     calculate_targets: turns sex, age, weight, height, activity level and goal
         into daily calories, protein, fat and carbs (whole numbers), plus
-        maintenance calories and whether the calorie minimum was applied.
-        No database or date inside: the caller passes the age.
+        maintenance calories, whether the calorie minimum was applied, and
+        whether the age is above the formula's tested range. No database or date inside: the caller passes the age.
 
 For wiring the app (main.py):
     router: GET /me/targets, the signed-in user's targets from their saved

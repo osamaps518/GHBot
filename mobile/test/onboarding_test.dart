@@ -307,12 +307,125 @@ void main() {
         'carbs_g': 125,
         'maintenance_calories': 1320,
         'at_minimum': true,
+        'above_tested_age': false,
       };
 
     await pumpApp(tester, backend, storedName: 'alice');
 
     expect(find.text('1200'), findsOneWidget);
     expect(find.text(english.minimumNote), findsOneWidget);
+  });
+
+  group('age warning', () {
+    // The backend decides who is above the tested age, so the form's
+    // values don't matter here.
+    Future<void> onboard(WidgetTester tester, FakeBackend backend) async {
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _fillForm(tester, english);
+      await _tapText(tester, english.calculateButton);
+    }
+
+    testWidgets('a 79-year-old sees it after onboarding, then the targets', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+
+      await onboard(tester, backend);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('someone who turns 79 sees it after editing their info', (
+      tester,
+    ) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      expect(find.text('2210'), findsOneWidget);
+
+      await _tapText(tester, english.editMyInfo);
+      backend.targets = {...exampleTargets, 'above_tested_age': true};
+      await _tapText(tester, english.calculateButton);
+
+      expect(find.text(english.profileTitle), findsNothing);
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('shows once: the next start goes straight to the targets', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _tapText(tester, english.understandButton);
+
+      // A new key makes a new app, as after closing it. What the app stored
+      // on the phone stays.
+      await tester.pumpWidget(
+        GhbotApp(
+          key: UniqueKey(),
+          client: backend.client,
+          apiBaseUrl: 'http://backend.test',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('stays until acknowledged, even after a restart', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice');
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+      // The warning replaces the targets, so Back can't skip it.
+      final warning = tester.element(find.text(english.ageWarning));
+      expect(Navigator.of(warning).canPop(), isFalse);
+
+      await tester.pumpWidget(
+        GhbotApp(
+          key: UniqueKey(),
+          client: backend.client,
+          apiBaseUrl: 'http://backend.test',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+    });
+
+    testWidgets('a 78-year-old never sees it', (tester) async {
+      final backend = FakeBackend();
+
+      await onboard(tester, backend);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
   });
 
   testWidgets('a response that stalls after its headers times out', (
