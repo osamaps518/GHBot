@@ -7,6 +7,7 @@ import 'api_failure.dart';
 
 /// Sends backend requests and decodes successful responses or failures.
 class ApiClient {
+  // Callers pass `client:`; a private named parameter keeps the field private.
   ApiClient({required this._client, required String baseUrl})
     : _baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), '');
 
