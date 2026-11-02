@@ -225,7 +225,7 @@ agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GH
 **Status:** Accepted, 2026-10-31 (#40)
 
 The app uses option D4, charcoal and tangerine, in light and dark, following the
-phone's setting. The theme lives in `mobile/lib/theme.dart`; screens take colors
+phone's setting. The theme lives in `mobile/lib/core/theme.dart`; screens take colors
 and text styles from it instead of hardcoding them. Colors Material has no role
 for (the daily calories card and the three macros) are in a `TargetsColors`
 theme extension.
@@ -253,11 +253,26 @@ not the token, because tokens last 15 minutes. It gets a new token at every star
 and on a 401 it gets a new one and retries the call once. Typing the same name
 after a reinstall gets you back to the same user. There is no sign-out.
 
-One API client class (`mobile/lib/api.dart`) owns the token and every backend
-call; screens never see headers or URLs. When the real provider comes, only the
-sign-in screen and that class change.
+The auth session in `mobile/lib/auth/` owns the token and authorized calls;
+screens never see headers or URLs. When the real provider comes, auth changes.
 
 Storing the token was considered, but it would expire between most app starts
 and need the refresh logic anyway. The trade-off is one extra request at each
 start, and anyone who knows a name can sign in as that user, which is fine for a
 development build only.
+
+---
+
+## 18. Mobile code layout
+
+**Status:** Accepted, 2026-11-02 (#11)
+
+Folders in `mobile/lib/` mirror the backend modules: `auth`, `profiles`, and
+`targets`. `core/` holds the API client, failures, error views, and theme that
+all modules use. The root widget in `main.dart` picks the screen and coordinates
+calls across modules.
+
+We considered Flutter's [case study layout](https://docs.flutter.dev/app-architecture/case-study)
+with UI by feature, data by type, view models, and repositories. Three screens
+using `setState` do not need those layers. Revisit this if we adopt a state
+management package.

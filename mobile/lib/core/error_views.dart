@@ -28,7 +28,7 @@ SnackBar connectionSnackBar(
 /// Startup failed: there's nothing cached to show, so the whole screen is
 /// the error.
 class ErrorScreen extends StatelessWidget {
-  const ErrorScreen({required this.failure, required this.onRetry});
+  const ErrorScreen({super.key, required this.failure, required this.onRetry});
 
   final Exception failure;
   final VoidCallback onRetry;

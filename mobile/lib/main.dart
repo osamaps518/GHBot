@@ -13,7 +13,7 @@ import 'profiles/profiles_api.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
 import 'targets/targets_screen.dart';
-import 'theme.dart';
+import 'core/theme.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 

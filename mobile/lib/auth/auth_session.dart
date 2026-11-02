@@ -37,12 +37,17 @@ class AuthSession {
       method,
       path,
       body: body,
-      token: await token,
+      headers: {'authorization': 'Bearer ${await token}'},
     );
     if (response.statusCode != 401) return response;
     // Calls made in parallel share one new token.
     if (identical(_token, token)) _token = null;
-    return _client.send(method, path, body: body, token: await _currentToken());
+    return _client.send(
+      method,
+      path,
+      body: body,
+      headers: {'authorization': 'Bearer ${await _currentToken()}'},
+    );
   }
 
   Future<String> _currentToken() =>

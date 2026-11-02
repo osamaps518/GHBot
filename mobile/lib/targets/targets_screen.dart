@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../profiles/profile.dart';
 import 'targets.dart';
 import '../l10n/app_localizations.dart';
-import '../theme.dart';
+import '../core/theme.dart';
 
 /// The daily calorie and macro targets. [profile] gives the goal for the
 /// "How we calculated this" panel.

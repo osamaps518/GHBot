@@ -7,9 +7,8 @@ import 'api_failure.dart';
 
 /// Sends backend requests and decodes successful responses or failures.
 class ApiClient {
-  ApiClient({required http.Client client, required String baseUrl})
-    : _client = client,
-      _baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), '');
+  ApiClient({required this._client, required String baseUrl})
+    : _baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), '');
 
   final http.Client _client;
   final String _baseUrl;
@@ -18,10 +17,10 @@ class ApiClient {
     String method,
     String path, {
     Object? body,
-    String? token,
+    Map<String, String>? headers,
   }) async {
     final request = http.Request(method, Uri.parse('$_baseUrl$path'));
-    if (token != null) request.headers['authorization'] = 'Bearer $token';
+    if (headers != null) request.headers.addAll(headers);
     if (body != null) {
       request.headers['content-type'] = 'application/json';
       request.body = jsonEncode(body);
