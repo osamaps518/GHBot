@@ -307,6 +307,7 @@ void main() {
         'carbs_g': 125,
         'maintenance_calories': 1320,
         'at_minimum': true,
+        'above_tested_age': false,
       };
 
     await pumpApp(tester, backend, storedName: 'alice');

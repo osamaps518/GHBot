@@ -6,6 +6,7 @@ class Targets {
     required this.carbsG,
     required this.maintenanceCalories,
     required this.atMinimum,
+    required this.aboveTestedAge,
   });
 
   factory Targets.fromJson(Map<String, Object?> json) => Targets(
@@ -15,6 +16,7 @@ class Targets {
     carbsG: json['carbs_g'] as int,
     maintenanceCalories: json['maintenance_calories'] as int,
     atMinimum: json['at_minimum'] as bool,
+    aboveTestedAge: json['above_tested_age'] as bool,
   );
 
   final int calories;
@@ -23,4 +25,7 @@ class Targets {
   final int carbsG;
   final int maintenanceCalories;
   final bool atMinimum;
+
+  /// Older than the calorie formula was tested for, so the app warns once.
+  final bool aboveTestedAge;
 }
