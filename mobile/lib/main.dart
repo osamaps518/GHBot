@@ -6,6 +6,7 @@ import 'auth/sign_in_screen.dart';
 import 'core/api_client.dart';
 import 'core/api_failure.dart';
 import 'core/error_views.dart';
+import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
 import 'profiles/profile.dart';
 import 'profiles/profile_form_screen.dart';
@@ -13,7 +14,6 @@ import 'profiles/profiles_api.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
 import 'targets/targets_screen.dart';
-import 'core/theme.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 

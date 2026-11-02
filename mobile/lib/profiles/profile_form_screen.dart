@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/api_failure.dart';
-import '../profiles/profile.dart';
-import '../l10n/app_localizations.dart';
 import '../core/error_views.dart';
+import '../l10n/app_localizations.dart';
+import 'profile.dart';
 
 /// The profile form, for onboarding and for "Edit my info" ([initial] set).
 class ProfileFormScreen extends StatefulWidget {
