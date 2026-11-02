@@ -3,7 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
 
-/// Owns dev sign-in and the token used by authorized backend calls.
+/// Owns dev sign-in and the token for authorized calls.
+///
+/// Dev sign-in (docs/decisions.md, 17): the name is the token subject. We
+/// store the name, not the token, because tokens last 15 minutes. A token is
+/// fetched on the first call after each start, and again on a 401.
 class AuthSession {
   AuthSession(this._client);
 
