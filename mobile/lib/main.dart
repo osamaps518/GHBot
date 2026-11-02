@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'api.dart';
+import 'auth/auth_session.dart';
+import 'auth/sign_in_screen.dart';
+import 'core/api_client.dart';
+import 'core/api_failure.dart';
+import 'core/error_views.dart';
 import 'l10n/app_localizations.dart';
+import 'profiles/profile.dart';
 import 'profiles/profile_form_screen.dart';
-import 'sign_in_screen.dart';
-import 'targets_screen.dart';
+import 'profiles/profiles_api.dart';
+import 'targets/targets.dart';
+import 'targets/targets_api.dart';
+import 'targets/targets_screen.dart';
 import 'theme.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
@@ -35,7 +42,13 @@ enum _Stage { loading, signIn, onboarding, targets, failed }
 /// Picks the screen from what the app knows: no stored name → sign-in, no
 /// profile → onboarding, otherwise the targets.
 class _GhbotAppState extends State<GhbotApp> {
-  late final _api = Api(client: widget.client, baseUrl: widget.apiBaseUrl);
+  late final _client = ApiClient(
+    client: widget.client,
+    baseUrl: widget.apiBaseUrl,
+  );
+  late final _session = AuthSession(_client);
+  late final _profiles = ProfilesApi(_client, _session);
+  late final _targetsApi = TargetsApi(_client, _session);
   // "Edit my info" opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
 
@@ -51,7 +64,7 @@ class _GhbotAppState extends State<GhbotApp> {
   }
 
   Future<void> _start() async {
-    if (await _api.restoreSignIn()) {
+    if (await _session.restoreSignIn()) {
       await _load();
     } else {
       setState(() => _stage = _Stage.signIn);
@@ -59,14 +72,17 @@ class _GhbotAppState extends State<GhbotApp> {
   }
 
   Future<void> _signIn(String name) async {
-    await _api.signIn(name);
+    await _session.signIn(name);
     await _load();
   }
 
   Future<void> _load() async {
     setState(() => _stage = _Stage.loading);
     try {
-      final results = await Future.wait([_api.getProfile(), _api.getTargets()]);
+      final results = await Future.wait([
+        _profiles.getProfile(),
+        _targetsApi.getTargets(),
+      ]);
       final profile = results[0] as Profile?;
       final targets = results[1] as Targets?;
       if (profile != null && targets == null) throw const ServerFailure(404);
@@ -84,8 +100,8 @@ class _GhbotAppState extends State<GhbotApp> {
   }
 
   Future<void> _save(Profile profile) async {
-    await _api.putProfile(profile);
-    final targets = await _api.getTargets();
+    await _profiles.putProfile(profile);
+    final targets = await _targetsApi.getTargets();
     if (targets == null) throw const ServerFailure(404);
     setState(() {
       _profile = profile;
@@ -123,7 +139,7 @@ class _GhbotAppState extends State<GhbotApp> {
       targets: _targets!,
       onEdit: _edit,
     ),
-    _Stage.failed => _ErrorScreen(failure: _failure!, onRetry: _load),
+    _Stage.failed => ErrorScreen(failure: _failure!, onRetry: _load),
   };
 
   @override
@@ -139,46 +155,6 @@ class _GhbotAppState extends State<GhbotApp> {
       theme: lightTheme,
       darkTheme: darkTheme,
       home: _screen(),
-    );
-  }
-}
-
-/// Startup failed: there's nothing cached to show, so the whole screen is
-/// the error.
-class _ErrorScreen extends StatelessWidget {
-  const _ErrorScreen({required this.failure, required this.onRetry});
-
-  final Exception failure;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final connection = failure is ConnectionFailure;
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 16,
-            children: [
-              Icon(
-                connection ? Icons.wifi_off : Icons.error_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              Text(
-                connection ? l10n.errorConnection : l10n.errorGeneral,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

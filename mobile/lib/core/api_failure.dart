@@ -20,4 +20,3 @@ class ServerFailure extends ApiFailure {
   const ServerFailure(this.statusCode);
   final int statusCode;
 }
-

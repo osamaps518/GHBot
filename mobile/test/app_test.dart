@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
-import 'package:ghbot/sign_in_screen.dart';
+import 'package:ghbot/auth/sign_in_screen.dart';
 import 'package:ghbot/theme.dart';
 
 import 'fake_backend.dart';

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'api.dart';
-import 'l10n/app_localizations.dart';
+import '../core/api_failure.dart';
+import '../core/error_views.dart';
+import '../l10n/app_localizations.dart';
 
 /// Dev sign-in: the name is the account. Replaced when a real provider comes.
 class SignInScreen extends StatefulWidget {
@@ -83,25 +84,3 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 }
-
-/// "Couldn't connect" with a Retry action. Used wherever the user submits
-/// something, so what they typed stays on screen.
-SnackBar connectionSnackBar(
-  AppLocalizations l10n, {
-  required VoidCallback onRetry,
-}) => SnackBar(
-  content: Row(
-    spacing: 10,
-    children: [
-      // The snackbar colors its text but not icons.
-      Builder(
-        builder: (context) => Icon(
-          Icons.wifi_off,
-          color: DefaultTextStyle.of(context).style.color,
-        ),
-      ),
-      Expanded(child: Text(l10n.errorConnection)),
-    ],
-  ),
-  action: SnackBarAction(label: l10n.retry, onPressed: onRetry),
-);

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_failure.dart';
 import '../profiles/profile.dart';
 import '../l10n/app_localizations.dart';
-import '../sign_in_screen.dart';
+import '../core/error_views.dart';
 
 /// The profile form, for onboarding and for "Edit my info" ([initial] set).
 class ProfileFormScreen extends StatefulWidget {
