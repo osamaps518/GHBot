@@ -17,6 +17,7 @@ Rules for AI coding agents (and people) working on GHBot.
 
 ## Arabic first (app)
 - No user-facing text in Dart. Add every string to `lib/l10n/app_ar.arb` (the template) and `app_en.arb`; commit the generated files.
+- Arabic text is Modern Standard Arabic (فصحى), not a dialect.
 - Use start and end, never left and right: `EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlign.start`. Plain `EdgeInsets` only when both sides are equal.
 - Numbers use Western digits (1850) in both languages.
 - Colors and text styles come from the theme in `lib/core/theme.dart` (decision 16).
