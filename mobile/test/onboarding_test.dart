@@ -342,6 +342,30 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
     });
 
+    testWidgets('shows once: the next start goes straight to the targets', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _tapText(tester, english.understandButton);
+
+      // A new key makes a new app, as after closing it. What the app stored
+      // on the phone stays.
+      await tester.pumpWidget(
+        GhbotApp(
+          key: UniqueKey(),
+          client: backend.client,
+          apiBaseUrl: 'http://backend.test',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
     testWidgets('a 78-year-old never sees it', (tester) async {
       final backend = FakeBackend();
 
