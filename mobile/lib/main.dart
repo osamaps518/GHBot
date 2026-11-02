@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'api.dart';
 import 'l10n/app_localizations.dart';
-import 'profile_form_screen.dart';
+import 'profiles/profile_form_screen.dart';
 import 'sign_in_screen.dart';
 import 'targets_screen.dart';
 import 'theme.dart';

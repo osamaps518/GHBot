@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/main.dart';
-import 'package:ghbot/profile_form_screen.dart';
+import 'package:ghbot/profiles/profile_form_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
