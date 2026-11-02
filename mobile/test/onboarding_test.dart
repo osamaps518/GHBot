@@ -387,6 +387,37 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
     });
 
+    testWidgets('stays until acknowledged, even after a restart', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice');
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+      // The warning replaces the targets, so Back can't skip it.
+      final warning = tester.element(find.text(english.ageWarning));
+      expect(Navigator.of(warning).canPop(), isFalse);
+
+      await tester.pumpWidget(
+        GhbotApp(
+          key: UniqueKey(),
+          client: backend.client,
+          apiBaseUrl: 'http://backend.test',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+    });
+
     testWidgets('a 78-year-old never sees it', (tester) async {
       final backend = FakeBackend();
 
