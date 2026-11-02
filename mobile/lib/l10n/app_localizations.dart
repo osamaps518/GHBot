@@ -367,6 +367,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعديل معلوماتي'**
   String get editMyInfo;
+
+  /// Shown once, before the targets, to users older than 78, from #33.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقديراتنا للسعرات مجرّبة على بالغين لحد عمر 78 سنة، فممكن تكون أقل دقة إلك. لو سمحت احكِ مع طبيبك قبل ما تبدأ حمية أو برنامج تمارين جديد.'**
+  String get ageWarning;
+
+  /// No description provided for @understandButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'فهمت'**
+  String get understandButton;
 }
 
 class _AppLocalizationsDelegate

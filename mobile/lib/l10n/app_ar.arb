@@ -121,5 +121,10 @@
   "@minimumNote": {
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
-  "editMyInfo": "تعديل معلوماتي"
+  "editMyInfo": "تعديل معلوماتي",
+  "ageWarning": "تقديراتنا للسعرات مجرّبة على بالغين لحد عمر 78 سنة، فممكن تكون أقل دقة إلك. لو سمحت احكِ مع طبيبك قبل ما تبدأ حمية أو برنامج تمارين جديد.",
+  "@ageWarning": {
+    "description": "Shown once, before the targets, to users older than 78, from #33."
+  },
+  "understandButton": "فهمت"
 }

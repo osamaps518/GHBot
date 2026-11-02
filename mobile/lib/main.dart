@@ -11,6 +11,7 @@ import 'l10n/app_localizations.dart';
 import 'profiles/profile.dart';
 import 'profiles/profile_form_screen.dart';
 import 'profiles/profiles_api.dart';
+import 'targets/age_warning_screen.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
 import 'targets/targets_screen.dart';
@@ -40,7 +41,8 @@ class GhbotApp extends StatefulWidget {
 enum _Stage { loading, signIn, onboarding, targets, failed }
 
 /// Picks the screen from what the app knows: no stored name → sign-in, no
-/// profile → onboarding, otherwise the targets.
+/// profile → onboarding, otherwise the targets. Users older than the formula
+/// was tested for see a warning before the targets, until they accept it.
 class _GhbotAppState extends State<GhbotApp> {
   late final _client = ApiClient(
     client: widget.client,
@@ -56,6 +58,7 @@ class _GhbotAppState extends State<GhbotApp> {
   Profile? _profile;
   Targets? _targets;
   Exception? _failure;
+  var _ageWarningSeen = false;
 
   @override
   void initState() {
@@ -134,6 +137,10 @@ class _GhbotAppState extends State<GhbotApp> {
     ),
     _Stage.signIn => SignInScreen(onSubmit: _signIn),
     _Stage.onboarding => ProfileFormScreen(onSubmit: _save),
+    _Stage.targets when _targets!.aboveTestedAge && !_ageWarningSeen =>
+      AgeWarningScreen(
+        onUnderstood: () => setState(() => _ageWarningSeen = true),
+      ),
     _Stage.targets => TargetsScreen(
       profile: _profile!,
       targets: _targets!,

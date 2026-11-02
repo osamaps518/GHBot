@@ -209,4 +209,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get editMyInfo => 'تعديل معلوماتي';
+
+  @override
+  String get ageWarning =>
+      'تقديراتنا للسعرات مجرّبة على بالغين لحد عمر 78 سنة، فممكن تكون أقل دقة إلك. لو سمحت احكِ مع طبيبك قبل ما تبدأ حمية أو برنامج تمارين جديد.';
+
+  @override
+  String get understandButton => 'فهمت';
 }

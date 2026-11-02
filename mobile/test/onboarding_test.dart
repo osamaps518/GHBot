@@ -316,6 +316,42 @@ void main() {
     expect(find.text(english.minimumNote), findsOneWidget);
   });
 
+  group('age warning', () {
+    // The backend decides who is above the tested age, so the form's
+    // values don't matter here.
+    Future<void> onboard(WidgetTester tester, FakeBackend backend) async {
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _fillForm(tester, english);
+      await _tapText(tester, english.calculateButton);
+    }
+
+    testWidgets('a 79-year-old sees it after onboarding, then the targets', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+
+      await onboard(tester, backend);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+      expect(find.text('2210'), findsNothing);
+
+      await _tapText(tester, english.understandButton);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('a 78-year-old never sees it', (tester) async {
+      final backend = FakeBackend();
+
+      await onboard(tester, backend);
+
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.ageWarning), findsNothing);
+    });
+  });
+
   testWidgets('a response that stalls after its headers times out', (
     tester,
   ) async {
