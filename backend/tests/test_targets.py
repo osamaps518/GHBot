@@ -64,6 +64,7 @@ def test_maintaining_weight_uses_rounded_calories_and_macros():
         "carbs_g": 251,
         "maintenance_calories": 2140,
         "at_minimum": False,
+        "above_tested_age": False,
     }
 
 
@@ -77,6 +78,7 @@ def test_ties_round_half_up():
         "carbs_g": 254,
         "maintenance_calories": 2150,
         "at_minimum": False,
+        "above_tested_age": False,
     }
 
 
@@ -112,7 +114,38 @@ def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
         "carbs_g": 500,
         "maintenance_calories": 3380,
         "at_minimum": False,
+        "above_tested_age": False,
     }
+
+
+@pytest.mark.parametrize(
+    "today, above_tested_age",
+    [
+        pytest.param(date(2026, 10, 30), False, id="78-day-before-birthday"),
+        pytest.param(date(2026, 10, 31), True, id="79-on-birthday"),
+    ],
+)
+def test_get_targets_flags_ages_above_78(
+    app, client, auth_headers, today, above_tested_age
+):
+    # The birthday is the last day of the birth month: 31 October.
+    app.dependency_overrides[utc_today] = lambda: today
+    headers = auth_headers(str(uuid4()))
+    profile = {
+        "birth_year": 1947,
+        "birth_month": 10,
+        "sex": "female",
+        "height_cm": 160,
+        "weight_kg": 60,
+        "activity_level": "sedentary",
+        "goal": "maintain",
+    }
+    assert client.put("/me/profile", headers=headers, json=profile).status_code == 201
+
+    response = client.get("/me/targets", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["above_tested_age"] is above_tested_age
 
 
 def test_get_targets_requires_valid_token(client):

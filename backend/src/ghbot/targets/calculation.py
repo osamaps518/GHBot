@@ -14,7 +14,12 @@ class Targets(TypedDict):
     carbs_g: int
     maintenance_calories: int
     at_minimum: bool
+    above_tested_age: bool
 
+
+# Mifflin-St Jeor was tested on adults aged 19 to 78. Above that, the app
+# warns that the estimate may be less accurate.
+OLDEST_TESTED_AGE = 78
 
 ACTIVITY_FACTORS = {
     "sedentary": Decimal("1.2"),
@@ -77,4 +82,5 @@ def calculate_targets(
         "carbs_g": _whole(carbs),
         "maintenance_calories": _nearest_ten(maintenance),
         "at_minimum": at_minimum,
+        "above_tested_age": age > OLDEST_TESTED_AGE,
     }
