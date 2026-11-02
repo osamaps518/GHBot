@@ -1,7 +1,7 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
+
+import 'core/api_client.dart';
+export 'core/api_failure.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Talks to the backend. The only place that knows URLs, headers and tokens.
@@ -11,11 +11,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// fetched on the first call after each start, and again on a 401.
 class Api {
   // Callers pass `client:`; a private named parameter keeps the field private.
-  Api({required this._client, required String baseUrl})
-    : _baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), '');
+  Api({required http.Client client, required String baseUrl})
+    : _client = ApiClient(client: client, baseUrl: baseUrl);
 
-  final http.Client _client;
-  final String _baseUrl;
+  final ApiClient _client;
   final _preferences = SharedPreferencesAsync();
   static const _subjectKey = 'dev_subject';
 
@@ -39,18 +38,18 @@ class Api {
   Future<Profile?> getProfile() async {
     final response = await _authorized('GET', '/me/profile');
     if (response.statusCode == 404) return null;
-    return Profile.fromJson(_decode(response));
+    return Profile.fromJson(_client.decode(response));
   }
 
   Future<void> putProfile(Profile profile) async {
-    _decode(await _authorized('PUT', '/me/profile', body: profile.toJson()));
+    _client.decode(await _authorized('PUT', '/me/profile', body: profile.toJson()));
   }
 
   /// Today's targets, or null before onboarding.
   Future<Targets?> getTargets() async {
     final response = await _authorized('GET', '/me/targets');
     if (response.statusCode == 404) return null;
-    return Targets.fromJson(_decode(response));
+    return Targets.fromJson(_client.decode(response));
   }
 
   Future<http.Response> _authorized(
@@ -59,11 +58,11 @@ class Api {
     Object? body,
   }) async {
     final token = _currentToken();
-    final response = await _send(method, path, body, await token);
+    final response = await _client.send(method, path, body: body, token: await token);
     if (response.statusCode != 401) return response;
     // Calls made in parallel share one new token.
     if (identical(_token, token)) _token = null;
-    return _send(method, path, body, await _currentToken());
+    return _client.send(method, path, body: body, token: await _currentToken());
   }
 
   Future<String> _currentToken() =>
@@ -74,69 +73,10 @@ class Api {
           });
 
   Future<String> _requestToken(String subject) async {
-    final response = await _send('POST', '/dev/token', {'subject': subject});
-    return _decode(response)['access_token'] as String;
+    final response = await _client.send('POST', '/dev/token', body: {'subject': subject});
+    return _client.decode(response)['access_token'] as String;
   }
 
-  Future<http.Response> _send(
-    String method,
-    String path,
-    Object? body, [
-    String? token,
-  ]) async {
-    final request = http.Request(method, Uri.parse('$_baseUrl$path'));
-    if (token != null) request.headers['authorization'] = 'Bearer $token';
-    if (body != null) {
-      request.headers['content-type'] = 'application/json';
-      request.body = jsonEncode(body);
-    }
-    try {
-      return await _client
-          .send(request)
-          .then(http.Response.fromStream)
-          // Without a timeout, an unreachable address can spin for minutes.
-          // It covers the body too: a stream can stall after its headers.
-          .timeout(const Duration(seconds: 5));
-    } on TimeoutException {
-      throw const ConnectionFailure();
-    } on http.ClientException {
-      throw const ConnectionFailure();
-    }
-  }
-
-  Map<String, Object?> _decode(http.Response response) {
-    if (response.statusCode == 422) {
-      throw ValidationFailure([
-        for (final error in (jsonDecode(response.body) as Map)['detail'])
-          (error as Map)['type'] as String,
-      ]);
-    }
-    if (response.statusCode >= 300) throw ServerFailure(response.statusCode);
-    return (jsonDecode(response.body) as Map).cast();
-  }
-}
-
-/// A failed backend call.
-sealed class ApiFailure implements Exception {
-  const ApiFailure();
-}
-
-/// The backend couldn't be reached, or didn't answer within 5 seconds.
-class ConnectionFailure extends ApiFailure {
-  const ConnectionFailure();
-}
-
-/// The backend rejected the request body. [types] are the errors' codes,
-/// such as `age_out_of_range`.
-class ValidationFailure extends ApiFailure {
-  const ValidationFailure(this.types);
-  final List<String> types;
-}
-
-/// Any other unexpected status.
-class ServerFailure extends ApiFailure {
-  const ServerFailure(this.statusCode);
-  final int statusCode;
 }
 
 enum Sex { male, female }
