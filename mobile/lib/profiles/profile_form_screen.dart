@@ -142,11 +142,6 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final muted = theme.textTheme.bodySmall!.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-
     return ScaffoldMessenger(
       key: _messenger,
       child: Scaffold(
@@ -160,173 +155,66 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               24,
             ),
             children: [
-              Text(l10n.profileTitle, style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 2),
-              Text(
-                l10n.profileSubtitle,
-                style: theme.textTheme.bodyLarge!.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              const _Header(),
               const SizedBox(height: 16),
               _Pair(
-                _Labeled(
-                  label: l10n.birthMonth,
-                  error: _errors.containsKey(_Field.birthMonth),
-                  child: DropdownMenu<int>(
-                    key: const ValueKey('birthMonth'),
-                    initialSelection: _month,
-                    expandedInsets: EdgeInsets.zero,
-                    selectOnly: true,
-                    errorText: _errors[_Field.birthMonth],
-                    onSelected: (month) =>
-                        _changed(_Field.birthMonth, () => _month = month),
-                    dropdownMenuEntries: [
-                      for (var month = 1; month <= 12; month++)
-                        DropdownMenuEntry(
-                          value: month,
-                          label: l10n.monthName('$month'),
-                        ),
-                    ],
-                  ),
+                _MonthField(
+                  value: _month,
+                  error: _errors[_Field.birthMonth],
+                  onChanged: (month) =>
+                      _changed(_Field.birthMonth, () => _month = month),
                 ),
-                _Labeled(
-                  label: l10n.birthYear,
-                  error: _errors.containsKey(_Field.birthYear),
-                  child: DropdownMenu<int>(
-                    key: const ValueKey('birthYear'),
-                    initialSelection: _year,
-                    expandedInsets: EdgeInsets.zero,
-                    selectOnly: true,
-                    errorText: _errors[_Field.birthYear],
-                    onSelected: (year) =>
-                        _changed(_Field.birthYear, () => _year = year),
-                    dropdownMenuEntries: [
-                      // Ages 18 to 100. The oldest year only fits birth months
-                      // later in the year; the age check catches the others.
-                      for (
-                        var year = _today.year - 18;
-                        year >= _today.year - 101;
-                        year--
-                      )
-                        DropdownMenuEntry(value: year, label: '$year'),
-                    ],
-                  ),
+                _YearField(
+                  thisYear: _today.year,
+                  value: _year,
+                  error: _errors[_Field.birthYear],
+                  onChanged: (year) =>
+                      _changed(_Field.birthYear, () => _year = year),
                 ),
               ),
               const SizedBox(height: 14),
-              _Labeled(
+              _ChoiceField(
                 label: l10n.sex,
-                error: _errors.containsKey(_Field.sex),
-                errorText: _errors[_Field.sex],
                 hint: l10n.sexHint,
-                child: SegmentedButton<Sex>(
-                  segments: [
-                    ButtonSegment(value: Sex.male, label: Text(l10n.sexMale)),
-                    ButtonSegment(
-                      value: Sex.female,
-                      label: Text(l10n.sexFemale),
-                    ),
-                  ],
-                  selected: {?_sex},
-                  emptySelectionAllowed: true,
-                  showSelectedIcon: false,
-                  expandedInsets: EdgeInsets.zero,
-                  onSelectionChanged: (selected) {
-                    // Tapping the chosen option keeps it chosen.
-                    if (selected.isEmpty) return;
-                    _changed(_Field.sex, () => _sex = selected.single);
-                  },
-                ),
+                options: {Sex.male: l10n.sexMale, Sex.female: l10n.sexFemale},
+                value: _sex,
+                error: _errors[_Field.sex],
+                onChanged: (sex) => _changed(_Field.sex, () => _sex = sex),
               ),
               const SizedBox(height: 14),
               _Pair(
-                _Labeled(
+                _NumberField(
+                  key: const ValueKey('height'),
                   label: l10n.height,
-                  error: _errors.containsKey(_Field.height),
-                  child: _NumberField(
-                    key: const ValueKey('height'),
-                    controller: _height,
-                    errorText: _errors[_Field.height],
-                    onChanged: () => _changed(_Field.height, () {}),
-                  ),
+                  controller: _height,
+                  error: _errors[_Field.height],
+                  onChanged: () => _changed(_Field.height, () {}),
                 ),
-                _Labeled(
+                _NumberField(
+                  key: const ValueKey('weight'),
                   label: l10n.weight,
-                  error: _errors.containsKey(_Field.weight),
-                  child: _NumberField(
-                    key: const ValueKey('weight'),
-                    controller: _weight,
-                    errorText: _errors[_Field.weight],
-                    onChanged: () => _changed(_Field.weight, () {}),
-                  ),
+                  controller: _weight,
+                  error: _errors[_Field.weight],
+                  onChanged: () => _changed(_Field.weight, () {}),
                 ),
               ),
               const SizedBox(height: 14),
-              _Labeled(
-                label: l10n.activityLevel,
-                error: _errors.containsKey(_Field.activityLevel),
-                hint: l10n.activityHint,
-                child: InputDecorator(
-                  isEmpty: _activity == null,
-                  decoration: InputDecoration(
-                    errorText: _errors[_Field.activityLevel],
-                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
-                      16,
-                      6,
-                      12,
-                      6,
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<ActivityLevel>(
-                      key: const ValueKey('activityLevel'),
-                      value: _activity,
-                      isExpanded: true,
-                      itemHeight: null,
-                      borderRadius: BorderRadius.circular(16),
-                      hint: Text(l10n.activityChoose),
-                      onChanged: (level) => _changed(
-                        _Field.activityLevel,
-                        () => _activity = level,
-                      ),
-                      items: [
-                        for (final level in ActivityLevel.values)
-                          DropdownMenuItem(
-                            value: level,
-                            child: _ActivityOption(level, muted: muted),
-                          ),
-                      ],
-                      selectedItemBuilder: (context) => [
-                        for (final level in ActivityLevel.values)
-                          _ActivityOption(level, muted: muted),
-                      ],
-                    ),
-                  ),
-                ),
+              _ActivityField(
+                value: _activity,
+                error: _errors[_Field.activityLevel],
+                onChanged: (level) =>
+                    _changed(_Field.activityLevel, () => _activity = level),
               ),
               const SizedBox(height: 14),
-              _Labeled(
+              _ChoiceField(
                 label: l10n.goal,
-                error: _errors.containsKey(_Field.goal),
-                errorText: _errors[_Field.goal],
-                child: SegmentedButton<Goal>(
-                  segments: [
-                    for (final goal in Goal.values)
-                      ButtonSegment(
-                        value: goal,
-                        label: Text(l10n.goalName(goal.name)),
-                      ),
-                  ],
-                  selected: {?_goal},
-                  emptySelectionAllowed: true,
-                  showSelectedIcon: false,
-                  expandedInsets: EdgeInsets.zero,
-                  onSelectionChanged: (selected) {
-                    if (selected.isEmpty) return;
-                    _changed(_Field.goal, () => _goal = selected.single);
-                  },
-                ),
+                options: {
+                  for (final goal in Goal.values)
+                    goal: l10n.goalName(goal.name),
+                },
+                value: _goal,
+                error: _errors[_Field.goal],
+                onChanged: (goal) => _changed(_Field.goal, () => _goal = goal),
               ),
             ],
           ),
@@ -338,6 +226,193 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               onPressed: _busy ? null : _submit,
               child: Text(l10n.calculateButton),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The form's title and the line under it.
+class _Header extends StatelessWidget {
+  const _Header();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 2,
+      children: [
+        Text(l10n.profileTitle, style: theme.textTheme.headlineSmall),
+        Text(
+          l10n.profileSubtitle,
+          style: theme.textTheme.bodyLarge!.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MonthField extends StatelessWidget {
+  const _MonthField({
+    required this.value,
+    required this.error,
+    required this.onChanged,
+  });
+
+  final int? value;
+  final String? error;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _Labeled(
+      label: l10n.birthMonth,
+      error: error != null,
+      child: DropdownMenu<int>(
+        key: const ValueKey('birthMonth'),
+        initialSelection: value,
+        expandedInsets: EdgeInsets.zero,
+        selectOnly: true,
+        errorText: error,
+        onSelected: onChanged,
+        dropdownMenuEntries: [
+          for (var month = 1; month <= 12; month++)
+            DropdownMenuEntry(value: month, label: l10n.monthName('$month')),
+        ],
+      ),
+    );
+  }
+}
+
+class _YearField extends StatelessWidget {
+  const _YearField({
+    required this.thisYear,
+    required this.value,
+    required this.error,
+    required this.onChanged,
+  });
+
+  final int thisYear;
+  final int? value;
+  final String? error;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Labeled(
+      label: AppLocalizations.of(context)!.birthYear,
+      error: error != null,
+      child: DropdownMenu<int>(
+        key: const ValueKey('birthYear'),
+        initialSelection: value,
+        expandedInsets: EdgeInsets.zero,
+        selectOnly: true,
+        errorText: error,
+        onSelected: onChanged,
+        dropdownMenuEntries: [
+          // Ages 18 to 100. The oldest year only fits birth months later in
+          // the year; the age check catches the others.
+          for (var year = thisYear - 18; year >= thisYear - 101; year--)
+            DropdownMenuEntry(value: year, label: '$year'),
+        ],
+      ),
+    );
+  }
+}
+
+/// One option out of a few, as a row of segments. Starts with none chosen.
+class _ChoiceField<T> extends StatelessWidget {
+  const _ChoiceField({
+    required this.label,
+    required this.options,
+    required this.value,
+    required this.error,
+    required this.onChanged,
+    this.hint,
+  });
+
+  final String label;
+
+  /// Each option and its text, in the order shown.
+  final Map<T, String> options;
+  final T? value;
+  final String? error;
+  final ValueChanged<T> onChanged;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Labeled(
+      label: label,
+      error: error != null,
+      errorText: error,
+      hint: hint,
+      child: SegmentedButton<T>(
+        segments: [
+          for (final option in options.entries)
+            ButtonSegment(value: option.key, label: Text(option.value)),
+        ],
+        selected: {?value},
+        emptySelectionAllowed: true,
+        showSelectedIcon: false,
+        expandedInsets: EdgeInsets.zero,
+        onSelectionChanged: (selected) {
+          // Tapping the chosen option keeps it chosen.
+          if (selected.isEmpty) return;
+          onChanged(selected.single);
+        },
+      ),
+    );
+  }
+}
+
+/// A dropdown whose options show a name and a description.
+class _ActivityField extends StatelessWidget {
+  const _ActivityField({
+    required this.value,
+    required this.error,
+    required this.onChanged,
+  });
+
+  final ActivityLevel? value;
+  final String? error;
+  final ValueChanged<ActivityLevel?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _Labeled(
+      label: l10n.activityLevel,
+      error: error != null,
+      hint: l10n.activityHint,
+      child: InputDecorator(
+        isEmpty: value == null,
+        decoration: InputDecoration(
+          errorText: error,
+          contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 6, 12, 6),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<ActivityLevel>(
+            key: const ValueKey('activityLevel'),
+            value: value,
+            isExpanded: true,
+            itemHeight: null,
+            borderRadius: BorderRadius.circular(16),
+            hint: Text(l10n.activityChoose),
+            onChanged: onChanged,
+            items: [
+              for (final level in ActivityLevel.values)
+                DropdownMenuItem(value: level, child: _ActivityOption(level)),
+            ],
+            selectedItemBuilder: (context) => [
+              for (final level in ActivityLevel.values) _ActivityOption(level),
+            ],
           ),
         ),
       ),
@@ -413,39 +488,50 @@ class _Labeled extends StatelessWidget {
 class _NumberField extends StatelessWidget {
   const _NumberField({
     super.key,
+    required this.label,
     required this.controller,
-    required this.errorText,
+    required this.error,
     required this.onChanged,
   });
 
+  final String label;
   final TextEditingController controller;
-  final String? errorText;
+  final String? error;
   final VoidCallback onChanged;
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    decoration: InputDecoration(errorText: errorText),
-    onChanged: (_) => onChanged(),
+  Widget build(BuildContext context) => _Labeled(
+    label: label,
+    error: error != null,
+    child: TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(errorText: error),
+      onChanged: (_) => onChanged(),
+    ),
   );
 }
 
 class _ActivityOption extends StatelessWidget {
-  const _ActivityOption(this.level, {required this.muted});
+  const _ActivityOption(this.level);
 
   final ActivityLevel level;
-  final TextStyle muted;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(l10n.activityName(level.code)),
-        Text(l10n.activityDescription(level.code), style: muted),
+        Text(
+          l10n.activityDescription(level.code),
+          style: theme.textTheme.bodySmall!.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
