@@ -208,6 +208,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.';
 
   @override
+  String get raisedToMinimum => 'رُفع إلى الحد الأدنى الآمن';
+
+  @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override

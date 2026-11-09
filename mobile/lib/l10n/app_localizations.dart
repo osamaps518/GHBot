@@ -362,6 +362,12 @@ abstract class AppLocalizations {
   /// **'حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.'**
   String get minimumNote;
 
+  /// No description provided for @raisedToMinimum.
+  ///
+  /// In ar, this message translates to:
+  /// **'رُفع إلى الحد الأدنى الآمن'**
+  String get raisedToMinimum;
+
   /// No description provided for @editMyInfo.
   ///
   /// In ar, this message translates to:

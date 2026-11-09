@@ -208,6 +208,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'We\'ve set your target at the safe minimum. For a lower intake, talk to a doctor or dietitian.';
 
   @override
+  String get raisedToMinimum => 'Raised to the safe minimum';
+
+  @override
   String get editMyInfo => 'Edit my info';
 
   @override

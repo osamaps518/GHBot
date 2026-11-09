@@ -316,8 +316,9 @@ void main() {
 
     await pumpApp(tester, backend, storedName: 'alice');
 
-    expect(find.text('1200'), findsOneWidget);
+    expect(find.text('1200'), findsNWidgets(2));
     expect(find.text(english.minimumNote), findsOneWidget);
+    expect(find.text(english.raisedToMinimum), findsOneWidget);
   });
 
   group('age warning', () {

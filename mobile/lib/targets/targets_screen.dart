@@ -168,6 +168,10 @@ class _HowWeCalculated extends StatelessWidget {
               '${targets.goalAdjustmentPercent.abs()}',
             ),
           ),
+          if (targets.atMinimum) ...[
+            const SizedBox(height: 8),
+            _Row(label: l10n.raisedToMinimum, value: '${targets.calories}'),
+          ],
         ],
       ),
     );

@@ -45,6 +45,7 @@
   "goalAdjustment": "{goal, select, lose{{percent}% less} maintain{No change} gain{{percent}% more} other{}}",
   "@goalAdjustment": {"placeholders": {"goal": {"type": "String"}, "percent": {"type": "String"}}},
   "minimumNote": "We've set your target at the safe minimum. For a lower intake, talk to a doctor or dietitian.",
+  "raisedToMinimum": "Raised to the safe minimum",
   "editMyInfo": "Edit my info",
   "ageWarning": "Our calorie estimates were tested on adults up to age 78, so they may be less accurate for you. Please check with your doctor before starting a new diet or training plan.",
   "understandButton": "I understand"

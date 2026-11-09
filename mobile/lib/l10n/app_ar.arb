@@ -122,6 +122,7 @@
     }
   },
   "minimumNote": "حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
+  "raisedToMinimum": "رُفع إلى الحد الأدنى الآمن",
   "@minimumNote": {
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
