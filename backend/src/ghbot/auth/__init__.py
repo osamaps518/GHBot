@@ -1,7 +1,8 @@
 """Token authentication and local user identities.
 
 For routes in other modules:
-    CurrentUser: route parameter that gives the signed-in User, or answers 401.
+    CurrentUser: route parameter that gives the signed-in user as a plain frozen
+        value with our user id, or answers 401.
     User: our users table. Other tables reference its id.
 
 For wiring the app (main.py):
