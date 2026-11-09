@@ -128,20 +128,19 @@ def test_invalid_credentials_get_the_same_401(client, invalid):
             claims["exp"] = now - 1
         elif invalid == "wrong-signature":
             secret = "different-secret-for-dev-sign-in-only-32-bytes"
-        else:
-            if invalid == "missing-expiry":
-                del claims["exp"]
-            elif invalid == "missing-sub":
-                del claims["sub"]
-            elif invalid == "integer-sub":
-                claims["sub"] = 123
-            elif invalid == "missing-iat":
-                del claims["iat"]
-            elif invalid == "none":
-                algorithm = "none"
-                secret = ""
-            elif invalid == "hs512":
-                algorithm = "HS512"
+        elif invalid == "missing-expiry":
+            del claims["exp"]
+        elif invalid == "missing-sub":
+            del claims["sub"]
+        elif invalid == "integer-sub":
+            claims["sub"] = 123
+        elif invalid == "missing-iat":
+            del claims["iat"]
+        elif invalid == "none":
+            algorithm = "none"
+            secret = ""
+        elif invalid == "hs512":
+            algorithm = "HS512"
         token = jwt.encode(claims, secret, algorithm=algorithm)
         headers = {"Authorization": f"Bearer {token}"}
 
