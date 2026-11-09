@@ -42,8 +42,6 @@ class ApiClient {
     } on TimeoutException {
       abort.complete();
       throw const ConnectionFailure();
-    } on http.RequestAbortedException {
-      throw const ConnectionFailure();
     } on http.ClientException {
       throw const ConnectionFailure();
     } on TlsException {
