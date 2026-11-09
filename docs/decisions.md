@@ -140,7 +140,7 @@ first requests. Our IDs are UUIDv7; future tables reference these IDs.
 
 ## 10. Module layout
 
-**Status:** Accepted, 2026-10-21 (#6)
+**Status:** Accepted, 2026-10-21 (#6). Extended by 19 for the files inside a backend module.
 
 Each module's `__init__.py` is its public API: it re-exports what other code may
 use, lists it in `__all__`, and says in its docstring what each name is for. Other
@@ -149,15 +149,6 @@ CurrentUser`), never from its files. Inside a module, files import each other
 directly.
 
 A module's routes live in `router.py`.
-
-For backend modules, `router.py` translates HTTP requests and responses; it holds
-no queries or rules. `application.py` holds use cases, including their queries and
-rules, without importing FastAPI. It passes other modules plain values rather
-than database rows. Split it only when it grows beyond about one screen.
-Module errors live in `exceptions.py` as plain Python exceptions. The module's
-HTTP files translate those errors; a caller of another module's application
-decides what an error means for its own route. Keep only the files a module needs.
-This rule does not cover the mobile app.
 
 ---
 
@@ -299,3 +290,21 @@ We considered Flutter's [case study layout](https://docs.flutter.dev/app-archite
 with UI by feature, data by type, view models, and repositories. One flow notifier
 handles the cross-screen state without adding repositories or a state management
 package. Screens still own their local form state.
+
+---
+
+## 19. Backend module files
+
+**Status:** Accepted, 2026-11-09 (#45). Extends 10.
+
+Every backend module splits its code the same way:
+- `router.py` turns HTTP requests into calls and the results back into responses. It holds no queries and no rules.
+- `application.py` holds the module's use cases with their queries and rules (for example, saving a profile checks the age, writes the row and commits). It never imports FastAPI. Other modules get plain values from it, never its database rows. Split it (for example, a `queries.py`) only when it grows past about one screen.
+- `exceptions.py` holds the module's errors as plain Python exceptions, with no HTTP status.
+- `dependencies.py` holds the route parameters other modules use, such as `CurrentUser` and `SavedProfile`.
+
+The module's own HTTP files, `router.py` and `dependencies.py`, turn its errors into HTTP answers. Other modules use those parameters and let them answer; they don't raise their own copy of the error. A module that calls another module's `application` and gets one of its errors decides what that means for its own route. There is no shared base class and no global handler. A module has only the files it needs.
+
+This rule covers the backend only, not the mobile app.
+
+We considered a shared `AppError` base class with one global handler, and a try/except in every route. This rule keeps FastAPI's own 401 and 422 answers and keeps HTTP codes out of the logic.
