@@ -1,3 +1,5 @@
+import '../profiles/profile.dart';
+
 class Targets {
   const Targets({
     required this.calories,
@@ -7,6 +9,8 @@ class Targets {
     required this.maintenanceCalories,
     required this.atMinimum,
     required this.aboveTestedAge,
+    required this.goal,
+    required this.goalAdjustmentPercent,
   });
 
   factory Targets.fromJson(Map<String, Object?> json) => Targets(
@@ -17,6 +21,8 @@ class Targets {
     maintenanceCalories: json['maintenance_calories'] as int,
     atMinimum: json['at_minimum'] as bool,
     aboveTestedAge: json['above_tested_age'] as bool,
+    goal: Goal.values.byName(json['goal'] as String),
+    goalAdjustmentPercent: json['goal_adjustment_percent'] as int,
   );
 
   final int calories;
@@ -28,4 +34,6 @@ class Targets {
 
   /// Older than the calorie formula was tested for, so the app warns once.
   final bool aboveTestedAge;
+  final Goal goal;
+  final int goalAdjustmentPercent;
 }

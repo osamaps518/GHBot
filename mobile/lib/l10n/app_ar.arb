@@ -107,13 +107,17 @@
       }
     }
   },
-  "goalAdjustment": "{goal, select, lose{أقل بـ 20%} maintain{بدون تغيير} gain{أكثر بـ 10%} other{}}",
+  "goalAdjustment": "{goal, select, lose{أقل بـ {percent}%} maintain{بدون تغيير} gain{أكثر بـ {percent}%} other{}}",
   "@goalAdjustment": {
     "description": "How the goal changes maintenance calories.",
     "placeholders": {
       "goal": {
         "type": "String",
         "description": "The goal code from the backend."
+      },
+      "percent": {
+        "type": "String",
+        "description": "Absolute whole percent from the backend, in Western digits."
       }
     }
   },

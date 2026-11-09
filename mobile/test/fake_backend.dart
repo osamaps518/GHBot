@@ -18,6 +18,8 @@ const exampleTargets = {
   'maintenance_calories': 2760,
   'at_minimum': false,
   'above_tested_age': false,
+  'goal': 'lose',
+  'goal_adjustment_percent': -20,
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, and targets.

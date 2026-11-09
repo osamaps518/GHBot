@@ -6,7 +6,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TypedDict
 
-from ghbot.profiles import ProfileSnapshot
+from ghbot.profiles import Goal, ProfileSnapshot
 
 
 class Targets(TypedDict):
@@ -17,6 +17,8 @@ class Targets(TypedDict):
     maintenance_calories: int
     at_minimum: bool
     above_tested_age: bool
+    goal: Goal
+    goal_adjustment_percent: int
 
 
 # Mifflin-St Jeor was tested on adults aged 19 to 78. Above that, the app
@@ -80,4 +82,8 @@ def calculate_targets(
         "maintenance_calories": _nearest_ten(maintenance),
         "at_minimum": at_minimum,
         "above_tested_age": profile.age > OLDEST_TESTED_AGE,
+        "goal": profile.goal,
+        "goal_adjustment_percent": _whole(
+            (GOAL_FACTORS[profile.goal] - Decimal("1")) * Decimal("100")
+        ),
     }

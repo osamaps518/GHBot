@@ -64,6 +64,12 @@ def target_for(sex, age, weight_kg, height_cm, activity_level, goal):
 def test_agreed_worked_examples(profile, expected):
     targets = target_for(*profile)
 
+    assert targets["goal"] == profile[-1]
+    assert (
+        targets["goal_adjustment_percent"]
+        == {"lose": -20, "maintain": 0, "gain": 10}[profile[-1]]
+    )
+
     assert (
         targets["calories"],
         targets["protein_g"],
@@ -89,6 +95,8 @@ def test_maintaining_weight_uses_rounded_calories_and_macros():
         "maintenance_calories": 2140,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 
@@ -103,6 +111,8 @@ def test_ties_round_half_up():
         "maintenance_calories": 2150,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 
@@ -139,6 +149,8 @@ def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
         "maintenance_calories": 3380,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 

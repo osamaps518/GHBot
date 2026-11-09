@@ -2,20 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
-import '../profiles/profile.dart';
 import 'targets.dart';
 
-/// The daily calorie and macro targets. [profile] gives the goal for the
-/// "How we calculated this" panel.
+/// The daily calorie and macro targets.
 class TargetsScreen extends StatelessWidget {
-  const TargetsScreen({
-    super.key,
-    required this.profile,
-    required this.targets,
-    required this.onEdit,
-  });
+  const TargetsScreen({super.key, required this.targets, required this.onEdit});
 
-  final Profile profile;
   final Targets targets;
   final VoidCallback onEdit;
 
@@ -34,7 +26,7 @@ class TargetsScreen extends StatelessWidget {
             ],
             _MacroCards(targets),
             const SizedBox(height: 12),
-            _HowWeCalculated(targets: targets, goal: profile.goal),
+            _HowWeCalculated(targets: targets),
           ],
         ),
       ),
@@ -149,10 +141,9 @@ class _MacroCards extends StatelessWidget {
 /// The "How we calculated this" panel: maintenance calories and the goal's
 /// adjustment.
 class _HowWeCalculated extends StatelessWidget {
-  const _HowWeCalculated({required this.targets, required this.goal});
+  const _HowWeCalculated({required this.targets});
 
   final Targets targets;
-  final Goal goal;
 
   @override
   Widget build(BuildContext context) {
@@ -171,8 +162,11 @@ class _HowWeCalculated extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _Row(
-            label: l10n.goalRow(goal.name),
-            value: l10n.goalAdjustment(goal.name),
+            label: l10n.goalRow(targets.goal.name),
+            value: l10n.goalAdjustment(
+              targets.goal.name,
+              '${targets.goalAdjustmentPercent.abs()}',
+            ),
           ),
         ],
       ),

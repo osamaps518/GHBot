@@ -118,6 +118,8 @@ void main() {
       'calories': 2760,
       'carbs_g': 401,
       'fat_g': 61,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
     };
     await _tapText(tester, english.goalName('maintain'));
     await _tapText(tester, english.calculateButton);
@@ -126,7 +128,7 @@ void main() {
     expect(jsonDecode(put.body), savedProfile(goal: 'maintain'));
     expect(find.text('2760'), findsNWidgets(2));
     expect(find.text(english.goalRow('maintain')), findsOneWidget);
-    expect(find.text(english.goalAdjustment('maintain')), findsOneWidget);
+    expect(find.text(english.goalAdjustment('maintain', '0')), findsOneWidget);
   });
 
   group('the form', () {
@@ -308,6 +310,8 @@ void main() {
         'maintenance_calories': 1320,
         'at_minimum': true,
         'above_tested_age': false,
+        'goal': 'lose',
+        'goal_adjustment_percent': -20,
       };
 
     await pumpApp(tester, backend, storedName: 'alice');

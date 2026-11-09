@@ -149,11 +149,7 @@ class _GhbotAppState extends State<GhbotApp> {
     _Stage.onboarding => ProfileFormScreen(onSubmit: _save),
     _Stage.targets when _targets!.aboveTestedAge && !_ageWarningSeen =>
       AgeWarningScreen(onUnderstood: _acceptAgeWarning),
-    _Stage.targets => TargetsScreen(
-      profile: _profile!,
-      targets: _targets!,
-      onEdit: _edit,
-    ),
+    _Stage.targets => TargetsScreen(targets: _targets!, onEdit: _edit),
     _Stage.failed => ErrorScreen(failure: _failure!, onRetry: _load),
   };
 

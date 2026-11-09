@@ -353,8 +353,8 @@ abstract class AppLocalizations {
   /// How the goal changes maintenance calories.
   ///
   /// In ar, this message translates to:
-  /// **'{goal, select, lose{أقل بـ 20%} maintain{بدون تغيير} gain{أكثر بـ 10%} other{}}'**
-  String goalAdjustment(String goal);
+  /// **'{goal, select, lose{أقل بـ {percent}%} maintain{بدون تغيير} gain{أكثر بـ {percent}%} other{}}'**
+  String goalAdjustment(String goal, String percent);
 
   /// Shown when the target was raised to the minimum, from #8 answer 13.
   ///
