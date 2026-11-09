@@ -17,6 +17,7 @@ class AppFlow extends ChangeNotifier {
   final AuthSession _session;
   final ProfilesApi _profilesApi;
   final TargetsApi _targetsApi;
+  // Kept on the phone, so after a reinstall the warning shows once more.
   final _preferences = SharedPreferencesAsync();
   static const _ageWarningSeenKey = 'age_warning_seen';
 

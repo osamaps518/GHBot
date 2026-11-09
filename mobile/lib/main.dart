@@ -46,7 +46,10 @@ class GhbotApp extends StatefulWidget {
   State<GhbotApp> createState() => _GhbotAppState();
 }
 
-/// Picks the screen from the app flow and owns Edit navigation.
+/// Picks the screen from the app flow and owns Edit navigation: no stored
+/// name → sign-in, no profile → onboarding, otherwise the targets. Users older
+/// than the formula was tested for see a warning before the targets, until
+/// they accept it.
 class _GhbotAppState extends State<GhbotApp> {
   late final _client = ApiClient(
     client: widget.client,
@@ -56,6 +59,7 @@ class _GhbotAppState extends State<GhbotApp> {
   late final _profilesApi = ProfilesApi(_session);
   late final _targetsApi = TargetsApi(_session);
   late final _flow = AppFlow(_session, _profilesApi, _targetsApi);
+  // Edit my info opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
 
   @override

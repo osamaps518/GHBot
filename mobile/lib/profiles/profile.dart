@@ -46,6 +46,10 @@ class ProfileDraft {
 }
 
 /// Checks a draft using the server's saved-profile rules as of a UTC date.
+///
+/// Same ranges as the backend (profiles/router.py) and age 18 to 100 with the
+/// birthday on the last day of the birth month (profiles/application.py). The
+/// backend stays the authority; this only gives quicker, clearer errors.
 Set<ProfileField> validateProfileDraft(ProfileDraft draft, DateTime today) {
   final errors = <ProfileField>{};
   final month = draft.birthMonth;
