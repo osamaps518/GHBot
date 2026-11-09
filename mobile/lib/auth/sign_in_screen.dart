@@ -18,6 +18,9 @@ class _SignInScreenState extends State<SignInScreen> {
   final _name = TextEditingController();
   var _busy = false;
 
+  bool get _canSubmit =>
+      !_busy && _name.text.trim().isNotEmpty && _name.text.trim().length <= 255;
+
   @override
   void dispose() {
     _name.dispose();
@@ -25,6 +28,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_canSubmit) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     setState(() => _busy = true);
@@ -45,7 +49,7 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final text = Theme.of(context).textTheme;
-    final canSubmit = !_busy && _name.text.trim().isNotEmpty;
+    final canSubmit = _canSubmit;
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -64,6 +68,7 @@ class _SignInScreenState extends State<SignInScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: _name,
+              maxLength: 255,
               autofocus: true,
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),

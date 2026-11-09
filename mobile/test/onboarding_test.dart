@@ -123,6 +123,19 @@ void main() {
     }
   });
 
+  testWidgets('sign-in Retry does not send an empty name', (tester) async {
+    final backend = FakeBackend()..offline = true;
+    await pumpApp(tester, backend);
+    await _type(tester, find.byType(TextField), 'alice');
+    await _tapText(tester, english.continueButton);
+    expect(backend.requestsTo('POST', '/dev/token'), hasLength(1));
+
+    await _type(tester, find.byType(TextField), '');
+    await _tapText(tester, english.retry);
+
+    expect(backend.requestsTo('POST', '/dev/token'), hasLength(1));
+  });
+
   testWidgets('reopening goes straight to the targets, and editing updates '
       'them', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
