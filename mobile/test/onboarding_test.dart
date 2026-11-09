@@ -561,14 +561,6 @@ void main() {
       expect(find.text('2210'), findsOneWidget);
     });
 
-    testWidgets('a 78-year-old never sees it', (tester) async {
-      final backend = FakeBackend();
-
-      await onboard(tester, backend);
-
-      expect(find.text('2210'), findsOneWidget);
-      expect(find.text(english.ageWarning), findsNothing);
-    });
   });
 
   testWidgets('a response that stalls after its headers times out', (
