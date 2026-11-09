@@ -146,6 +146,15 @@ directly.
 
 A module's routes live in `router.py`.
 
+For backend modules, `router.py` translates HTTP requests and responses; it holds
+no queries or rules. `application.py` holds use cases, including their queries and
+rules, without importing FastAPI. It passes other modules plain values rather
+than database rows. Split it only when it grows beyond about one screen.
+Module errors live in `exceptions.py` as plain Python exceptions. The module's
+HTTP files translate those errors; a caller of another module's application
+decides what an error means for its own route. Keep only the files a module needs.
+This rule does not cover the mobile app.
+
 ---
 
 ## 11. Mobile app setup
