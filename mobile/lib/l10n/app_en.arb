@@ -43,7 +43,6 @@
   "maintenanceCalories": "Maintenance calories",
   "goalRow": "{goal, select, lose{Goal: lose weight} maintain{Goal: maintain weight} gain{Goal: gain weight} other{}}",
   "goalAdjustment": "{goal, select, lose{{percent}% less} maintain{No change} gain{{percent}% more} other{}}",
-  "@goalAdjustment": {"placeholders": {"goal": {"type": "String"}, "percent": {"type": "String"}}},
   "minimumNote": "We've set your target at the safe minimum. For a lower intake, talk to a doctor or dietitian.",
   "raisedToMinimum": "Raised to the safe minimum",
   "editMyInfo": "Edit my info",
