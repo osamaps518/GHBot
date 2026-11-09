@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from ghbot.auth.application import find_or_create_user
@@ -9,22 +9,19 @@ from ghbot.auth.models import User
 from ghbot.auth.provider import AuthProvider
 from ghbot.database import SessionDependency
 
+bearer = HTTPBearer()
+
 
 async def get_current_user(
     request: Request,
     session: SessionDependency,
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
 ) -> User:
-    unauthorized = HTTPException(
-        status_code=401,
-        detail="Not authenticated",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     provider: AuthProvider = request.app.state.auth_provider
     try:
         subject = provider.verify_token(credentials.credentials)
     except InvalidToken:
-        raise unauthorized from None
+        raise bearer.make_not_authenticated_error() from None
 
     return await find_or_create_user(session, subject)
 
