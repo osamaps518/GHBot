@@ -4,17 +4,15 @@ Targets are calculated on every request and never stored. The rules come from
 #8; see decision 15 in docs/decisions.md.
 
 For other modules:
-    calculate_targets: turns sex, age, weight, height, activity level and goal
-        into daily calories, protein, fat and carbs (whole numbers), plus
-        maintenance calories, whether the calorie minimum was applied, and
-        whether the age is above the formula's tested range. No database or date inside: the caller passes the age.
+    calculate_targets: turns a saved profile value into daily calories, protein,
+        fat and carbs (whole numbers), plus maintenance calories and flags.
 
 For wiring the app (main.py):
     router: GET /me/targets, the signed-in user's targets from their saved
         profile, or 404 if they have none.
 """
 
-from ghbot.targets.calculation import calculate_targets
+from ghbot.targets.application import calculate_targets
 from ghbot.targets.router import router
 
 __all__ = ["calculate_targets", "router"]

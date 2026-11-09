@@ -6,6 +6,8 @@
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TypedDict
 
+from ghbot.profiles import Goal, ProfileSnapshot
+
 
 class Targets(TypedDict):
     calories: int
@@ -15,6 +17,8 @@ class Targets(TypedDict):
     maintenance_calories: int
     at_minimum: bool
     above_tested_age: bool
+    goal: Goal
+    goal_adjustment_percent: int
 
 
 # Mifflin-St Jeor was tested on adults aged 19 to 78. Above that, the app
@@ -44,24 +48,19 @@ def _nearest_ten(value: Decimal) -> int:
 
 
 def calculate_targets(
-    sex: str,
-    age: int,
-    weight_kg: float,
-    height_cm: float,
-    activity_level: str,
-    goal: str,
+    profile: ProfileSnapshot,
 ) -> Targets:
-    weight = Decimal(str(weight_kg))
-    height = Decimal(str(height_cm))
+    weight = Decimal(str(profile.weight_kg))
+    height = Decimal(str(profile.height_cm))
     bmr = (
         Decimal("10") * weight
         + Decimal("6.25") * height
-        - Decimal("5") * age
-        + (Decimal("5") if sex == "male" else Decimal("-161"))
+        - Decimal("5") * profile.age
+        + (Decimal("5") if profile.sex == "male" else Decimal("-161"))
     )
-    maintenance = bmr * ACTIVITY_FACTORS[activity_level]
-    proposed = maintenance * GOAL_FACTORS[goal]
-    minimum = Decimal("1500") if sex == "male" else Decimal("1200")
+    maintenance = bmr * ACTIVITY_FACTORS[profile.activity_level]
+    proposed = maintenance * GOAL_FACTORS[profile.goal]
+    minimum = Decimal("1500") if profile.sex == "male" else Decimal("1200")
     at_minimum = proposed < minimum
     calories = _nearest_ten(max(proposed, minimum))
 
@@ -82,5 +81,9 @@ def calculate_targets(
         "carbs_g": _whole(carbs),
         "maintenance_calories": _nearest_ten(maintenance),
         "at_minimum": at_minimum,
-        "above_tested_age": age > OLDEST_TESTED_AGE,
+        "above_tested_age": profile.age > OLDEST_TESTED_AGE,
+        "goal": profile.goal,
+        "goal_adjustment_percent": _whole(
+            (GOAL_FACTORS[profile.goal] - Decimal("1")) * Decimal("100")
+        ),
     }

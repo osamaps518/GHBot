@@ -25,11 +25,15 @@ def create_app() -> FastAPI:
         app: FastAPI,
     ) -> AsyncIterator[dict[str, async_sessionmaker[AsyncSession]]]:
         # The engine connects lazily, so the app starts even if Postgres is down.
-        engine = create_async_engine(settings.database_url.get_secret_value())
+        engine = create_async_engine(
+            settings.database_url.get_secret_value(), hide_parameters=True
+        )
         # Without expire_on_commit=False, reading a field after commit would
         # trigger a hidden query, which async SQLAlchemy can't do.
-        yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
-        await engine.dispose()
+        try:
+            yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
+        finally:
+            await engine.dispose()
 
     app = FastAPI(title="GHBot", lifespan=lifespan)
     provider = DevAuthProvider(settings.dev_jwt_secret.get_secret_value())
@@ -43,11 +47,16 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        # Same as FastAPI's default, except NaN and Infinity, which the JSON
-        # parser accepts but JSON can't hold. json.dumps gives the text sent.
+        # Same as FastAPI's default, except for values the JSON parser accepts
+        # but the response can't hold: NaN and Infinity (json.dumps gives the
+        # text that was sent), and lone surrogates like \ud800, which UTF-8
+        # can't encode (backslashreplace sends them back as text).
         errors = jsonable_encoder(
             exc.errors(),
-            custom_encoder={float: lambda x: x if math.isfinite(x) else json.dumps(x)},
+            custom_encoder={
+                float: lambda x: x if math.isfinite(x) else json.dumps(x),
+                str: lambda x: x.encode("utf-8", "backslashreplace").decode("utf-8"),
+            },
         )
         return JSONResponse(status_code=422, content={"detail": errors})
 

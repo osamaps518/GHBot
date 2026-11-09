@@ -193,11 +193,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String goalAdjustment(String goal) {
+  String goalAdjustment(String goal, String percent) {
     String _temp0 = intl.Intl.selectLogic(goal, {
-      'lose': '20% less',
+      'lose': '$percent% less',
       'maintain': 'No change',
-      'gain': '10% more',
+      'gain': '$percent% more',
       'other': '',
     });
     return '$_temp0';
@@ -206,6 +206,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get minimumNote =>
       'We\'ve set your target at the safe minimum. For a lower intake, talk to a doctor or dietitian.';
+
+  @override
+  String get raisedToMinimum => 'Raised to the safe minimum';
 
   @override
   String get editMyInfo => 'Edit my info';

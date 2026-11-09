@@ -113,6 +113,10 @@ Not needed for the first version (basic CRUD). We decide when we build the coach
 - One database session per request. It never commits by itself: code that writes data commits explicitly.
 - Migrations run on purpose (`alembic upgrade head`), never when the app starts.
 - `/health` only says the API process is running. It doesn't check the database.
+- The engine hides bound parameters in errors and logs, because profile values
+  include health data. Before adding a CHECK or NOT NULL constraint on health
+  data, handle `DBAPIError` by logging only the error type and SQL: PostgreSQL
+  can put a rejected row's values in its own error message.
 
 ---
 
@@ -136,7 +140,7 @@ first requests. Our IDs are UUIDv7; future tables reference these IDs.
 
 ## 10. Module layout
 
-**Status:** Accepted, 2026-10-21 (#6)
+**Status:** Accepted, 2026-10-21 (#6). Extended by 19 for the files inside a backend module.
 
 Each module's `__init__.py` is its public API: it re-exports what other code may
 use, lists it in `__all__`, and says in its docstring what each name is for. Other
@@ -157,7 +161,9 @@ A module's routes live in `router.py`.
 - **Translations with Flutter's built-in `gen-l10n`.** Arabic (`app_ar.arb`) is the template, English sits alongside. No user-facing text in Dart code.
 - **Language rule:** English if the phone is in English, Arabic otherwise. Arabic is first in `supportedLocales`, and Flutter's default resolution falls back to the first entry. No in-app switch yet (question 9 in #8).
 - **Backend address from `mobile/config.json`,** passed with `--dart-define-from-file` and not committed, like `backend/.env`. The app refuses to start without it instead of guessing a default.
-- **Plain HTTP only in debug builds,** set in the debug Android manifest, so release builds can't talk to the backend unencrypted.
+- **Plain HTTP only in debug and profile builds.** Release startup checks that the configured
+  backend address begins with `https://` and has a host. Dart's HTTP client does
+  not use Android's cleartext manifest setting, so the check lives in Dart.
 
 ---
 
@@ -190,6 +196,12 @@ youngest possible birthday and the server's UTC date. Saved profiles remain
 readable after the user turns 81. Checks that need more than the request body
 (today's date, the database) return the same 422 shape as the request model,
 with their own `type` code.
+
+Reads use a response model without save ranges. Narrowing a range later does
+not strand previously saved rows: the app can show them and flags an invalid
+value when the user edits. Removing or renaming a stored text code requires a
+migration mapping old codes to new ones, because the app cannot parse a code
+it does not know.
 
 We considered putting profile fields on `users`, but that is the auth module's
 identity table. Native Postgres enums would need a hand-written migration for
@@ -269,10 +281,30 @@ development build only.
 
 Folders in `mobile/lib/` mirror the backend modules: `auth`, `profiles`, and
 `targets`. `core/` holds the API client, failures, error views, and theme that
-all modules use. The root widget in `main.dart` picks the screen and coordinates
-calls across modules.
+all modules use. A plain `AppFlow` notifier coordinates sign-in, loading, saves,
+and the age warning. The root widget in `main.dart` listens to it, picks the
+screen, and owns Edit navigation. This keeps asynchronous results from an older
+save from replacing a newer one.
 
 We considered Flutter's [case study layout](https://docs.flutter.dev/app-architecture/case-study)
-with UI by feature, data by type, view models, and repositories. Three screens
-using `setState` do not need those layers. Revisit this if we adopt a state
-management package.
+with UI by feature, data by type, view models, and repositories. One flow notifier
+handles the cross-screen state without adding repositories or a state management
+package. Screens still own their local form state.
+
+---
+
+## 19. Backend module files
+
+**Status:** Accepted, 2026-11-09 (#45). Extends 10.
+
+Every backend module splits its code the same way:
+- `router.py` turns HTTP requests into calls and the results back into responses. It holds no queries and no rules.
+- `application.py` holds the module's use cases with their queries and rules (for example, saving a profile checks the age, writes the row and commits). It never imports FastAPI. Other modules get plain values from it, never its database rows. Split it (for example, a `queries.py`) only when it grows past about one screen.
+- `exceptions.py` holds the module's errors as plain Python exceptions, with no HTTP status.
+- `dependencies.py` holds the route parameters other modules use, such as `CurrentUser` and `SavedProfile`.
+
+The module's own HTTP files, `router.py` and `dependencies.py`, turn its errors into HTTP answers. Other modules use those parameters and let them answer; they don't raise their own copy of the error. A module that calls another module's `application` and gets one of its errors decides what that means for its own route. There is no shared base class and no global handler. A module has only the files it needs.
+
+This rule covers the backend only, not the mobile app.
+
+We considered a shared `AppError` base class with one global handler, and a try/except in every route. This rule keeps FastAPI's own 401 and 422 answers and keeps HTTP codes out of the logic.

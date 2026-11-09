@@ -20,3 +20,8 @@ class ServerFailure extends ApiFailure {
   const ServerFailure(this.statusCode);
   final int statusCode;
 }
+
+/// A response did not match the backend's JSON contract.
+class UnexpectedResponseFailure extends ApiFailure {
+  const UnexpectedResponseFailure();
+}

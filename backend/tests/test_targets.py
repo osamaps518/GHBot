@@ -1,10 +1,31 @@
 from datetime import date
-from uuid import uuid4
+from typing import get_args
 
 import pytest
 
-from ghbot.profiles.router import utc_today
+from ghbot.profiles import ActivityLevel, Goal, ProfileSnapshot, utc_today
 from ghbot.targets import calculate_targets
+from ghbot.targets.application import ACTIVITY_FACTORS, GOAL_FACTORS
+
+
+def test_every_profile_code_has_a_target_factor():
+    assert set(get_args(ActivityLevel)) == set(ACTIVITY_FACTORS)
+    assert set(get_args(Goal)) == set(GOAL_FACTORS)
+
+
+def target_for(sex, age, weight_kg, height_cm, activity_level, goal):
+    return calculate_targets(
+        ProfileSnapshot(
+            birth_year=2026 - age,
+            birth_month=1,
+            sex=sex,
+            height_cm=height_cm,
+            weight_kg=weight_kg,
+            activity_level=activity_level,
+            goal=goal,
+            age=age,
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -38,7 +59,13 @@ from ghbot.targets import calculate_targets
     ],
 )
 def test_agreed_worked_examples(profile, expected):
-    targets = calculate_targets(*profile)
+    targets = target_for(*profile)
+
+    assert targets["goal"] == profile[-1]
+    assert (
+        targets["goal_adjustment_percent"]
+        == {"lose": -20, "maintain": 0, "gain": 10}[profile[-1]]
+    )
 
     assert (
         targets["calories"],
@@ -55,7 +82,7 @@ def test_agreed_worked_examples(profile, expected):
 
 
 def test_maintaining_weight_uses_rounded_calories_and_macros():
-    targets = calculate_targets("male", 30, 80, 180, "sedentary", "maintain")
+    targets = target_for("male", 30, 80, 180, "sedentary", "maintain")
 
     assert targets == {
         "calories": 2140,
@@ -65,11 +92,13 @@ def test_maintaining_weight_uses_rounded_calories_and_macros():
         "maintenance_calories": 2140,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 
 def test_ties_round_half_up():
-    targets = calculate_targets("male", 31, 80, 182, "sedentary", "maintain")
+    targets = target_for("male", 31, 80, 182, "sedentary", "maintain")
 
     assert targets == {
         "calories": 2150,
@@ -79,11 +108,13 @@ def test_ties_round_half_up():
         "maintenance_calories": 2150,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 
 def test_get_targets_without_profile_returns_404(client, auth_headers):
-    response = client.get("/me/targets", headers=auth_headers(str(uuid4())))
+    response = client.get("/me/targets", headers=auth_headers())
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Profile not found"}
@@ -91,7 +122,7 @@ def test_get_targets_without_profile_returns_404(client, auth_headers):
 
 def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
     app.dependency_overrides[utc_today] = lambda: date(2026, 10, 30)
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {
         "birth_year": 1996,
         "birth_month": 10,
@@ -115,6 +146,8 @@ def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
         "maintenance_calories": 3380,
         "at_minimum": False,
         "above_tested_age": False,
+        "goal": "maintain",
+        "goal_adjustment_percent": 0,
     }
 
 
@@ -130,7 +163,7 @@ def test_get_targets_flags_ages_above_78(
 ):
     # The birthday is the last day of the birth month: 31 October.
     app.dependency_overrides[utc_today] = lambda: today
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {
         "birth_year": 1947,
         "birth_month": 10,

@@ -18,6 +18,8 @@ const exampleTargets = {
   'maintenance_calories': 2760,
   'at_minimum': false,
   'above_tested_age': false,
+  'goal': 'lose',
+  'goal_adjustment_percent': -20,
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, and targets.
@@ -38,6 +40,9 @@ class FakeBackend {
   /// While set, `PUT /me/profile` waits for it before answering, so a test
   /// can act while a save is pending.
   Completer<void>? holdSave;
+
+  /// Holds one targets response with the values captured when requested.
+  Completer<void>? holdNextTargets;
 
   final _validTokens = <String>{};
   var _tokensIssued = 0;
@@ -78,7 +83,14 @@ class FakeBackend {
         profile = (jsonDecode(request.body) as Map).cast<String, Object?>();
         return _json(profile, created ? 201 : 200);
       case 'GET /me/targets':
-        return profile == null ? _notFound() : _json(targets);
+        if (profile == null) return _notFound();
+        final snapshot = Map<String, Object?>.of(targets);
+        final hold = holdNextTargets;
+        if (hold != null) {
+          holdNextTargets = null;
+          await hold.future;
+        }
+        return _json(snapshot);
     }
     return _notFound();
   }
@@ -109,12 +121,16 @@ Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
+  bool ageWarningSeen = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.reset);
   SharedPreferencesAsyncPlatform.instance =
-      InMemorySharedPreferencesAsync.withData({'dev_subject': ?storedName});
+      InMemorySharedPreferencesAsync.withData({
+        'dev_subject': ?storedName,
+        if (ageWarningSeen) 'age_warning_seen': true,
+      });
 
   await tester.pumpWidget(
     GhbotApp(client: backend.client, apiBaseUrl: 'http://backend.test'),

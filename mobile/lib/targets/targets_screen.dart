@@ -2,20 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
-import '../profiles/profile.dart';
 import 'targets.dart';
 
-/// The daily calorie and macro targets. [profile] gives the goal for the
-/// "How we calculated this" panel.
+/// The daily calorie and macro targets.
 class TargetsScreen extends StatelessWidget {
-  const TargetsScreen({
-    super.key,
-    required this.profile,
-    required this.targets,
-    required this.onEdit,
-  });
+  const TargetsScreen({super.key, required this.targets, required this.onEdit});
 
-  final Profile profile;
   final Targets targets;
   final VoidCallback onEdit;
 
@@ -26,7 +18,10 @@ class TargetsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
           children: [
-            _CaloriesHero(calories: targets.calories),
+            _CaloriesHero(
+              calories: targets.calories,
+              aboveTestedAge: targets.aboveTestedAge,
+            ),
             const SizedBox(height: 12),
             if (targets.atMinimum) ...[
               const _MinimumNote(),
@@ -34,7 +29,7 @@ class TargetsScreen extends StatelessWidget {
             ],
             _MacroCards(targets),
             const SizedBox(height: 12),
-            _HowWeCalculated(targets: targets, goal: profile.goal),
+            _HowWeCalculated(targets: targets),
           ],
         ),
       ),
@@ -53,9 +48,10 @@ class TargetsScreen extends StatelessWidget {
 
 /// The day's calories, large, on the colored card at the top.
 class _CaloriesHero extends StatelessWidget {
-  const _CaloriesHero({required this.calories});
+  const _CaloriesHero({required this.calories, required this.aboveTestedAge});
 
   final int calories;
+  final bool aboveTestedAge;
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +72,33 @@ class _CaloriesHero extends StatelessWidget {
             style: text.titleMedium!.copyWith(color: colors.heroMuted),
           ),
           const SizedBox(height: 6),
-          Text(
-            '$calories',
-            style: text.displayLarge!.copyWith(color: colors.heroNumber),
+          Row(
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    '$calories',
+                    style: text.displayLarge!.copyWith(
+                      color: colors.heroNumber,
+                    ),
+                  ),
+                ),
+              ),
+              if (aboveTestedAge)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 8),
+                  child: Tooltip(
+                    message: l10n.ageWarning,
+                    child: Icon(
+                      Icons.warning_amber_rounded,
+                      size: 20,
+                      color: colors.heroNumber,
+                    ),
+                  ),
+                ),
+            ],
           ),
           Text(
             l10n.caloriesPerDay,
@@ -149,10 +169,9 @@ class _MacroCards extends StatelessWidget {
 /// The "How we calculated this" panel: maintenance calories and the goal's
 /// adjustment.
 class _HowWeCalculated extends StatelessWidget {
-  const _HowWeCalculated({required this.targets, required this.goal});
+  const _HowWeCalculated({required this.targets});
 
   final Targets targets;
-  final Goal goal;
 
   @override
   Widget build(BuildContext context) {
@@ -171,9 +190,16 @@ class _HowWeCalculated extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _Row(
-            label: l10n.goalRow(goal.name),
-            value: l10n.goalAdjustment(goal.name),
+            label: l10n.goalRow(targets.goal.name),
+            value: l10n.goalAdjustment(
+              targets.goal.name,
+              '${targets.goalAdjustmentPercent.abs()}',
+            ),
           ),
+          if (targets.atMinimum) ...[
+            const SizedBox(height: 8),
+            _Row(label: l10n.raisedToMinimum, value: '${targets.calories}'),
+          ],
         ],
       ),
     );
@@ -256,12 +282,7 @@ class _Row extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          value,
-          style: theme.textTheme.bodyLarge!.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(value, style: targetsRowValueStyle(theme)),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,6 +53,17 @@ Future<void> _tapText(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _restartApp(WidgetTester tester, FakeBackend backend) async {
+  await tester.pumpWidget(
+    GhbotApp(
+      key: UniqueKey(),
+      client: backend.client,
+      apiBaseUrl: 'http://backend.test',
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 /// Fills in the form with [savedProfile]'s values, using [l10n]'s labels.
 Future<void> _fillForm(
   WidgetTester tester,
@@ -99,6 +111,53 @@ void main() {
 
   // The other tests run with an English (en_US) phone, the default.
 
+  testWidgets('only the name is stored and tokens stay in backend headers', (
+    tester,
+  ) async {
+    final backend = FakeBackend();
+    await pumpApp(tester, backend);
+    await _type(tester, find.byType(TextField), 'alice');
+    await _tapText(tester, english.continueButton);
+    await _fillForm(tester, english);
+    await _tapText(tester, english.calculateButton);
+
+    expect(await SharedPreferencesAsync().getKeys(), {'dev_subject'});
+    for (final request in backend.requests) {
+      expect(request.url.host, 'backend.test');
+      expect(request.url.toString(), isNot(contains('token-alice-1')));
+      expect(request.body, isNot(contains('token-alice-1')));
+      if (request.url.path == '/dev/token') {
+        expect(request.headers, isNot(contains('authorization')));
+      } else {
+        expect(request.headers['authorization'], 'Bearer token-alice-1');
+      }
+    }
+  });
+
+  testWidgets('sign-in Retry does not send an empty name', (tester) async {
+    final backend = FakeBackend()..offline = true;
+    await pumpApp(tester, backend);
+    await _type(tester, find.byType(TextField), 'alice');
+    await _tapText(tester, english.continueButton);
+    expect(backend.requestsTo('POST', '/dev/token'), hasLength(1));
+
+    await _type(tester, find.byType(TextField), '');
+    await _tapText(tester, english.retry);
+
+    expect(backend.requestsTo('POST', '/dev/token'), hasLength(1));
+  });
+
+  testWidgets('sign-in counts a name in characters, as the backend does', (
+    tester,
+  ) async {
+    await pumpApp(tester, FakeBackend());
+    // 200 characters, but 400 UTF-16 units.
+    await _type(tester, find.byType(TextField), '😀' * 200);
+
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNotNull);
+  });
+
   testWidgets('reopening goes straight to the targets, and editing updates '
       'them', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
@@ -118,6 +177,8 @@ void main() {
       'calories': 2760,
       'carbs_g': 401,
       'fat_g': 61,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
     };
     await _tapText(tester, english.goalName('maintain'));
     await _tapText(tester, english.calculateButton);
@@ -126,7 +187,7 @@ void main() {
     expect(jsonDecode(put.body), savedProfile(goal: 'maintain'));
     expect(find.text('2760'), findsNWidgets(2));
     expect(find.text(english.goalRow('maintain')), findsOneWidget);
-    expect(find.text(english.goalAdjustment('maintain')), findsOneWidget);
+    expect(find.text(english.goalAdjustment('maintain', '0')), findsOneWidget);
   });
 
   group('the form', () {
@@ -243,6 +304,74 @@ void main() {
     });
   });
 
+  testWidgets('an older save cannot replace a newer edit', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
+    };
+    final firstReply = Completer<void>();
+    backend.holdNextTargets = firstReply;
+    await tester.tap(find.text(english.calculateButton));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('gain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'gain',
+      'goal_adjustment_percent': 10,
+    };
+    await _tapText(tester, english.calculateButton);
+    expect(find.text(english.goalRow('gain')), findsOneWidget);
+
+    firstReply.complete();
+    await tester.pumpAndSettle();
+    expect(find.text(english.goalRow('gain')), findsOneWidget);
+  });
+
+  testWidgets('an older save still shows when a newer one fails', (
+    tester,
+  ) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
+    };
+    final firstReply = Completer<void>();
+    backend.holdNextTargets = firstReply;
+    await tester.tap(find.text(english.calculateButton));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('gain'));
+    backend.offline = true;
+    await _tapText(tester, english.calculateButton);
+    expect(find.text(english.retry), findsOneWidget);
+    backend.offline = false;
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    firstReply.complete();
+    await tester.pumpAndSettle();
+    expect(backend.profile!['goal'], 'maintain');
+    expect(find.text(english.goalRow('maintain')), findsOneWidget);
+  });
+
   testWidgets('gets a new token and retries once after a 401', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
@@ -296,6 +425,54 @@ void main() {
     expect(find.text(english.signInTitle), findsNothing);
   });
 
+  testWidgets('TLS handshake failure shows the connection error', (
+    tester,
+  ) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    backend.intercept = (request) => throw const HandshakeException();
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorConnection), findsOneWidget);
+  });
+
+  testWidgets('malformed targets show an error with Retry', (tester) async {
+    final backend = FakeBackend()
+      ..profile = savedProfile()
+      ..targets = {...exampleTargets, 'calories': 1850.0};
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.retry), findsOneWidget);
+  });
+
+  testWidgets('malformed 422 detail shows an error with Retry', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    backend.intercept = (request) => request.url.path == '/me/targets'
+        ? http.Response('{"detail":"invalid"}', 422)
+        : null;
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.retry), findsOneWidget);
+  });
+
+  testWidgets('HTML after saving shows an error snackbar', (tester) async {
+    final backend = FakeBackend();
+    await pumpApp(tester, backend, storedName: 'alice');
+    await _fillForm(tester, english);
+    backend.intercept = (request) => request.method == 'PUT'
+        ? http.Response('<html>bad gateway</html>', 200)
+        : null;
+
+    await _tapText(tester, english.calculateButton);
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.profileTitle), findsOneWidget);
+  });
+
   testWidgets('explains a target raised to the minimum', (tester) async {
     // Worked example C from #8: female, 45, 52 kg, 155 cm, sedentary, lose.
     final backend = FakeBackend()
@@ -308,15 +485,34 @@ void main() {
         'maintenance_calories': 1320,
         'at_minimum': true,
         'above_tested_age': false,
+        'goal': 'lose',
+        'goal_adjustment_percent': -20,
       };
 
     await pumpApp(tester, backend, storedName: 'alice');
 
-    expect(find.text('1200'), findsOneWidget);
+    expect(find.text('1200'), findsNWidgets(2));
     expect(find.text(english.minimumNote), findsOneWidget);
+    expect(find.text(english.raisedToMinimum), findsOneWidget);
   });
 
   group('age warning', () {
+    testWidgets('warning icon stays beside calories after acknowledgement', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice', ageWarningSeen: true);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    });
+
+    testWidgets('no warning icon for ages in the tested range', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+    });
+
     // The backend decides who is above the tested age, so the form's
     // values don't matter here.
     Future<void> onboard(WidgetTester tester, FakeBackend backend) async {
@@ -340,6 +536,10 @@ void main() {
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
+      expect(await SharedPreferencesAsync().getKeys(), {
+        'dev_subject',
+        'age_warning_seen',
+      });
     });
 
     testWidgets('someone who turns 79 sees it after editing their info', (
@@ -374,14 +574,7 @@ void main() {
 
       // A new key makes a new app, as after closing it. What the app stored
       // on the phone stays.
-      await tester.pumpWidget(
-        GhbotApp(
-          key: UniqueKey(),
-          client: backend.client,
-          apiBaseUrl: 'http://backend.test',
-        ),
-      );
-      await tester.pumpAndSettle();
+      await _restartApp(tester, backend);
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
@@ -401,14 +594,7 @@ void main() {
       final warning = tester.element(find.text(english.ageWarning));
       expect(Navigator.of(warning).canPop(), isFalse);
 
-      await tester.pumpWidget(
-        GhbotApp(
-          key: UniqueKey(),
-          client: backend.client,
-          apiBaseUrl: 'http://backend.test',
-        ),
-      );
-      await tester.pumpAndSettle();
+      await _restartApp(tester, backend);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -416,15 +602,6 @@ void main() {
       await _tapText(tester, english.understandButton);
 
       expect(find.text('2210'), findsOneWidget);
-    });
-
-    testWidgets('a 78-year-old never sees it', (tester) async {
-      final backend = FakeBackend();
-
-      await onboard(tester, backend);
-
-      expect(find.text('2210'), findsOneWidget);
-      expect(find.text(english.ageWarning), findsNothing);
     });
   });
 

@@ -67,6 +67,10 @@ const _tangerine = Color(0xFFFF7A1A);
 const _offWhite = Color(0xFFF2F2F0);
 const _darkCard = Color(0xFF1D1D20);
 
+/// The emphasized value in a targets explanation row.
+TextStyle targetsRowValueStyle(ThemeData theme) =>
+    theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
+
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
   final base = ThemeData(colorScheme: colors, fontFamily: 'Rubik');
 

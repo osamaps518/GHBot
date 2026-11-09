@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
+import '../core/api_failure.dart';
 
 /// Owns dev sign-in and the token for authorized calls.
 ///
@@ -31,7 +32,21 @@ class AuthSession {
     _token = Future.value(token);
   }
 
-  Future<http.Response> sendAuthorized(
+  Future<T?> get<T>(
+    String path,
+    T Function(Map<String, Object?>) parse, {
+    bool absentOn404 = false,
+  }) async {
+    final response = await _sendAuthorized('GET', path);
+    if (response.statusCode == 404 && absentOn404) return null;
+    return _parse(() => parse(_client.decode(response)));
+  }
+
+  Future<void> put(String path, Object body) async {
+    _client.decode(await _sendAuthorized('PUT', path, body: body));
+  }
+
+  Future<http.Response> _sendAuthorized(
     String method,
     String path, {
     Object? body,
@@ -54,12 +69,23 @@ class AuthSession {
     );
   }
 
-  Future<String> _currentToken() =>
-      _token ??= _requestToken(_subject!)
-          .catchError((Object error, StackTrace stack) {
-            _token = null;
-            Error.throwWithStackTrace(error, stack);
-          });
+  Future<String> _currentToken() {
+    final current = _token;
+    if (current != null) return current;
+    late final Future<String> pending;
+    pending =
+        _requestToken(
+          _subject ??
+              (throw StateError(
+                'Sign in before making an authorized request.',
+              )),
+        ).catchError((Object error, StackTrace stack) {
+          if (identical(_token, pending)) _token = null;
+          Error.throwWithStackTrace(error, stack);
+        });
+    _token = pending;
+    return pending;
+  }
 
   Future<String> _requestToken(String subject) async {
     final response = await _client.send(
@@ -67,6 +93,16 @@ class AuthSession {
       '/dev/token',
       body: {'subject': subject},
     );
-    return _client.decode(response)['access_token'] as String;
+    return _parse(() => _client.decode(response)['access_token'] as String);
+  }
+
+  T _parse<T>(T Function() parse) {
+    try {
+      return parse();
+    } on ApiFailure {
+      rethrow;
+    } on Object {
+      throw const UnexpectedResponseFailure();
+    }
   }
 }
