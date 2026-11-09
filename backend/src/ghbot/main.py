@@ -47,8 +47,10 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        # Same as FastAPI's default, except NaN and Infinity, which the JSON
-        # parser accepts but JSON can't hold. json.dumps gives the text sent.
+        # Same as FastAPI's default, except for values the JSON parser accepts
+        # but the response can't hold: NaN and Infinity (json.dumps gives the
+        # text that was sent), and lone surrogates like \ud800, which UTF-8
+        # can't encode (backslashreplace sends them back as text).
         errors = jsonable_encoder(
             exc.errors(),
             custom_encoder={
