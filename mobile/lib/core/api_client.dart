@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -36,6 +37,8 @@ class ApiClient {
     } on TimeoutException {
       throw const ConnectionFailure();
     } on http.ClientException {
+      throw const ConnectionFailure();
+    } on TlsException {
       throw const ConnectionFailure();
     }
   }

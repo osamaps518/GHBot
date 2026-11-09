@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -352,6 +353,17 @@ void main() {
 
     expect(find.text('2210'), findsOneWidget);
     expect(find.text(english.signInTitle), findsNothing);
+  });
+
+  testWidgets('TLS handshake failure shows the connection error', (
+    tester,
+  ) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    backend.intercept = (request) => throw const HandshakeException();
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorConnection), findsOneWidget);
   });
 
   testWidgets('malformed targets show an error with Retry', (tester) async {
