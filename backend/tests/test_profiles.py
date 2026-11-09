@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -6,8 +7,10 @@ from threading import Barrier
 from uuid import uuid4
 
 import pytest
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import DBAPIError
 
-from ghbot.profiles import utc_today
+from ghbot.profiles import Profile, utc_today
 
 PROFILE = {
     "birth_year": 1998,
@@ -18,6 +21,29 @@ PROFILE = {
     "activity_level": "moderately_active",
     "goal": "maintain",
 }
+
+
+def test_failed_profile_insert_does_not_log_health_values(client, caplog):
+    # A missing user makes Postgres reject this profile insert. The bound
+    # height must stay out of the exception that a server would log.
+    height = float("171.37")
+
+    async def fail_insert():
+        async with client.app_state["sessions"]() as session:
+            await session.execute(
+                insert(Profile).values(
+                    user_id=uuid4(), **{**PROFILE, "height_cm": height}
+                )
+            )
+
+    with pytest.raises(DBAPIError):
+        try:
+            client.portal.call(fail_insert)
+        except DBAPIError:
+            logging.getLogger("ghbot.test").exception("Profile insert failed")
+            raise
+
+    assert "171.37" not in caplog.text
 
 
 def test_get_missing_profile_returns_404(client, auth_headers):

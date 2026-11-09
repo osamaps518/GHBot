@@ -25,7 +25,9 @@ def create_app() -> FastAPI:
         app: FastAPI,
     ) -> AsyncIterator[dict[str, async_sessionmaker[AsyncSession]]]:
         # The engine connects lazily, so the app starts even if Postgres is down.
-        engine = create_async_engine(settings.database_url.get_secret_value())
+        engine = create_async_engine(
+            settings.database_url.get_secret_value(), hide_parameters=True
+        )
         # Without expire_on_commit=False, reading a field after commit would
         # trigger a hidden query, which async SQLAlchemy can't do.
         yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
