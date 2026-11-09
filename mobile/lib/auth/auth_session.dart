@@ -69,14 +69,23 @@ class AuthSession {
     );
   }
 
-  Future<String> _currentToken() => _token ??=
-      _requestToken(
-        _subject ??
-            (throw StateError('Sign in before making an authorized request.')),
-      ).catchError((Object error, StackTrace stack) {
-        _token = null;
-        Error.throwWithStackTrace(error, stack);
-      });
+  Future<String> _currentToken() {
+    final current = _token;
+    if (current != null) return current;
+    late final Future<String> pending;
+    pending =
+        _requestToken(
+          _subject ??
+              (throw StateError(
+                'Sign in before making an authorized request.',
+              )),
+        ).catchError((Object error, StackTrace stack) {
+          if (identical(_token, pending)) _token = null;
+          Error.throwWithStackTrace(error, stack);
+        });
+    _token = pending;
+    return pending;
+  }
 
   Future<String> _requestToken(String subject) async {
     final response = await _client.send(
