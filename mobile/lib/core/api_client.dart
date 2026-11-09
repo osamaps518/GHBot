@@ -21,7 +21,12 @@ class ApiClient {
     Object? body,
     Map<String, String>? headers,
   }) async {
-    final request = http.Request(method, Uri.parse('$_baseUrl$path'));
+    final abort = Completer<void>();
+    final request = http.AbortableRequest(
+      method,
+      Uri.parse('$_baseUrl$path'),
+      abortTrigger: abort.future,
+    );
     if (headers != null) request.headers.addAll(headers);
     if (body != null) {
       request.headers['content-type'] = 'application/json';
@@ -35,6 +40,9 @@ class ApiClient {
           // It covers the body too: a stream can stall after its headers.
           .timeout(const Duration(seconds: 5));
     } on TimeoutException {
+      abort.complete();
+      throw const ConnectionFailure();
+    } on http.RequestAbortedException {
       throw const ConnectionFailure();
     } on http.ClientException {
       throw const ConnectionFailure();
