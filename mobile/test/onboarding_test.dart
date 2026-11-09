@@ -298,6 +298,43 @@ void main() {
     expect(find.text(english.signInTitle), findsNothing);
   });
 
+  testWidgets('malformed targets show an error with Retry', (tester) async {
+    final backend = FakeBackend()
+      ..profile = savedProfile()
+      ..targets = {...exampleTargets, 'calories': 1850.0};
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.retry), findsOneWidget);
+  });
+
+  testWidgets('malformed 422 detail shows an error with Retry', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    backend.intercept = (request) => request.url.path == '/me/targets'
+        ? http.Response('{"detail":"invalid"}', 422)
+        : null;
+
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.retry), findsOneWidget);
+  });
+
+  testWidgets('HTML after saving shows an error snackbar', (tester) async {
+    final backend = FakeBackend();
+    await pumpApp(tester, backend, storedName: 'alice');
+    await _fillForm(tester, english);
+    backend.intercept = (request) => request.method == 'PUT'
+        ? http.Response('<html>bad gateway</html>', 200)
+        : null;
+
+    await _tapText(tester, english.calculateButton);
+
+    expect(find.text(english.errorGeneral), findsOneWidget);
+    expect(find.text(english.profileTitle), findsOneWidget);
+  });
+
   testWidgets('explains a target raised to the minimum', (tester) async {
     // Worked example C from #8: female, 45, 52 kg, 155 cm, sedentary, lose.
     final backend = FakeBackend()

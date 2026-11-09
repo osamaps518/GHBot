@@ -131,7 +131,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
           }
         case ConnectionFailure():
           messenger.showSnackBar(connectionSnackBar(l10n, onRetry: _submit));
-        case ServerFailure():
+        case ServerFailure() || UnexpectedResponseFailure():
           messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneral)));
       }
     } finally {

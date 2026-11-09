@@ -50,8 +50,8 @@ class _GhbotAppState extends State<GhbotApp> {
     baseUrl: widget.apiBaseUrl,
   );
   late final _session = AuthSession(_client);
-  late final _profilesApi = ProfilesApi(_client, _session);
-  late final _targetsApi = TargetsApi(_client, _session);
+  late final _profilesApi = ProfilesApi(_session);
+  late final _targetsApi = TargetsApi(_session);
   // "Edit my info" opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
   // Kept on the phone, so after a reinstall the warning shows once more.

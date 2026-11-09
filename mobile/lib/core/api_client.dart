@@ -41,13 +41,31 @@ class ApiClient {
   }
 
   Map<String, Object?> decode(http.Response response) {
-    if (response.statusCode == 422) {
-      throw ValidationFailure([
-        for (final error in (jsonDecode(response.body) as Map)['detail'])
-          (error as Map)['type'] as String,
-      ]);
+    if (response.statusCode >= 300 && response.statusCode != 422) {
+      throw ServerFailure(response.statusCode);
     }
-    if (response.statusCode >= 300) throw ServerFailure(response.statusCode);
-    return (jsonDecode(response.body) as Map).cast();
+    Object? body;
+    try {
+      body = jsonDecode(response.body);
+    } on FormatException {
+      throw const UnexpectedResponseFailure();
+    }
+    if (response.statusCode == 422) {
+      if (body is! Map<String, dynamic> || body['detail'] is! List) {
+        throw const UnexpectedResponseFailure();
+      }
+      final types = <String>[];
+      for (final error in body['detail'] as List) {
+        if (error is! Map<String, dynamic> || error['type'] is! String) {
+          throw const UnexpectedResponseFailure();
+        }
+        types.add(error['type'] as String);
+      }
+      throw ValidationFailure(types);
+    }
+    if (body is! Map<String, dynamic>) {
+      throw const UnexpectedResponseFailure();
+    }
+    return body;
   }
 }
