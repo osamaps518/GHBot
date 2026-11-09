@@ -147,6 +147,17 @@ void main() {
     expect(backend.requestsTo('POST', '/dev/token'), hasLength(1));
   });
 
+  testWidgets('sign-in counts a name in characters, as the backend does', (
+    tester,
+  ) async {
+    await pumpApp(tester, FakeBackend());
+    // 200 characters, but 400 UTF-16 units.
+    await _type(tester, find.byType(TextField), '😀' * 200);
+
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNotNull);
+  });
+
   testWidgets('reopening goes straight to the targets, and editing updates '
       'them', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();

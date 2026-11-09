@@ -19,7 +19,9 @@ class _SignInScreenState extends State<SignInScreen> {
   var _busy = false;
 
   bool get _canSubmit =>
-      !_busy && _name.text.trim().isNotEmpty && _name.text.trim().length <= 255;
+      !_busy &&
+      _name.text.trim().isNotEmpty &&
+      _name.text.trim().runes.length <= 255;
 
   @override
   void dispose() {
@@ -49,7 +51,6 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final text = Theme.of(context).textTheme;
-    final canSubmit = _canSubmit;
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -72,7 +73,7 @@ class _SignInScreenState extends State<SignInScreen> {
               autofocus: true,
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => canSubmit ? _submit() : null,
+              onSubmitted: (_) => _submit(),
             ),
           ],
         ),
@@ -81,7 +82,7 @@ class _SignInScreenState extends State<SignInScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: FilledButton(
-            onPressed: canSubmit ? _submit : null,
+            onPressed: _canSubmit ? _submit : null,
             child: Text(l10n.continueButton),
           ),
         ),
