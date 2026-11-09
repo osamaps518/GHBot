@@ -170,7 +170,9 @@ This rule does not cover the mobile app.
 - **Translations with Flutter's built-in `gen-l10n`.** Arabic (`app_ar.arb`) is the template, English sits alongside. No user-facing text in Dart code.
 - **Language rule:** English if the phone is in English, Arabic otherwise. Arabic is first in `supportedLocales`, and Flutter's default resolution falls back to the first entry. No in-app switch yet (question 9 in #8).
 - **Backend address from `mobile/config.json`,** passed with `--dart-define-from-file` and not committed, like `backend/.env`. The app refuses to start without it instead of guessing a default.
-- **Plain HTTP only in debug builds,** set in the debug Android manifest, so release builds can't talk to the backend unencrypted.
+- **Plain HTTP only in debug builds.** Release startup checks that the configured
+  backend address begins with `https://` and has a host. Dart's HTTP client does
+  not use Android's cleartext manifest setting, so the check lives in Dart.
 
 ---
 
