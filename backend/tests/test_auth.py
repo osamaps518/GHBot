@@ -72,6 +72,16 @@ def test_dev_token_rejects_invalid_subjects(client, subject):
     assert response.status_code == 422
 
 
+def test_lone_surrogate_in_token_subject_returns_422(client):
+    response = client.post(
+        "/dev/token",
+        headers={"Content-Type": "application/json"},
+        content=r'{"subject":"\ud800"}',
+    )
+
+    assert response.status_code == 422
+
+
 def test_valid_token_returns_our_user_id(client, auth_headers):
     response = client.get("/me", headers=auth_headers(str(uuid4())))
 

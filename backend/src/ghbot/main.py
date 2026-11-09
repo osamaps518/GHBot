@@ -49,7 +49,10 @@ def create_app() -> FastAPI:
         # parser accepts but JSON can't hold. json.dumps gives the text sent.
         errors = jsonable_encoder(
             exc.errors(),
-            custom_encoder={float: lambda x: x if math.isfinite(x) else json.dumps(x)},
+            custom_encoder={
+                float: lambda x: x if math.isfinite(x) else json.dumps(x),
+                str: lambda x: x.encode("utf-8", "backslashreplace").decode("utf-8"),
+            },
         )
         return JSONResponse(status_code=422, content={"detail": errors})
 
