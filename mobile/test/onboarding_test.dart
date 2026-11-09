@@ -415,6 +415,22 @@ void main() {
   });
 
   group('age warning', () {
+    testWidgets('warning icon stays beside calories after acknowledgement', (
+      tester,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      await pumpApp(tester, backend, storedName: 'alice', ageWarningSeen: true);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    });
+
+    testWidgets('no warning icon for ages in the tested range', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+    });
+
     // The backend decides who is above the tested age, so the form's
     // values don't matter here.
     Future<void> onboard(WidgetTester tester, FakeBackend backend) async {

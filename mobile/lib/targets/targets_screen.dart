@@ -18,7 +18,10 @@ class TargetsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
           children: [
-            _CaloriesHero(calories: targets.calories),
+            _CaloriesHero(
+              calories: targets.calories,
+              aboveTestedAge: targets.aboveTestedAge,
+            ),
             const SizedBox(height: 12),
             if (targets.atMinimum) ...[
               const _MinimumNote(),
@@ -45,9 +48,10 @@ class TargetsScreen extends StatelessWidget {
 
 /// The day's calories, large, on the colored card at the top.
 class _CaloriesHero extends StatelessWidget {
-  const _CaloriesHero({required this.calories});
+  const _CaloriesHero({required this.calories, required this.aboveTestedAge});
 
   final int calories;
+  final bool aboveTestedAge;
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +72,33 @@ class _CaloriesHero extends StatelessWidget {
             style: text.titleMedium!.copyWith(color: colors.heroMuted),
           ),
           const SizedBox(height: 6),
-          Text(
-            '$calories',
-            style: text.displayLarge!.copyWith(color: colors.heroNumber),
+          Row(
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    '$calories',
+                    style: text.displayLarge!.copyWith(
+                      color: colors.heroNumber,
+                    ),
+                  ),
+                ),
+              ),
+              if (aboveTestedAge)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 8),
+                  child: Tooltip(
+                    message: l10n.ageWarning,
+                    child: Icon(
+                      Icons.warning_amber_rounded,
+                      size: 20,
+                      color: colors.heroNumber,
+                    ),
+                  ),
+                ),
+            ],
           ),
           Text(
             l10n.caloriesPerDay,

@@ -121,12 +121,16 @@ Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
+  bool ageWarningSeen = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.reset);
   SharedPreferencesAsyncPlatform.instance =
-      InMemorySharedPreferencesAsync.withData({'dev_subject': ?storedName});
+      InMemorySharedPreferencesAsync.withData({
+        'dev_subject': ?storedName,
+        if (ageWarningSeen) 'age_warning_seen': true,
+      });
 
   await tester.pumpWidget(
     GhbotApp(client: backend.client, apiBaseUrl: 'http://backend.test'),
