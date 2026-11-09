@@ -3,9 +3,7 @@ from typing import Protocol, cast
 
 import jwt
 
-
-class InvalidToken(ValueError):
-    """The provider could not verify the token."""
+from ghbot.auth.exceptions import InvalidToken
 
 
 class AuthProvider(Protocol):
