@@ -282,12 +282,7 @@ class _Row extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          value,
-          style: theme.textTheme.bodyLarge!.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(value, style: targetsRowValueStyle(theme)),
       ],
     );
   }
