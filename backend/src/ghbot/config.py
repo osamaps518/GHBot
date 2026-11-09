@@ -1,10 +1,14 @@
+from pathlib import Path
+
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     # Environment variables win over the .env file.
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).resolve().parents[2] / ".env"
+    )
 
     database_url: SecretStr
     environment: str

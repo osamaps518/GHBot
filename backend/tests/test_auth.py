@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 
 from ghbot.auth import User
+from ghbot.config import Settings
 from ghbot.main import create_app
 
 
@@ -22,7 +23,10 @@ def test_dev_auth_refuses_other_environments(monkeypatch, environment):
 
 
 def test_dev_auth_requires_an_explicit_environment(monkeypatch, tmp_path):
-    monkeypatch.chdir(tmp_path)  # Do not read the developer's .env.
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        Settings, "model_config", {**Settings.model_config, "env_file": None}
+    )
     monkeypatch.delenv("ENVIRONMENT")
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://localhost/unused")
 
