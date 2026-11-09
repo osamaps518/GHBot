@@ -95,7 +95,6 @@ def test_profile_owner_cannot_be_changed_by_body_ids(app, client, auth_headers):
     bob = auth_headers()
     alice_id = client.get("/me", headers=alice).json()["id"]
     alice_profile = {
-        **PROFILE,
         "birth_year": 1996,
         "birth_month": 10,
         "sex": "male",
@@ -105,7 +104,6 @@ def test_profile_owner_cannot_be_changed_by_body_ids(app, client, auth_headers):
         "goal": "lose",
     }
     bob_profile = {
-        **PROFILE,
         "birth_year": 2001,
         "birth_month": 10,
         "sex": "female",
