@@ -53,6 +53,17 @@ Future<void> _tapText(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _restartApp(WidgetTester tester, FakeBackend backend) async {
+  await tester.pumpWidget(
+    GhbotApp(
+      key: UniqueKey(),
+      client: backend.client,
+      apiBaseUrl: 'http://backend.test',
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 /// Fills in the form with [savedProfile]'s values, using [l10n]'s labels.
 Future<void> _fillForm(
   WidgetTester tester,
@@ -517,14 +528,7 @@ void main() {
 
       // A new key makes a new app, as after closing it. What the app stored
       // on the phone stays.
-      await tester.pumpWidget(
-        GhbotApp(
-          key: UniqueKey(),
-          client: backend.client,
-          apiBaseUrl: 'http://backend.test',
-        ),
-      );
-      await tester.pumpAndSettle();
+      await _restartApp(tester, backend);
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
@@ -544,14 +548,7 @@ void main() {
       final warning = tester.element(find.text(english.ageWarning));
       expect(Navigator.of(warning).canPop(), isFalse);
 
-      await tester.pumpWidget(
-        GhbotApp(
-          key: UniqueKey(),
-          client: backend.client,
-          apiBaseUrl: 'http://backend.test',
-        ),
-      );
-      await tester.pumpAndSettle();
+      await _restartApp(tester, backend);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -560,7 +557,6 @@ void main() {
 
       expect(find.text('2210'), findsOneWidget);
     });
-
   });
 
   testWidgets('a response that stalls after its headers times out', (
