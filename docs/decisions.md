@@ -278,10 +278,12 @@ development build only.
 
 Folders in `mobile/lib/` mirror the backend modules: `auth`, `profiles`, and
 `targets`. `core/` holds the API client, failures, error views, and theme that
-all modules use. The root widget in `main.dart` picks the screen and coordinates
-calls across modules.
+all modules use. A plain `AppFlow` notifier coordinates sign-in, loading, saves,
+and the age warning. The root widget in `main.dart` listens to it, picks the
+screen, and owns Edit navigation. This keeps asynchronous results from an older
+save from replacing a newer one.
 
 We considered Flutter's [case study layout](https://docs.flutter.dev/app-architecture/case-study)
-with UI by feature, data by type, view models, and repositories. Three screens
-using `setState` do not need those layers. Revisit this if we adopt a state
-management package.
+with UI by feature, data by type, view models, and repositories. One flow notifier
+handles the cross-screen state without adding repositories or a state management
+package. Screens still own their local form state.
