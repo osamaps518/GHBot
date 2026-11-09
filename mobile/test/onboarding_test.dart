@@ -245,6 +245,39 @@ void main() {
     });
   });
 
+  testWidgets('an older save cannot replace a newer edit', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
+    };
+    final firstReply = Completer<void>();
+    backend.holdNextTargets = firstReply;
+    await tester.tap(find.text(english.calculateButton));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('gain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'gain',
+      'goal_adjustment_percent': 10,
+    };
+    await _tapText(tester, english.calculateButton);
+    expect(find.text(english.goalRow('gain')), findsOneWidget);
+
+    firstReply.complete();
+    await tester.pumpAndSettle();
+    expect(find.text(english.goalRow('gain')), findsOneWidget);
+  });
+
   testWidgets('gets a new token and retries once after a 401', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
