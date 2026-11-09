@@ -58,14 +58,14 @@ async def put_profile(
             body.birth_month,
             today,
         )
-    except AgeOutOfRange as error:
+    except AgeOutOfRange:
         raise RequestValidationError(
             [
                 {
                     "type": "age_out_of_range",
                     "loc": ("body", "birth_year"),
                     "msg": "Age must be between 18 and 100",
-                    "input": error.birth_year,
+                    "input": body.birth_year,
                 }
             ]
         )

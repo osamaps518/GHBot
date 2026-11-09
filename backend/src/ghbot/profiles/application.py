@@ -59,7 +59,7 @@ async def save_profile(
 ) -> bool:
     age = age_on_date(birth_year, birth_month, today)
     if not 18 <= age <= 100:
-        raise AgeOutOfRange(birth_year)
+        raise AgeOutOfRange
 
     created = await session.scalar(
         insert(Profile)

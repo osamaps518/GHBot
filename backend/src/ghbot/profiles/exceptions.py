@@ -3,5 +3,4 @@ class ProfileNotFound(Exception):
 
 
 class AgeOutOfRange(ValueError):
-    def __init__(self, birth_year: int) -> None:
-        self.birth_year = birth_year
+    """The age on today's date is outside 18 to 100."""
