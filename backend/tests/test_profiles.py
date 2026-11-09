@@ -89,6 +89,50 @@ def test_profiles_are_private_to_each_user(client, auth_headers):
     assert client.get("/me/profile", headers=bob).json() == bob_profile
 
 
+def test_profile_owner_cannot_be_changed_by_body_ids(app, client, auth_headers):
+    app.dependency_overrides[utc_today] = lambda: date(2026, 10, 31)
+    alice = auth_headers(str(uuid4()))
+    bob = auth_headers(str(uuid4()))
+    alice_id = client.get("/me", headers=alice).json()["id"]
+    alice_profile = {
+        **PROFILE,
+        "birth_year": 1996,
+        "birth_month": 10,
+        "sex": "male",
+        "height_cm": 180,
+        "weight_kg": 80,
+        "activity_level": "moderately_active",
+        "goal": "lose",
+    }
+    bob_profile = {
+        **PROFILE,
+        "birth_year": 2001,
+        "birth_month": 10,
+        "sex": "female",
+        "height_cm": 165,
+        "weight_kg": 60,
+        "activity_level": "lightly_active",
+        "goal": "gain",
+    }
+    assert (
+        client.put("/me/profile", headers=alice, json=alice_profile).status_code == 201
+    )
+    assert client.put("/me/profile", headers=bob, json=bob_profile).status_code == 201
+
+    changed = {**bob_profile, "goal": "maintain"}
+    response = client.put(
+        "/me/profile",
+        headers=bob,
+        json={**changed, "id": alice_id, "user_id": alice_id},
+    )
+
+    assert response.status_code == 200
+    assert client.get("/me/profile", headers=alice).json() == alice_profile
+    assert client.get("/me/profile", headers=bob).json() == changed
+    assert client.get("/me/targets", headers=alice).json()["calories"] == 2210
+    assert client.get("/me/targets", headers=bob).json()["calories"] == 1850
+
+
 @pytest.mark.parametrize(
     "invalid",
     [

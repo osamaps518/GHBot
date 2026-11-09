@@ -7,11 +7,13 @@ from uuid import UUID, uuid4
 import jwt
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import func, select
 
+from ghbot.auth import User
 from ghbot.main import create_app
 
 
-@pytest.mark.parametrize("environment", ["production", "staging", ""])
+@pytest.mark.parametrize("environment", ["production", "staging", "Development", ""])
 def test_dev_auth_refuses_other_environments(monkeypatch, environment):
     monkeypatch.setenv("ENVIRONMENT", environment)
 
@@ -35,6 +37,13 @@ def test_dev_auth_requires_an_explicit_environment(monkeypatch, tmp_path):
 
 def test_dev_auth_rejects_an_empty_secret(monkeypatch):
     monkeypatch.setenv("DEV_JWT_SECRET", "")
+
+    with pytest.raises(ValidationError):
+        create_app()
+
+
+def test_dev_auth_rejects_a_31_character_secret(monkeypatch):
+    monkeypatch.setenv("DEV_JWT_SECRET", "x" * 31)
 
     with pytest.raises(ValidationError):
         create_app()
@@ -72,9 +81,26 @@ def test_valid_token_returns_our_user_id(client, auth_headers):
 
 
 @pytest.mark.parametrize(
-    "invalid", ["missing", "not-a-jwt", "expired", "wrong-signature", "missing-expiry"]
+    "invalid",
+    [
+        "missing",
+        "not-a-jwt",
+        "expired",
+        "wrong-signature",
+        "missing-expiry",
+        "none",
+        "hs512",
+        "missing-sub",
+        "integer-sub",
+        "missing-iat",
+    ],
 )
 def test_invalid_credentials_get_the_same_401(client, invalid):
+    async def count_users():
+        async with client.app_state["sessions"]() as session:
+            return await session.scalar(select(func.count()).select_from(User))
+
+    before = client.portal.call(count_users)
     if invalid == "missing":
         headers = {}
     elif invalid == "not-a-jwt":
@@ -83,20 +109,53 @@ def test_invalid_credentials_get_the_same_401(client, invalid):
         now = int(datetime.now(UTC).timestamp())
         claims = {"sub": str(uuid4()), "iat": now, "exp": now + 900}
         secret = os.environ["DEV_JWT_SECRET"]
+        algorithm = "HS256"
         if invalid == "expired":
             claims["exp"] = now - 1
         elif invalid == "wrong-signature":
             secret = "different-secret-for-dev-sign-in-only-32-bytes"
         else:
-            del claims["exp"]
-        token = jwt.encode(claims, secret, algorithm="HS256")
+            if invalid == "missing-expiry":
+                del claims["exp"]
+            elif invalid == "missing-sub":
+                del claims["sub"]
+            elif invalid == "integer-sub":
+                claims["sub"] = 123
+            elif invalid == "missing-iat":
+                del claims["iat"]
+            elif invalid == "none":
+                algorithm = "none"
+                secret = ""
+            elif invalid == "hs512":
+                algorithm = "HS512"
+        token = jwt.encode(claims, secret, algorithm=algorithm)
         headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.get("/me", headers=headers)
+    for method, path in [
+        ("GET", "/me"),
+        ("GET", "/me/profile"),
+        ("PUT", "/me/profile"),
+        ("GET", "/me/targets"),
+    ]:
+        response = client.request(method, path, headers=headers)
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Not authenticated"}
+        assert response.headers["WWW-Authenticate"] == "Bearer"
+    assert client.portal.call(count_users) == before
 
-    assert response.status_code == 401
-    assert response.json() == {"detail": "Not authenticated"}
-    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+def test_api_does_not_enable_cors(client):
+    response = client.get("/health", headers={"Origin": "https://other.example"})
+    preflight = client.options(
+        "/me/profile",
+        headers={
+            "Origin": "https://other.example",
+            "Access-Control-Request-Method": "PUT",
+        },
+    )
+
+    assert "Access-Control-Allow-Origin" not in response.headers
+    assert "Access-Control-Allow-Origin" not in preflight.headers
 
 
 def test_subject_keeps_its_user_id_across_requests(client, auth_headers):
