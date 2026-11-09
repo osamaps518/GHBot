@@ -3,14 +3,12 @@ from typing import get_args
 
 import pytest
 
-from ghbot.profiles import ProfileSnapshot, utc_today
+from ghbot.profiles import ActivityLevel, Goal, ProfileSnapshot, utc_today
 from ghbot.targets import calculate_targets
+from ghbot.targets.application import ACTIVITY_FACTORS, GOAL_FACTORS
 
 
 def test_every_profile_code_has_a_target_factor():
-    from ghbot.profiles import ActivityLevel, Goal
-    from ghbot.targets.application import ACTIVITY_FACTORS, GOAL_FACTORS
-
     assert set(get_args(ActivityLevel)) == set(ACTIVITY_FACTORS)
     assert set(get_args(Goal)) == set(GOAL_FACTORS)
 
