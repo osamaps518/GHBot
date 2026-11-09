@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from ghbot.profiles.router import utc_today
+from ghbot.profiles import utc_today
 
 PROFILE = {
     "birth_year": 1998,

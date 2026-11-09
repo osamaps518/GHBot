@@ -1,45 +1,33 @@
-from datetime import UTC, date, datetime
-from typing import Annotated, Literal
+from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
-from ghbot.profiles.application import read_profile, save_profile
-from ghbot.profiles.exceptions import AgeOutOfRange, ProfileNotFound
+from ghbot.profiles.application import save_profile
+from ghbot.profiles.dependencies import SavedProfile, utc_today
+from ghbot.profiles.exceptions import AgeOutOfRange
+from ghbot.profiles.models import ActivityLevel, Goal, Sex
 
 
 class ProfileBody(BaseModel):
     birth_year: int
     birth_month: int = Field(ge=1, le=12)
-    sex: Literal["male", "female"]
+    sex: Sex
     height_cm: float = Field(ge=130, le=220)
     weight_kg: float = Field(ge=35, le=250)
-    activity_level: Literal[
-        "sedentary",
-        "lightly_active",
-        "moderately_active",
-        "very_active",
-        "extremely_active",
-    ]
-    goal: Literal["lose", "maintain", "gain"]
+    activity_level: ActivityLevel
+    goal: Goal
 
 
 router = APIRouter(prefix="/me/profile")
 
 
-def utc_today() -> date:
-    return datetime.now(UTC).date()
-
-
 @router.get("")
-async def get_profile(user: CurrentUser, session: SessionDependency) -> ProfileBody:
-    try:
-        profile = await read_profile(session, user.id, utc_today())
-    except ProfileNotFound:
-        raise HTTPException(status_code=404, detail="Profile not found")
+async def get_profile(profile: SavedProfile) -> ProfileBody:
     return ProfileBody.model_validate(profile, from_attributes=True)
 
 

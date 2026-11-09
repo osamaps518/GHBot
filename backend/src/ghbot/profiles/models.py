@@ -1,9 +1,20 @@
+from typing import Literal
 from uuid import UUID
 
 from sqlalchemy import Double, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ghbot.database import Base
+
+Sex = Literal["male", "female"]
+ActivityLevel = Literal[
+    "sedentary",
+    "lightly_active",
+    "moderately_active",
+    "very_active",
+    "extremely_active",
+]
+Goal = Literal["lose", "maintain", "gain"]
 
 
 class Profile(Base):

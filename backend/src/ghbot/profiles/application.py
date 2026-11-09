@@ -1,6 +1,7 @@
 from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import update
@@ -8,18 +9,18 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ghbot.profiles.exceptions import AgeOutOfRange, ProfileNotFound
-from ghbot.profiles.models import Profile
+from ghbot.profiles.models import ActivityLevel, Goal, Profile, Sex
 
 
 @dataclass(frozen=True)
-class SavedProfile:
+class ProfileSnapshot:
     birth_year: int
     birth_month: int
-    sex: str
+    sex: Sex
     height_cm: float
     weight_kg: float
-    activity_level: str
-    goal: str
+    activity_level: ActivityLevel
+    goal: Goal
     age: int
 
 
@@ -32,18 +33,18 @@ def age_on_date(birth_year: int, birth_month: int, today: date) -> int:
 
 async def read_profile(
     session: AsyncSession, user_id: UUID, today: date
-) -> SavedProfile:
+) -> ProfileSnapshot:
     row = await session.get(Profile, user_id)
     if row is None:
         raise ProfileNotFound
-    return SavedProfile(
+    return ProfileSnapshot(
         birth_year=row.birth_year,
         birth_month=row.birth_month,
-        sex=row.sex,
+        sex=cast(Sex, row.sex),
         height_cm=row.height_cm,
         weight_kg=row.weight_kg,
-        activity_level=row.activity_level,
-        goal=row.goal,
+        activity_level=cast(ActivityLevel, row.activity_level),
+        goal=cast(Goal, row.goal),
         age=age_on_date(row.birth_year, row.birth_month, today),
     )
 

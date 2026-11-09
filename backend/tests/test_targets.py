@@ -1,10 +1,34 @@
 from datetime import date
+from typing import get_args
 from uuid import uuid4
 
 import pytest
 
-from ghbot.profiles.router import utc_today
+from ghbot.profiles import ProfileSnapshot, utc_today
 from ghbot.targets import calculate_targets
+
+
+def test_every_profile_code_has_a_target_factor():
+    from ghbot.profiles import ActivityLevel, Goal
+    from ghbot.targets.application import ACTIVITY_FACTORS, GOAL_FACTORS
+
+    assert set(get_args(ActivityLevel)) == set(ACTIVITY_FACTORS)
+    assert set(get_args(Goal)) == set(GOAL_FACTORS)
+
+
+def target_for(sex, age, weight_kg, height_cm, activity_level, goal):
+    return calculate_targets(
+        ProfileSnapshot(
+            birth_year=2026 - age,
+            birth_month=1,
+            sex=sex,
+            height_cm=height_cm,
+            weight_kg=weight_kg,
+            activity_level=activity_level,
+            goal=goal,
+            age=age,
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -38,7 +62,7 @@ from ghbot.targets import calculate_targets
     ],
 )
 def test_agreed_worked_examples(profile, expected):
-    targets = calculate_targets(*profile)
+    targets = target_for(*profile)
 
     assert (
         targets["calories"],
@@ -55,7 +79,7 @@ def test_agreed_worked_examples(profile, expected):
 
 
 def test_maintaining_weight_uses_rounded_calories_and_macros():
-    targets = calculate_targets("male", 30, 80, 180, "sedentary", "maintain")
+    targets = target_for("male", 30, 80, 180, "sedentary", "maintain")
 
     assert targets == {
         "calories": 2140,
@@ -69,7 +93,7 @@ def test_maintaining_weight_uses_rounded_calories_and_macros():
 
 
 def test_ties_round_half_up():
-    targets = calculate_targets("male", 31, 80, 182, "sedentary", "maintain")
+    targets = target_for("male", 31, 80, 182, "sedentary", "maintain")
 
     assert targets == {
         "calories": 2150,
