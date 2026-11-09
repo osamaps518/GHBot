@@ -99,6 +99,29 @@ void main() {
 
   // The other tests run with an English (en_US) phone, the default.
 
+  testWidgets('only the name is stored and tokens stay in backend headers', (
+    tester,
+  ) async {
+    final backend = FakeBackend();
+    await pumpApp(tester, backend);
+    await _type(tester, find.byType(TextField), 'alice');
+    await _tapText(tester, english.continueButton);
+    await _fillForm(tester, english);
+    await _tapText(tester, english.calculateButton);
+
+    expect(await SharedPreferencesAsync().getKeys(), {'dev_subject'});
+    for (final request in backend.requests) {
+      expect(request.url.host, 'backend.test');
+      expect(request.url.toString(), isNot(contains('token-alice-1')));
+      expect(request.body, isNot(contains('token-alice-1')));
+      if (request.url.path == '/dev/token') {
+        expect(request.headers, isNot(contains('authorization')));
+      } else {
+        expect(request.headers['authorization'], 'Bearer token-alice-1');
+      }
+    }
+  });
+
   testWidgets('reopening goes straight to the targets, and editing updates '
       'them', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
@@ -415,6 +438,10 @@ void main() {
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
+      expect(await SharedPreferencesAsync().getKeys(), {
+        'dev_subject',
+        'age_warning_seen',
+      });
     });
 
     testWidgets('someone who turns 79 sees it after editing their info', (
