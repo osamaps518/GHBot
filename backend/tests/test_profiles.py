@@ -4,7 +4,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from threading import Barrier
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy.dialects.postgresql import insert
@@ -289,6 +289,25 @@ def test_get_keeps_saved_profile_after_user_turns_101(app, client, auth_headers)
 
     assert response.status_code == 200
     assert response.json() == profile
+
+
+def test_old_saved_value_outside_current_range_still_reads(client, auth_headers):
+    headers = auth_headers(str(uuid4()))
+    user_id = UUID(client.get("/me", headers=headers).json()["id"])
+    saved = {**PROFILE, "height_cm": 229.0}
+
+    async def insert_old_profile():
+        async with client.app_state["sessions"]() as session:
+            await session.execute(insert(Profile).values(user_id=user_id, **saved))
+            await session.commit()
+
+    client.portal.call(insert_old_profile)
+
+    response = client.get("/me/profile", headers=headers)
+    assert response.status_code == 200
+    assert response.json() == saved
+    assert client.get("/me/targets", headers=headers).status_code == 200
+    assert client.put("/me/profile", headers=headers, json=saved).status_code == 422
 
 
 @pytest.mark.parametrize("method", ["get", "put"])

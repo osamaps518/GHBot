@@ -23,12 +23,22 @@ class ProfileBody(BaseModel):
     goal: Goal
 
 
+class ProfileResponse(BaseModel):
+    birth_year: int
+    birth_month: int
+    sex: str
+    height_cm: float
+    weight_kg: float
+    activity_level: str
+    goal: str
+
+
 router = APIRouter(prefix="/me/profile")
 
 
 @router.get("")
-async def get_profile(profile: SavedProfile) -> ProfileBody:
-    return ProfileBody.model_validate(profile, from_attributes=True)
+async def get_profile(profile: SavedProfile) -> ProfileResponse:
+    return ProfileResponse.model_validate(profile, from_attributes=True)
 
 
 @router.put("")
