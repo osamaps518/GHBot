@@ -30,8 +30,10 @@ def create_app() -> FastAPI:
         )
         # Without expire_on_commit=False, reading a field after commit would
         # trigger a hidden query, which async SQLAlchemy can't do.
-        yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
-        await engine.dispose()
+        try:
+            yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
+        finally:
+            await engine.dispose()
 
     app = FastAPI(title="GHBot", lifespan=lifespan)
     provider = DevAuthProvider(settings.dev_jwt_secret.get_secret_value())
