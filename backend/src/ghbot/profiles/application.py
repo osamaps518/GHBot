@@ -25,6 +25,7 @@ class ProfileSnapshot:
 
 
 def age_on_date(birth_year: int, birth_month: int, today: date) -> int:
+    # The birthday counts as the last day of the birth month: we don't store the day.
     last_day = monthrange(today.year, birth_month)[1]
     return (
         today.year - birth_year - ((today.month, today.day) < (birth_month, last_day))
