@@ -113,6 +113,10 @@ Not needed for the first version (basic CRUD). We decide when we build the coach
 - One database session per request. It never commits by itself: code that writes data commits explicitly.
 - Migrations run on purpose (`alembic upgrade head`), never when the app starts.
 - `/health` only says the API process is running. It doesn't check the database.
+- The engine hides bound parameters in errors and logs, because profile values
+  include health data. Before adding a CHECK or NOT NULL constraint on health
+  data, handle `DBAPIError` by logging only the error type and SQL: PostgreSQL
+  can put a rejected row's values in its own error message.
 
 ---
 
