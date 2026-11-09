@@ -326,6 +326,41 @@ void main() {
     expect(find.text(english.goalRow('gain')), findsOneWidget);
   });
 
+  testWidgets('an older save still shows when a newer one fails', (
+    tester,
+  ) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    await pumpApp(tester, backend, storedName: 'alice');
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
+    };
+    final firstReply = Completer<void>();
+    backend.holdNextTargets = firstReply;
+    await tester.tap(find.text(english.calculateButton));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('gain'));
+    backend.offline = true;
+    await _tapText(tester, english.calculateButton);
+    expect(find.text(english.retry), findsOneWidget);
+    backend.offline = false;
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    firstReply.complete();
+    await tester.pumpAndSettle();
+    expect(backend.profile!['goal'], 'maintain');
+    expect(find.text(english.goalRow('maintain')), findsOneWidget);
+  });
+
   testWidgets('gets a new token and retries once after a 401', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');

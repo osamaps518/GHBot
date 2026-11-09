@@ -26,6 +26,7 @@ class AppFlow extends ChangeNotifier {
   Exception? failure;
   bool ageWarningSeen = false;
   int _saveVersion = 0;
+  int _shownVersion = 0;
 
   Future<void> start() async {
     ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
@@ -70,7 +71,8 @@ class AppFlow extends ChangeNotifier {
     await _profilesApi.putProfile(changed);
     final updatedTargets = await _targetsApi.getTargets();
     if (updatedTargets == null) throw const ServerFailure(404);
-    if (version != _saveVersion) return;
+    if (version < _shownVersion) return;
+    _shownVersion = version;
     profile = changed;
     targets = updatedTargets;
     stage = AppStage.targets;
