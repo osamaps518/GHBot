@@ -34,79 +34,42 @@ void main() {
   });
 
   group('language', () {
-    testWidgets('Arabic phone shows Arabic, right to left', (tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('ar')];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    for (final (name, locales, expectedLocale, direction) in [
+      ('Arabic', [const Locale('ar')], const Locale('ar'), TextDirection.rtl),
+      (
+        'English',
+        [const Locale('en', 'US')],
+        const Locale('en'),
+        TextDirection.ltr,
+      ),
+      ('French', [const Locale('fr')], const Locale('en'), TextDirection.ltr),
+      (
+        'French then Arabic',
+        [const Locale('fr', 'FR'), const Locale('ar')],
+        const Locale('ar'),
+        TextDirection.rtl,
+      ),
+      (
+        'French then English',
+        [const Locale('fr', 'FR'), const Locale('en', 'US')],
+        const Locale('en'),
+        TextDirection.ltr,
+      ),
+      ('no preference', <Locale>[], const Locale('en'), TextDirection.ltr),
+    ]) {
+      testWidgets('$name phone uses ${expectedLocale.languageCode}', (
+        tester,
+      ) async {
+        tester.platformDispatcher.localesTestValue = locales;
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
-      await _pumpApp(tester);
+        await _pumpApp(tester);
 
-      final arabic = lookupAppLocalizations(const Locale('ar'));
-      expect(find.text(arabic.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.rtl);
-    });
-
-    testWidgets('English phone shows English, left to right', (tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('en', 'US')];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-      await _pumpApp(tester);
-
-      final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.ltr);
-    });
-
-    testWidgets('French-only phone falls back to English', (tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('fr')];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-      await _pumpApp(tester);
-
-      final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.ltr);
-    });
-
-    testWidgets('French then Arabic phone shows Arabic', (tester) async {
-      tester.platformDispatcher.localesTestValue = const [
-        Locale('fr', 'FR'),
-        Locale('ar'),
-      ];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-      await _pumpApp(tester);
-
-      final arabic = lookupAppLocalizations(const Locale('ar'));
-      expect(find.text(arabic.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.rtl);
-    });
-
-    testWidgets('French then English phone shows English', (tester) async {
-      tester.platformDispatcher.localesTestValue = const [
-        Locale('fr', 'FR'),
-        Locale('en', 'US'),
-      ];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-      await _pumpApp(tester);
-
-      final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.ltr);
-    });
-
-    testWidgets('no phone language preferences falls back to English', (
-      tester,
-    ) async {
-      tester.platformDispatcher.localesTestValue = [];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-
-      await _pumpApp(tester);
-
-      final english = lookupAppLocalizations(const Locale('en'));
-      expect(find.text(english.signInTitle), findsOneWidget);
-      expect(_direction(tester), TextDirection.ltr);
-    });
+        final l10n = lookupAppLocalizations(expectedLocale);
+        expect(find.text(l10n.signInTitle), findsOneWidget);
+        expect(_direction(tester), direction);
+      });
+    }
   });
 
   group('theme', () {
