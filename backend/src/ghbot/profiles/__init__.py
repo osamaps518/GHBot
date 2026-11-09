@@ -12,7 +12,8 @@ For wiring the app (main.py):
     router: GET and PUT /me/profile.
 """
 
+from ghbot.profiles.application import age_on_date
 from ghbot.profiles.models import Profile
-from ghbot.profiles.router import age_on_date, router, utc_today
+from ghbot.profiles.router import router, utc_today
 
 __all__ = ["Profile", "age_on_date", "router", "utc_today"]

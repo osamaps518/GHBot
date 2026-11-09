@@ -1,16 +1,14 @@
-from calendar import monthrange
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
-from sqlalchemy import update
-from sqlalchemy.dialects.postgresql import insert
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
-from ghbot.profiles.models import Profile
+from ghbot.profiles.application import read_profile, save_profile
+from ghbot.profiles.exceptions import AgeOutOfRange, ProfileNotFound
 
 
 class ProfileBody(BaseModel):
@@ -36,17 +34,11 @@ def utc_today() -> date:
     return datetime.now(UTC).date()
 
 
-def age_on_date(birth_year: int, birth_month: int, today: date) -> int:
-    last_day = monthrange(today.year, birth_month)[1]
-    return (
-        today.year - birth_year - ((today.month, today.day) < (birth_month, last_day))
-    )
-
-
 @router.get("")
 async def get_profile(user: CurrentUser, session: SessionDependency) -> ProfileBody:
-    profile = await session.get(Profile, user.id)
-    if profile is None:
+    try:
+        profile = await read_profile(session, user.id, utc_today())
+    except ProfileNotFound:
         raise HTTPException(status_code=404, detail="Profile not found")
     return ProfileBody.model_validate(profile, from_attributes=True)
 
@@ -59,30 +51,26 @@ async def put_profile(
     response: Response,
     today: Annotated[date, Depends(utc_today)],
 ) -> ProfileBody:
-    age = age_on_date(body.birth_year, body.birth_month, today)
-    if not 18 <= age <= 100:
+    try:
+        created = await save_profile(
+            session,
+            user.id,
+            body.model_dump(),
+            body.birth_year,
+            body.birth_month,
+            today,
+        )
+    except AgeOutOfRange as error:
         raise RequestValidationError(
             [
                 {
                     "type": "age_out_of_range",
                     "loc": ("body", "birth_year"),
                     "msg": "Age must be between 18 and 100",
-                    "input": body.birth_year,
+                    "input": error.birth_year,
                 }
             ]
         )
 
-    values = body.model_dump()
-    created = await session.scalar(
-        insert(Profile)
-        .values(user_id=user.id, **values)
-        .on_conflict_do_nothing(index_elements=[Profile.user_id])
-        .returning(Profile.user_id)
-    )
-    if created is None:
-        await session.execute(
-            update(Profile).where(Profile.user_id == user.id).values(**values)
-        )
-    await session.commit()
-    response.status_code = 201 if created is not None else 200
+    response.status_code = 201 if created else 200
     return body
