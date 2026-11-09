@@ -16,8 +16,6 @@ class ProfileFormScreen extends StatefulWidget {
   State<ProfileFormScreen> createState() => _ProfileFormScreenState();
 }
 
-enum _Field { birthMonth, birthYear, sex, height, weight, activityLevel, goal }
-
 class _ProfileFormScreenState extends State<ProfileFormScreen> {
   // The backend uses UTC dates for the age check.
   final _today = DateTime.now().toUtc();
@@ -35,7 +33,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
   late ActivityLevel? _activity = widget.initial?.activityLevel;
   late Goal? _goal = widget.initial?.goal;
 
-  var _errors = <_Field, String>{};
+  var _errors = <ProfileField, String>{};
   var _busy = false;
 
   // The form's own snackbars, so they and their Retry go when it closes.
@@ -48,47 +46,42 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
     super.dispose();
   }
 
-  void _changed(_Field field, VoidCallback change) => setState(() {
+  void _changed(ProfileField field, VoidCallback change) => setState(() {
     change();
     _errors.remove(field);
-    if (field == _Field.birthMonth || field == _Field.birthYear) {
+    if (field == ProfileField.birthMonth || field == ProfileField.birthYear) {
       _errors
-        ..remove(_Field.birthMonth)
-        ..remove(_Field.birthYear);
+        ..remove(ProfileField.birthMonth)
+        ..remove(ProfileField.birthYear);
     }
   });
 
-  // Same ranges as the backend, in backend/src/ghbot/profiles/router.py. The
-  // backend stays the authority; these only give quicker, clearer errors.
-  Map<_Field, String> _validate(AppLocalizations l10n) {
-    final height = _parseNumber(_height.text);
-    final weight = _parseNumber(_weight.text);
-    final month = _month;
-    final year = _year;
+  Map<ProfileField, String> _validate(AppLocalizations l10n) {
+    final invalid = validateProfileDraft(
+      ProfileDraft(
+        birthYear: _year,
+        birthMonth: _month,
+        sex: _sex,
+        heightCm: _parseNumber(_height.text),
+        weightKg: _parseNumber(_weight.text),
+        activityLevel: _activity,
+        goal: _goal,
+      ),
+      _today,
+    );
     return {
-      if (month == null) _Field.birthMonth: l10n.errorChooseOne,
-      if (year == null) _Field.birthYear: l10n.errorChooseOne,
-      if (month != null && year != null && !_isAdult(year, month)) ...{
-        _Field.birthMonth: '',
-        _Field.birthYear: l10n.errorAge,
-      },
-      if (_sex == null) _Field.sex: l10n.errorChooseOne,
-      if (!_inRange(height, 130, 220)) _Field.height: l10n.errorHeight,
-      if (!_inRange(weight, 35, 250)) _Field.weight: l10n.errorWeight,
-      if (_activity == null) _Field.activityLevel: l10n.errorChooseOne,
-      if (_goal == null) _Field.goal: l10n.errorChooseOne,
+      for (final field in invalid)
+        field: switch (field) {
+          ProfileField.birthMonth => _month == null ? l10n.errorChooseOne : '',
+          ProfileField.birthYear =>
+            _year == null ? l10n.errorChooseOne : l10n.errorAge,
+          ProfileField.sex ||
+          ProfileField.activityLevel ||
+          ProfileField.goal => l10n.errorChooseOne,
+          ProfileField.height => l10n.errorHeight,
+          ProfileField.weight => l10n.errorWeight,
+        },
     };
-  }
-
-  /// Age 18 to 100, counting the birthday as the last day of the birth
-  /// month, as the backend does.
-  bool _isAdult(int year, int month) {
-    final lastDay = DateTime.utc(_today.year, month + 1, 0).day;
-    final hadBirthday =
-        _today.month > month ||
-        (_today.month == month && _today.day >= lastDay);
-    final age = _today.year - year - (hadBirthday ? 0 : 1);
-    return age >= 18 && age <= 100;
   }
 
   Future<void> _submit() async {
@@ -119,8 +112,8 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
           if (types.contains('age_out_of_range')) {
             setState(
               () => _errors = {
-                _Field.birthMonth: '',
-                _Field.birthYear: l10n.errorAge,
+                ProfileField.birthMonth: '',
+                ProfileField.birthYear: l10n.errorAge,
               },
             );
           }
@@ -160,16 +153,16 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
               _Pair(
                 _MonthField(
                   value: _month,
-                  error: _errors[_Field.birthMonth],
+                  error: _errors[ProfileField.birthMonth],
                   onChanged: (month) =>
-                      _changed(_Field.birthMonth, () => _month = month),
+                      _changed(ProfileField.birthMonth, () => _month = month),
                 ),
                 _YearField(
                   thisYear: _today.year,
                   value: _year,
-                  error: _errors[_Field.birthYear],
+                  error: _errors[ProfileField.birthYear],
                   onChanged: (year) =>
-                      _changed(_Field.birthYear, () => _year = year),
+                      _changed(ProfileField.birthYear, () => _year = year),
                 ),
               ),
               const SizedBox(height: 14),
@@ -178,8 +171,9 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                 hint: l10n.sexHint,
                 options: {Sex.male: l10n.sexMale, Sex.female: l10n.sexFemale},
                 value: _sex,
-                error: _errors[_Field.sex],
-                onChanged: (sex) => _changed(_Field.sex, () => _sex = sex),
+                error: _errors[ProfileField.sex],
+                onChanged: (sex) =>
+                    _changed(ProfileField.sex, () => _sex = sex),
               ),
               const SizedBox(height: 14),
               _Pair(
@@ -187,23 +181,25 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                   key: const ValueKey('height'),
                   label: l10n.height,
                   controller: _height,
-                  error: _errors[_Field.height],
-                  onChanged: () => _changed(_Field.height, () {}),
+                  error: _errors[ProfileField.height],
+                  onChanged: () => _changed(ProfileField.height, () {}),
                 ),
                 _NumberField(
                   key: const ValueKey('weight'),
                   label: l10n.weight,
                   controller: _weight,
-                  error: _errors[_Field.weight],
-                  onChanged: () => _changed(_Field.weight, () {}),
+                  error: _errors[ProfileField.weight],
+                  onChanged: () => _changed(ProfileField.weight, () {}),
                 ),
               ),
               const SizedBox(height: 14),
               _ActivityField(
                 value: _activity,
-                error: _errors[_Field.activityLevel],
-                onChanged: (level) =>
-                    _changed(_Field.activityLevel, () => _activity = level),
+                error: _errors[ProfileField.activityLevel],
+                onChanged: (level) => _changed(
+                  ProfileField.activityLevel,
+                  () => _activity = level,
+                ),
               ),
               const SizedBox(height: 14),
               _ChoiceField(
@@ -213,8 +209,9 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
                     goal: l10n.goalName(goal.name),
                 },
                 value: _goal,
-                error: _errors[_Field.goal],
-                onChanged: (goal) => _changed(_Field.goal, () => _goal = goal),
+                error: _errors[ProfileField.goal],
+                onChanged: (goal) =>
+                    _changed(ProfileField.goal, () => _goal = goal),
               ),
             ],
           ),
@@ -550,10 +547,6 @@ double? _parseNumber(String text) {
       .replaceAll(RegExp('[٫,]'), '.');
   return double.tryParse(western);
 }
-
-// Written this way round so NaN, which double.tryParse accepts, fails.
-bool _inRange(double? value, double min, double max) =>
-    value != null && value >= min && value <= max;
 
 /// Shows a saved number with Western digits (decision 16), without a
 /// trailing ".0".
