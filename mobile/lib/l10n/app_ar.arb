@@ -122,10 +122,10 @@
     }
   },
   "minimumNote": "حدّدنا هدفك عند الحد الأدنى الآمن. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
-  "raisedToMinimum": "رُفع إلى الحد الأدنى الآمن",
   "@minimumNote": {
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
+  "raisedToMinimum": "رُفع إلى الحد الأدنى الآمن",
   "editMyInfo": "تعديل معلوماتي",
   "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
   "@ageWarning": {
