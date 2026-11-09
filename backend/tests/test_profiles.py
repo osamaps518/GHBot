@@ -47,14 +47,14 @@ def test_failed_profile_insert_does_not_log_health_values(client, caplog):
 
 
 def test_get_missing_profile_returns_404(client, auth_headers):
-    response = client.get("/me/profile", headers=auth_headers(str(uuid4())))
+    response = client.get("/me/profile", headers=auth_headers())
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Profile not found"}
 
 
 def test_put_creates_profile_and_get_returns_it(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
 
     saved = client.put("/me/profile", headers=headers, json=PROFILE)
 
@@ -66,7 +66,7 @@ def test_put_creates_profile_and_get_returns_it(client, auth_headers):
 
 
 def test_second_put_replaces_whole_profile(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     client.put("/me/profile", headers=headers, json=PROFILE)
     changed = {**PROFILE, "weight_kg": 70.75, "goal": "lose"}
 
@@ -78,8 +78,8 @@ def test_second_put_replaces_whole_profile(client, auth_headers):
 
 
 def test_profiles_are_private_to_each_user(client, auth_headers):
-    alice = auth_headers(str(uuid4()))
-    bob = auth_headers(str(uuid4()))
+    alice = auth_headers()
+    bob = auth_headers()
     bob_profile = {**PROFILE, "height_cm": 181.25}
     assert client.put("/me/profile", headers=alice, json=PROFILE).status_code == 201
 
@@ -91,8 +91,8 @@ def test_profiles_are_private_to_each_user(client, auth_headers):
 
 def test_profile_owner_cannot_be_changed_by_body_ids(app, client, auth_headers):
     app.dependency_overrides[utc_today] = lambda: date(2026, 10, 31)
-    alice = auth_headers(str(uuid4()))
-    bob = auth_headers(str(uuid4()))
+    alice = auth_headers()
+    bob = auth_headers()
     alice_id = client.get("/me", headers=alice).json()["id"]
     alice_profile = {
         **PROFILE,
@@ -155,7 +155,7 @@ def test_profile_owner_cannot_be_changed_by_body_ids(app, client, auth_headers):
     ],
 )
 def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, invalid):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     assert client.put("/me/profile", headers=headers, json=PROFILE).status_code == 201
 
     response = client.put("/me/profile", headers=headers, json=invalid)
@@ -169,7 +169,7 @@ def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, invali
     [(math.nan, "NaN"), (math.inf, "Infinity"), (-math.inf, "-Infinity")],
 )
 def test_non_finite_number_gives_422(client, auth_headers, height_cm, sent):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     # json= in the test client refuses NaN and Infinity, so send the raw text.
     body = json.dumps({**PROFILE, "height_cm": height_cm})
 
@@ -213,9 +213,7 @@ def test_non_finite_numbers_nested_in_error_input_give_422(client):
     ],
 )
 def test_range_limits_are_accepted(client, auth_headers, profile):
-    response = client.put(
-        "/me/profile", headers=auth_headers(str(uuid4())), json=profile
-    )
+    response = client.put("/me/profile", headers=auth_headers(), json=profile)
 
     assert response.status_code == 201
     assert response.json() == profile
@@ -239,9 +237,7 @@ def test_range_limits_are_accepted(client, auth_headers, profile):
 def test_agreed_choice_codes_are_accepted(client, auth_headers, field, code):
     profile = {**PROFILE, field: code}
 
-    response = client.put(
-        "/me/profile", headers=auth_headers(str(uuid4())), json=profile
-    )
+    response = client.put("/me/profile", headers=auth_headers(), json=profile)
 
     assert response.status_code == 201
     assert response.json()[field] == code
@@ -263,7 +259,7 @@ def test_age_is_checked_at_save_using_last_day_of_birth_month(
     app, client, auth_headers, today, birth_year, birth_month, expected
 ):
     app.dependency_overrides[utc_today] = lambda: today
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {**PROFILE, "birth_year": birth_year, "birth_month": birth_month}
 
     response = client.put("/me/profile", headers=headers, json=profile)
@@ -280,7 +276,7 @@ def test_age_is_checked_at_save_using_last_day_of_birth_month(
 
 def test_get_keeps_saved_profile_after_user_turns_101(app, client, auth_headers):
     app.dependency_overrides[utc_today] = lambda: date(2026, 10, 25)
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {**PROFILE, "birth_year": 1925, "birth_month": 11}
     assert client.put("/me/profile", headers=headers, json=profile).status_code == 201
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 30)
@@ -292,7 +288,7 @@ def test_get_keeps_saved_profile_after_user_turns_101(app, client, auth_headers)
 
 
 def test_old_saved_value_outside_current_range_still_reads(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     user_id = UUID(client.get("/me", headers=headers).json()["id"])
     saved = {**PROFILE, "height_cm": 229.0}
 
@@ -320,7 +316,7 @@ def test_profile_endpoints_require_valid_token(client, method, headers):
 
 
 def test_concurrent_first_saves_share_one_profile(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     start = Barrier(2)
     first = {**PROFILE, "weight_kg": 61.5}
     second = {**PROFILE, "weight_kg": 72.5}

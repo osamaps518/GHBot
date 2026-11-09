@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -6,10 +8,10 @@ from ghbot.main import create_app
 
 @pytest.fixture
 def auth_headers(client):
-    def headers(subject):
-        token = client.post("/dev/token", json={"subject": subject}).json()[
-            "access_token"
-        ]
+    def headers(subject=None):
+        token = client.post(
+            "/dev/token", json={"subject": subject or str(uuid4())}
+        ).json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
     return headers

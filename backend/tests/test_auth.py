@@ -87,7 +87,7 @@ def test_lone_surrogate_in_token_subject_returns_422(client):
 
 
 def test_valid_token_returns_our_user_id(client, auth_headers):
-    response = client.get("/me", headers=auth_headers(str(uuid4())))
+    response = client.get("/me", headers=auth_headers())
 
     assert response.status_code == 200
     assert set(response.json()) == {"id"}
@@ -173,20 +173,20 @@ def test_api_does_not_enable_cors(client):
 
 
 def test_subject_keeps_its_user_id_across_requests(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     first = client.get("/me", headers=headers)
     returning = client.get("/me", headers=headers)
 
     assert first.status_code == returning.status_code == 200
     assert returning.json()["id"] == first.json()["id"]
 
-    other = client.get("/me", headers=auth_headers(str(uuid4())))
+    other = client.get("/me", headers=auth_headers())
     assert other.status_code == 200
     assert other.json()["id"] != first.json()["id"]
 
 
 def test_concurrent_first_requests_share_one_user(client, auth_headers):
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     start = Barrier(4)
 
     def get_me():

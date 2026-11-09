@@ -1,6 +1,5 @@
 from datetime import date
 from typing import get_args
-from uuid import uuid4
 
 import pytest
 
@@ -117,7 +116,7 @@ def test_ties_round_half_up():
 
 
 def test_get_targets_without_profile_returns_404(client, auth_headers):
-    response = client.get("/me/targets", headers=auth_headers(str(uuid4())))
+    response = client.get("/me/targets", headers=auth_headers())
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Profile not found"}
@@ -125,7 +124,7 @@ def test_get_targets_without_profile_returns_404(client, auth_headers):
 
 def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
     app.dependency_overrides[utc_today] = lambda: date(2026, 10, 30)
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {
         "birth_year": 1996,
         "birth_month": 10,
@@ -166,7 +165,7 @@ def test_get_targets_flags_ages_above_78(
 ):
     # The birthday is the last day of the birth month: 31 October.
     app.dependency_overrides[utc_today] = lambda: today
-    headers = auth_headers(str(uuid4()))
+    headers = auth_headers()
     profile = {
         "birth_year": 1947,
         "birth_month": 10,
