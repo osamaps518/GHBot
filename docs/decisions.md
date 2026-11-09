@@ -206,6 +206,12 @@ readable after the user turns 81. Checks that need more than the request body
 (today's date, the database) return the same 422 shape as the request model,
 with their own `type` code.
 
+Reads use a response model without save ranges. Narrowing a range later does
+not strand previously saved rows: the app can show them and flags an invalid
+value when the user edits. Removing or renaming a stored text code requires a
+migration mapping old codes to new ones, because the app cannot parse a code
+it does not know.
+
 We considered putting profile fields on `users`, but that is the auth module's
 identity table. Native Postgres enums would need a hand-written migration for
 each new code, and fixed-decimal storage would round numbers from the app. A
