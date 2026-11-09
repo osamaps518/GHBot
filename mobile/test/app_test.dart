@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/auth/sign_in_screen.dart';
 import 'package:ghbot/core/theme.dart';
+import 'package:ghbot/main.dart' show validateApiBaseUrl;
 
 import 'fake_backend.dart';
 
@@ -13,6 +14,25 @@ TextDirection _direction(WidgetTester tester) =>
     Directionality.of(tester.element(find.byType(SignInScreen)));
 
 void main() {
+  test('release builds require an HTTPS backend address', () {
+    expect(
+      () => validateApiBaseUrl('http://backend.test', releaseMode: true),
+      throwsStateError,
+    );
+    expect(
+      () => validateApiBaseUrl('https://backend.test', releaseMode: true),
+      returnsNormally,
+    );
+    expect(
+      () => validateApiBaseUrl('https:backend.test', releaseMode: true),
+      throwsStateError,
+    );
+    expect(
+      () => validateApiBaseUrl('http://backend.test', releaseMode: false),
+      returnsNormally,
+    );
+  });
+
   group('language', () {
     testWidgets('Arabic phone shows Arabic, right to left', (tester) async {
       tester.platformDispatcher.localesTestValue = [const Locale('ar')];

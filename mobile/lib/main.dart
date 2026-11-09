@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,13 +18,22 @@ import 'targets/targets_screen.dart';
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
 void main() {
-  if (apiBaseUrl.isEmpty) {
+  validateApiBaseUrl(apiBaseUrl, releaseMode: kReleaseMode);
+  runApp(GhbotApp(client: http.Client(), apiBaseUrl: apiBaseUrl));
+}
+
+void validateApiBaseUrl(String address, {required bool releaseMode}) {
+  if (address.isEmpty) {
     throw StateError(
       'API_BASE_URL is not set. Copy config.example.json to config.json '
       'and run with --dart-define-from-file=config.json.',
     );
   }
-  runApp(GhbotApp(client: http.Client(), apiBaseUrl: apiBaseUrl));
+  if (releaseMode &&
+      (!address.startsWith('https://') ||
+          (Uri.tryParse(address)?.host.isEmpty ?? true))) {
+    throw StateError('Release builds require an HTTPS API_BASE_URL.');
+  }
 }
 
 class GhbotApp extends StatefulWidget {
