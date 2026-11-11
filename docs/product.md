@@ -1,6 +1,6 @@
 # Product and modules
 
-What GHbot does, who uses it, and how it splits into modules. Each module lists its requirements.
+What GHbot does, who uses it, how it splits into modules, and what each module must do.
 
 ## Users
 
@@ -35,9 +35,27 @@ Expert advisors (a dietitian, an exercise scientist) approve the research librar
 
 ## Modules
 
-### Accounts
+| Module | What it is | Needs |
+|---|---|---|
+| **Accounts** | Who you are and getting in. | The authentication provider |
+| **Profiles** | What a trainee tells us about themselves, and their preferences. | Accounts |
+| **Targets** | Daily calories and macros. | Profiles |
+| **Food database** | The foods a trainee can log. | The food data sources |
+| **Food log** | What a trainee ate. | Food database, Targets |
+| **Exercise library** | The exercises a trainee can log. | Nothing |
+| **Workout log** | What a trainee trained. | Exercise library |
+| **Progress** | How it's going over time. | Food log, Workout log, Targets |
+| **Coach** | The AI chat. | Research library, Profiles, Targets, the logs, the model provider |
+| **Research library** | The sources the coach may answer from. | The research sources |
+| **Supervision** | Other people linked to a trainee's account. | Accounts, Targets, the logs |
+| **Gyms and referrals** | Partner gyms and their codes (#29). | Accounts, Subscriptions, the payout provider |
+| **Subscriptions** | Free and premium. | Accounts, app store billing |
+| **Notifications** | What the app tells a trainee without being asked. | The push notification service |
+| **Analytics** | Numbers about the whole app, for admins. | Every other module, possibly an analytics tool |
 
-Who you are and getting in. Needs: the authentication provider.
+## Requirements
+
+### Accounts
 
 - A person can sign up.
 - A person can sign in.
@@ -50,8 +68,6 @@ Who you are and getting in. Needs: the authentication provider.
 
 ### Profiles
 
-What a trainee tells us about themselves, and their preferences. Needs: Accounts.
-
 - A trainee can enter their birth month and year, sex, height, weight, activity level and goal.
 - A trainee can change this information at any time.
 - A trainee can enter their training experience (#27).
@@ -60,8 +76,6 @@ What a trainee tells us about themselves, and their preferences. Needs: Accounts
 - A trainee can choose metric or imperial units (#26).
 
 ### Targets
-
-Daily calories and macros. Needs: Profiles.
 
 - A trainee sees their daily calorie target.
 - A trainee sees their daily protein, carbs and fat in grams.
@@ -76,8 +90,6 @@ Daily calories and macros. Needs: Profiles.
 
 ### Food database
 
-The foods a trainee can log. Needs: the food data sources.
-
 - A trainee can search for a food in Arabic or English.
 - A trainee can find regional dishes, such as maqluba and musakhan.
 - A trainee can pick a food's amount in everyday units (a piece, a cup) or in grams.
@@ -88,8 +100,6 @@ The foods a trainee can log. Needs: the food data sources.
 - A dietitian approves the regional dishes (#34).
 
 ### Food log
-
-What a trainee ate. Needs: Food database, Targets.
 
 - A trainee can log a food they ate.
 - A trainee can change a logged entry.
@@ -106,8 +116,6 @@ What a trainee ate. Needs: Food database, Targets.
 
 ### Exercise library
 
-The exercises a trainee can log.
-
 - A trainee can browse the exercises.
 - A trainee can search for an exercise in Arabic or English.
 - A trainee can filter exercises by equipment.
@@ -115,8 +123,6 @@ The exercises a trainee can log.
 - An admin can fix an exercise.
 
 ### Workout log
-
-What a trainee trained. Needs: Exercise library.
 
 - A trainee can log a workout: its exercises, and the sets, reps, weight and effort (RPE) of each.
 - A trainee can change a logged workout.
@@ -128,8 +134,6 @@ What a trainee trained. Needs: Exercise library.
 
 ### Progress
 
-How it's going over time. Needs: Food log, Workout log, Targets.
-
 - A trainee can log their weight.
 - A trainee can see their weight trend.
 - A trainee can see their strength trend.
@@ -138,8 +142,6 @@ How it's going over time. Needs: Food log, Workout log, Targets.
 - A trainee gets a weekly report.
 
 ### Coach
-
-The AI chat. Needs: Research library, Profiles, Targets, the logs, the model provider.
 
 - A trainee can ask the coach a question about training or nutrition.
 - Every answer shows the sources it came from.
@@ -158,16 +160,12 @@ The AI chat. Needs: Research library, Profiles, Targets, the logs, the model pro
 
 ### Research library
 
-The sources the coach may answer from. Needs: the research sources.
-
 - An admin can add a source with its details (title, year, study type, evidence grade).
 - An admin can remove a source.
 - The coach uses a source only after an expert advisor approved it.
 - The library keeps only abstracts, open-access papers and our own summaries.
 
 ### Supervision
-
-Other people linked to a trainee's account. Needs: Accounts, Targets, the logs.
 
 - A trainee can add their health professional.
 - A trainee can remove their health professional.
@@ -180,8 +178,6 @@ Other people linked to a trainee's account. Needs: Accounts, Targets, the logs.
 - Nobody sees a trainee's data without the trainee's permission.
 
 ### Gyms and referrals
-
-Partner gyms and their codes (#29). Needs: Accounts, Subscriptions, the payout provider.
 
 - An admin can add a partner gym.
 - Each partner gym gets its own code and a QR poster.
@@ -197,8 +193,6 @@ Partner gyms and their codes (#29). Needs: Accounts, Subscriptions, the payout p
 
 ### Subscriptions
 
-Free and premium. Needs: Accounts, app store billing.
-
 - A trainee can use food and workout logging for free.
 - A free trainee can send a limited number of coach messages.
 - A trainee can start a free trial of premium.
@@ -208,15 +202,11 @@ Free and premium. Needs: Accounts, app store billing.
 
 ### Notifications
 
-What the app tells a trainee without being asked. Needs: the push notification service.
-
 - A trainee gets a reminder to log. *(proposed)*
 - A trainee is notified when their weekly report is ready.
 - A trainee can turn each kind of notification off. *(proposed)*
 
 ### Analytics
-
-Numbers about the whole app, for admins. Needs: every other module, possibly an analytics tool.
 
 - An admin can see how many trainees there are and how many signed up recently.
 - An admin can see how many trainees log a meal and a workout in their first week.
