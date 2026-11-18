@@ -25,10 +25,10 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
   late int? _year = widget.initial?.birthYear;
   late Sex? _sex = widget.initial?.sex;
   late final _height = TextEditingController(
-    text: _formatNumber(widget.initial?.heightCm),
+    text: formatSavedNumber(widget.initial?.heightCm),
   );
   late final _weight = TextEditingController(
-    text: _formatNumber(widget.initial?.weightKg),
+    text: formatSavedNumber(widget.initial?.weightKg),
   );
   late ActivityLevel? _activity = widget.initial?.activityLevel;
   late Goal? _goal = widget.initial?.goal;
@@ -62,8 +62,8 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
         birthYear: _year,
         birthMonth: _month,
         sex: _sex,
-        heightCm: _parseNumber(_height.text),
-        weightKg: _parseNumber(_weight.text),
+        heightCm: parseTypedNumber(_height.text),
+        weightKg: parseTypedNumber(_weight.text),
         activityLevel: _activity,
         goal: _goal,
       ),
@@ -98,8 +98,8 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
           birthYear: _year!,
           birthMonth: _month!,
           sex: _sex!,
-          heightCm: _parseNumber(_height.text)!,
-          weightKg: _parseNumber(_weight.text)!,
+          heightCm: parseTypedNumber(_height.text)!,
+          weightKg: parseTypedNumber(_weight.text)!,
           activityLevel: _activity!,
           goal: _goal!,
         ),
@@ -532,27 +532,4 @@ class _ActivityOption extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Reads a number typed with Western or Arabic-Indic digits (٠–٩), and `.`,
-/// `٫` or `,` as the decimal point. Some Arabic keyboards send those, and
-/// `double.parse` rejects them.
-double? _parseNumber(String text) {
-  final western = text
-      .trim()
-      .replaceAllMapped(
-        RegExp('[٠-٩]'),
-        (digit) => '${digit[0]!.codeUnitAt(0) - 0x0660}',
-      )
-      .replaceAll(RegExp('[٫,]'), '.');
-  return double.tryParse(western);
-}
-
-/// Shows a saved number with Western digits (decision 16), without a
-/// trailing ".0".
-String _formatNumber(double? value) {
-  if (value == null) return '';
-  return value == value.truncateToDouble()
-      ? value.toInt().toString()
-      : value.toString();
 }

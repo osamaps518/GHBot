@@ -38,4 +38,19 @@ void main() {
     );
     expect(errors, contains(ProfileField.height));
   });
+
+  for (final (text, number) in [
+    ('١٨٠', 180.0),
+    ('٨٠٫٥', 80.5),
+    ('72,5', 72.5),
+    ('  65.5 ', 65.5),
+    ('', null),
+    ('abc', null),
+  ]) {
+    test('parse "$text"', () => expect(parseTypedNumber(text), number));
+  }
+
+  for (final (number, text) in [(180.0, '180'), (72.5, '72.5'), (null, '')]) {
+    test('format $number', () => expect(formatSavedNumber(number), text));
+  }
 }
