@@ -1,4 +1,6 @@
 import 'package:drift/drift.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../profiles/profile.dart';
 import '../profiles/profile_table.dart';
@@ -6,6 +8,17 @@ import '../targets/targets.dart';
 import '../targets/targets_table.dart';
 
 part 'database.g.dart';
+
+/// Opens `<userId>.sqlite` in `user_data/` under the app support folder.
+AppDatabase openUserDatabase(String userId) => AppDatabase(
+  driftDatabase(
+    name: userId,
+    native: DriftNativeOptions(
+      databaseDirectory: () async =>
+          '${(await getApplicationSupportDirectory()).path}/user_data',
+    ),
+  ),
+);
 
 /// One user's data on the phone, in its own file (docs/decisions.md, 25).
 @DriftDatabase(tables: [ProfileTable, TargetsTable])
@@ -23,11 +36,16 @@ class AppDatabase extends _$AppDatabase {
     return (profile: profile, targets: targets);
   }
 
+  /// Removes the stored profile and targets.
+  Future<void> clearProfileAndTargets() => transaction(() async {
+    await delete(profileTable).go();
+    await delete(targetsTable).go();
+  });
+
   /// Replaces what is stored with [profile] and [targets], both or neither.
   Future<void> storeProfileAndTargets(Profile profile, Targets targets) =>
       transaction(() async {
-        await delete(profileTable).go();
-        await delete(targetsTable).go();
+        await clearProfileAndTargets();
         await into(profileTable).insert(
           ProfileTableCompanion.insert(
             birthYear: profile.birthYear,

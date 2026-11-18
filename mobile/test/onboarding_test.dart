@@ -53,17 +53,6 @@ Future<void> _tapText(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _restartApp(WidgetTester tester, FakeBackend backend) async {
-  await tester.pumpWidget(
-    GhbotApp(
-      key: UniqueKey(),
-      client: backend.client,
-      apiBaseUrl: 'http://backend.test',
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 /// Fills in the form with [savedProfile]'s values, using [l10n]'s labels.
 Future<void> _fillForm(
   WidgetTester tester,
@@ -589,12 +578,11 @@ void main() {
       final backend = FakeBackend()
         ..profile = savedProfile()
         ..targets = {...exampleTargets, 'above_tested_age': true};
-      await pumpApp(tester, backend, storedName: 'alice');
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
       await _tapText(tester, english.understandButton);
 
-      // A new key makes a new app, as after closing it. What the app stored
-      // on the phone stays.
-      await _restartApp(tester, backend);
+      await restartApp(tester, backend, storage);
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
@@ -606,7 +594,8 @@ void main() {
       final backend = FakeBackend()
         ..profile = savedProfile()
         ..targets = {...exampleTargets, 'above_tested_age': true};
-      await pumpApp(tester, backend, storedName: 'alice');
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -614,7 +603,7 @@ void main() {
       final warning = tester.element(find.text(english.ageWarning));
       expect(Navigator.of(warning).canPop(), isFalse);
 
-      await _restartApp(tester, backend);
+      await restartApp(tester, backend, storage);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -638,7 +627,11 @@ void main() {
         InMemorySharedPreferencesAsync.withData({'dev_subject': 'alice'});
 
     await tester.pumpWidget(
-      GhbotApp(client: stalling, apiBaseUrl: 'http://backend.test'),
+      GhbotApp(
+        client: stalling,
+        apiBaseUrl: 'http://backend.test',
+        openDatabase: PhoneStorage().open,
+      ),
     );
     await tester.pump(const Duration(seconds: 6));
     await tester.pump();

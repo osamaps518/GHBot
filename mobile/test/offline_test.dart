@@ -1,0 +1,92 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ghbot/l10n/app_localizations.dart';
+import 'package:http/http.dart' as http;
+
+import 'fake_backend.dart';
+
+final english = lookupAppLocalizations(const Locale('en'));
+
+void main() {
+  // Opens online once, so the profile and targets are stored on the phone.
+  Future<(FakeBackend, PhoneStorage)> openOnce(WidgetTester tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    final storage = PhoneStorage();
+    await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+    expect(find.text('2210'), findsOneWidget);
+    return (backend, storage);
+  }
+
+  testWidgets('opens on the stored targets without a connection', (
+    tester,
+  ) async {
+    final (backend, storage) = await openOnce(tester);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+
+    expect(find.text('2210'), findsOneWidget);
+    expect(find.text(english.errorConnection), findsNothing);
+  });
+
+  testWidgets('shows the stored targets at once, then stores the refreshed '
+      'ones', (tester) async {
+    final (backend, storage) = await openOnce(tester);
+    backend.targets = {...exampleTargets, 'calories': 1990};
+    final reply = Completer<void>();
+    backend.holdNextTargets = reply;
+
+    await restartApp(tester, backend, storage);
+    expect(find.text('2210'), findsOneWidget);
+
+    reply.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('1990'), findsOneWidget);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+    expect(find.text('1990'), findsOneWidget);
+  });
+
+  testWidgets('a profile gone from the server clears the stored one and opens '
+      'onboarding', (tester) async {
+    final (backend, storage) = await openOnce(tester);
+    backend.profile = null;
+
+    await restartApp(tester, backend, storage);
+    expect(find.text(english.profileTitle), findsOneWidget);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+    expect(find.text(english.errorConnection), findsOneWidget);
+  });
+
+  for (final (name, fail) in [
+    ('offline', (FakeBackend backend) => backend.offline = true),
+    (
+      'a server error',
+      (FakeBackend backend) =>
+          backend.intercept = (request) =>
+              request.url.path == '/me/targets' ? http.Response('', 500) : null,
+    ),
+  ]) {
+    testWidgets('a refresh that fails ($name) keeps the stored data', (
+      tester,
+    ) async {
+      final (backend, storage) = await openOnce(tester);
+      fail(backend);
+
+      await restartApp(tester, backend, storage);
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.errorGeneral), findsNothing);
+
+      backend
+        ..intercept = null
+        ..offline = true;
+      await restartApp(tester, backend, storage);
+      expect(find.text('2210'), findsOneWidget);
+    });
+  }
+}

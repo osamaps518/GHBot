@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ghbot/core/database.dart';
 import 'package:ghbot/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -122,15 +125,30 @@ Map<String, Object?> savedProfile({String goal = 'lose'}) => {
   'goal': goal,
 };
 
+/// The phone's app storage for one test: each user's database file in a
+/// temporary folder, so a restarted app finds what the last one stored.
+class PhoneStorage {
+  PhoneStorage() {
+    addTearDown(() => _folder.deleteSync(recursive: true));
+  }
+
+  final _folder = Directory.systemTemp.createTempSync('ghbot_test_');
+
+  AppDatabase open(String userId) =>
+      AppDatabase(NativeDatabase(File('${_folder.path}/$userId.sqlite')));
+}
+
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
 /// an earlier sign-in, with its ID unless [storedId] is false (an install
 /// from before IDs were stored); without a name, this is a fresh install.
+/// [storage] starts empty unless given.
 Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
   bool storedId = true,
   bool ageWarningSeen = false,
+  PhoneStorage? storage,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
@@ -141,9 +159,22 @@ Future<void> pumpApp(
         if (storedName != null && storedId) 'user_id': userIdFor(storedName),
         if (ageWarningSeen) 'age_warning_seen': true,
       });
+  await restartApp(tester, backend, storage ?? PhoneStorage());
+}
 
+/// Starts a new app, as after closing it. What the last one stored stays.
+Future<void> restartApp(
+  WidgetTester tester,
+  FakeBackend backend,
+  PhoneStorage storage,
+) async {
   await tester.pumpWidget(
-    GhbotApp(client: backend.client, apiBaseUrl: 'http://backend.test'),
+    GhbotApp(
+      key: UniqueKey(),
+      client: backend.client,
+      apiBaseUrl: 'http://backend.test',
+      openDatabase: storage.open,
+    ),
   );
   await tester.pumpAndSettle();
 }

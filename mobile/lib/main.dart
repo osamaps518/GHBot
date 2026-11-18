@@ -6,6 +6,7 @@ import 'app_flow.dart';
 import 'auth/auth_session.dart';
 import 'auth/sign_in_screen.dart';
 import 'core/api_client.dart';
+import 'core/database.dart';
 import 'core/error_views.dart';
 import 'core/theme.dart';
 import 'l10n/app_localizations.dart';
@@ -19,7 +20,13 @@ const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
 void main() {
   validateApiBaseUrl(apiBaseUrl, releaseMode: kReleaseMode);
-  runApp(GhbotApp(client: http.Client(), apiBaseUrl: apiBaseUrl));
+  runApp(
+    GhbotApp(
+      client: http.Client(),
+      apiBaseUrl: apiBaseUrl,
+      openDatabase: openUserDatabase,
+    ),
+  );
 }
 
 void validateApiBaseUrl(String address, {required bool releaseMode}) {
@@ -37,10 +44,18 @@ void validateApiBaseUrl(String address, {required bool releaseMode}) {
 }
 
 class GhbotApp extends StatefulWidget {
-  const GhbotApp({super.key, required this.client, required this.apiBaseUrl});
+  const GhbotApp({
+    super.key,
+    required this.client,
+    required this.apiBaseUrl,
+    required this.openDatabase,
+  });
 
   final http.Client client;
   final String apiBaseUrl;
+
+  /// Opens a user's database. Tests pass one that uses a temporary folder.
+  final AppDatabase Function(String userId) openDatabase;
 
   @override
   State<GhbotApp> createState() => _GhbotAppState();
@@ -58,7 +73,12 @@ class _GhbotAppState extends State<GhbotApp> {
   late final _session = AuthSession(_client);
   late final _profilesApi = ProfilesApi(_session);
   late final _targetsApi = TargetsApi(_session);
-  late final _flow = AppFlow(_session, _profilesApi, _targetsApi);
+  late final _flow = AppFlow(
+    _session,
+    _profilesApi,
+    _targetsApi,
+    widget.openDatabase,
+  );
   // Edit my info opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
 
