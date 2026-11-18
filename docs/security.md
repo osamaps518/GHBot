@@ -18,7 +18,9 @@ Profiles hold health data. The database engine hides bound parameters in its err
 
 ## The phone
 
-The app stores the sign-in name and, once the user accepts the age warning, a flag for it. It never stores a token; it gets a new one at each start (decision 17). Every request goes to the configured backend, and the token goes only in the `Authorization` header, never in a URL or body. The widget tests "only the name is stored and tokens stay in backend headers" and "a 79-year-old sees it after onboarding, then the targets" check this.
+The app stores the sign-in name, the user's ID from `GET /me`, and, once a user accepts the age warning, a mark for that user. It never stores a token; it gets one when a call needs it (decision 25). Every request goes to the configured backend, and the token goes only in the `Authorization` header, never in a URL or body. The widget tests "only the name and ID are stored and tokens stay in backend headers", "a 79-year-old sees it after onboarding, then the targets" and "shows once for each user on the phone" check this.
+
+Each user's profile and targets are kept in their own database file, `user_data/<userId>.sqlite` in the app's private storage, so a second user on the phone sees none of the first's data (decision 25). The widget test "two users on one phone each keep only their own data" checks this. `user_data/` is left out of Android backup and device transfer (`data_extraction_rules.xml` for Android 12 and higher, `full_backup_content.xml` for Android 11 and lower).
 
 Release builds refuse to start unless the backend address begins with `https://` and has a host, so tokens and health data never go over plain HTTP. Debug and profile builds allow plain HTTP for the local backend (decision 11). The test "release builds require an HTTPS backend address" checks this.
 
@@ -26,5 +28,5 @@ Release builds refuse to start unless the backend address begins with `https://`
 
 - PostgreSQL can put a rejected row's values in its own constraint error message. Before adding a CHECK or NOT NULL constraint on health data, handle `DBAPIError` by logging only the error type and SQL (decision 8).
 - Development names are not private credentials. Production sign-in, account recovery and session storage need their own design and review.
-- Android backup stays on while development names are used. Revisit it when real sign-in replaces them.
+- Android backup still includes the name and ID while development names are used. Revisit it when real sign-in replaces them.
 - Hosting, certificates, production logging and access to the servers wait until deployment is planned (decision 6).
