@@ -547,7 +547,7 @@ void main() {
       expect(await SharedPreferencesAsync().getKeys(), {
         'dev_subject',
         'user_id',
-        'age_warning_seen',
+        'age_warning_seen_id-alice',
       });
     });
 
@@ -586,6 +586,22 @@ void main() {
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('shows once for each user on the phone', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      await _tapText(tester, english.understandButton);
+
+      // There is no sign-out yet, so the test switches the stored user.
+      await SharedPreferencesAsync().setString('dev_subject', 'bob');
+      await SharedPreferencesAsync().setString('user_id', 'id-bob');
+      await restartApp(tester, backend, storage);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
     });
 
     testWidgets('stays until acknowledged, even after a restart', (

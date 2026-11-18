@@ -157,7 +157,8 @@ Future<void> pumpApp(
       InMemorySharedPreferencesAsync.withData({
         'dev_subject': ?storedName,
         if (storedName != null && storedId) 'user_id': userIdFor(storedName),
-        if (ageWarningSeen) 'age_warning_seen': true,
+        if (storedName != null && ageWarningSeen)
+          'age_warning_seen_${userIdFor(storedName)}': true,
       });
   await restartApp(tester, backend, storage ?? PhoneStorage());
 }

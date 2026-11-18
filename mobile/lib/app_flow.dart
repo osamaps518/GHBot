@@ -30,9 +30,10 @@ class AppFlow extends ChangeNotifier {
   final TargetsApi _targetsApi;
   final AppDatabase Function(String userId) _openDatabase;
   AppDatabase? _database;
-  // Kept on the phone, so after a reinstall the warning shows once more.
+  // Kept on the phone for each user, so after a reinstall the warning shows
+  // once more.
   final _preferences = SharedPreferencesAsync();
-  static const _ageWarningSeenKey = 'age_warning_seen';
+  String get _ageWarningSeenKey => 'age_warning_seen_${_session.userId!}';
 
   AppStage stage = AppStage.loading;
   Profile? profile;
@@ -45,7 +46,6 @@ class AppFlow extends ChangeNotifier {
   int _shownVersion = 0;
 
   Future<void> start() async {
-    ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
     if (await _session.restoreSignIn()) {
       await load();
     } else {
@@ -67,6 +67,7 @@ class AppFlow extends ChangeNotifier {
     try {
       if (_session.userId == null) await _session.fetchUserId();
       final database = _database ??= _openDatabase(_session.userId!);
+      ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
       final stored = await database.readProfileAndTargets();
       if (stored == null) {
         await _refresh(database);
