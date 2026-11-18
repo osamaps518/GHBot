@@ -44,7 +44,8 @@ class FakeBackend {
   /// Holds one targets response with the values captured when requested.
   Completer<void>? holdNextTargets;
 
-  final _validTokens = <String>{};
+  /// The subject each valid token was issued for.
+  final _validTokens = <String, String>{};
   var _tokensIssued = 0;
 
   late final http.Client client = MockClient(_handle);
@@ -66,15 +67,18 @@ class FakeBackend {
     if (route == 'POST /dev/token') {
       final subject = (jsonDecode(request.body) as Map)['subject'];
       final token = 'token-$subject-${++_tokensIssued}';
-      _validTokens.add(token);
+      _validTokens[token] = subject as String;
       return _json({'access_token': token, 'token_type': 'bearer'});
     }
 
     final token = request.headers['authorization']?.replaceFirst('Bearer ', '');
-    if (!_validTokens.contains(token)) {
+    final subject = _validTokens[token];
+    if (subject == null) {
       return _json({'detail': 'Not authenticated'}, 401);
     }
     switch (route) {
+      case 'GET /me':
+        return _json({'id': userIdFor(subject)});
       case 'GET /me/profile':
         final saved = profile;
         return saved == null ? _notFound() : _json(saved);
@@ -96,6 +100,9 @@ class FakeBackend {
   }
 }
 
+/// The user ID the fake backend gives a name.
+String userIdFor(String name) => 'id-$name';
+
 http.Response _json(Object? body, [int status = 200]) => http.Response(
   jsonEncode(body),
   status,
@@ -116,11 +123,13 @@ Map<String, Object?> savedProfile({String goal = 'lose'}) => {
 };
 
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
-/// an earlier sign-in; without it, this is a fresh install.
+/// an earlier sign-in, with its ID unless [storedId] is false (an install
+/// from before IDs were stored); without a name, this is a fresh install.
 Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
+  bool storedId = true,
   bool ageWarningSeen = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
@@ -129,6 +138,7 @@ Future<void> pumpApp(
   SharedPreferencesAsyncPlatform.instance =
       InMemorySharedPreferencesAsync.withData({
         'dev_subject': ?storedName,
+        if (storedName != null && storedId) 'user_id': userIdFor(storedName),
         if (ageWarningSeen) 'age_warning_seen': true,
       });
 

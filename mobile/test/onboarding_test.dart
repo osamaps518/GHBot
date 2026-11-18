@@ -106,14 +106,14 @@ void main() {
       expect(jsonDecode(put.body), savedProfile());
       expect(find.text('2210'), findsOneWidget);
       expect(await SharedPreferencesAsync().getString('dev_subject'), 'alice');
+      expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
     },
   );
 
   // The other tests run with an English (en_US) phone, the default.
 
-  testWidgets('only the name is stored and tokens stay in backend headers', (
-    tester,
-  ) async {
+  testWidgets('only the name and ID are stored and tokens stay in backend '
+      'headers', (tester) async {
     final backend = FakeBackend();
     await pumpApp(tester, backend);
     await _type(tester, find.byType(TextField), 'alice');
@@ -121,7 +121,10 @@ void main() {
     await _fillForm(tester, english);
     await _tapText(tester, english.calculateButton);
 
-    expect(await SharedPreferencesAsync().getKeys(), {'dev_subject'});
+    expect(await SharedPreferencesAsync().getKeys(), {
+      'dev_subject',
+      'user_id',
+    });
     for (final request in backend.requests) {
       expect(request.url.host, 'backend.test');
       expect(request.url.toString(), isNot(contains('token-alice-1')));
@@ -425,6 +428,22 @@ void main() {
     expect(find.text(english.signInTitle), findsNothing);
   });
 
+  testWidgets('a name stored without an ID gets the ID at the next start '
+      'with a connection', (tester) async {
+    final backend = FakeBackend()
+      ..profile = savedProfile()
+      ..offline = true;
+
+    await pumpApp(tester, backend, storedName: 'alice', storedId: false);
+
+    expect(find.text(english.errorConnection), findsOneWidget);
+    backend.offline = false;
+    await _tapText(tester, english.retry);
+
+    expect(find.text('2210'), findsOneWidget);
+    expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
+  });
+
   testWidgets('TLS handshake failure shows the connection error', (
     tester,
   ) async {
@@ -538,6 +557,7 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
       expect(await SharedPreferencesAsync().getKeys(), {
         'dev_subject',
+        'user_id',
         'age_warning_seen',
       });
     });

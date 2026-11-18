@@ -28,7 +28,7 @@ void main() {
         return http.Response('{"access_token":"new-token"}', 200);
       }
       expect(request.headers['authorization'], 'Bearer new-token');
-      return http.Response('{"ok":true}', 200);
+      return http.Response('{"ok":true,"id":"id-new"}', 200);
     });
     final session = AuthSession(
       ApiClient(client: client, baseUrl: 'https://backend.test'),

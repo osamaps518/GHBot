@@ -48,6 +48,7 @@ class AppFlow extends ChangeNotifier {
     stage = AppStage.loading;
     notifyListeners();
     try {
+      if (_session.userId == null) await _session.fetchUserId();
       final results = await Future.wait([
         _profilesApi.getProfile(),
         _targetsApi.getTargets(),
