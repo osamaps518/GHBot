@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # For `dart run drift_dev make-migrations`, which exports each
+          # schema version to drift_schemas/ (see README.md).
+          databases:
+            app_database: lib/core/database.dart

@@ -63,6 +63,12 @@ After changing a table or the database class, regenerate the `*.g.dart` files an
 dart run build_runner build
 ```
 
+Each schema version is exported to `drift_schemas/`, so upgrades on users' phones can be tested against it. After changing a table, bump `schemaVersion` in `lib/core/database.dart`, run this, and commit what it writes (the new schema file, the migration steps and the migration test):
+
+```bash
+dart run drift_dev make-migrations
+```
+
 ## Checks
 
 CI runs these on every PR that changes `mobile/`.
