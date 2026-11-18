@@ -3,11 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
+import 'package:ghbot/profiles/profile.dart';
 import 'package:http/http.dart' as http;
 
 import 'fake_backend.dart';
 
 final english = lookupAppLocalizations(const Locale('en'));
+
+Future<void> _tapText(WidgetTester tester, String text) async {
+  await tester.ensureVisible(find.text(text));
+  await tester.tap(find.text(text));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   // Opens online once, so the profile and targets are stored on the phone.
@@ -89,4 +96,38 @@ void main() {
       expect(find.text('2210'), findsOneWidget);
     });
   }
+
+  testWidgets('a save stores what the server returned', (tester) async {
+    final (backend, storage) = await openOnce(tester);
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {...exampleTargets, 'calories': 1990};
+    await _tapText(tester, english.calculateButton);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+
+    expect(find.text('1990'), findsOneWidget);
+    await _tapText(tester, english.editMyInfo);
+    final goal = tester.widget<SegmentedButton<Goal>>(
+      find.byType(SegmentedButton<Goal>),
+    );
+    expect(goal.selected, {Goal.maintain});
+  });
+
+  testWidgets('an offline save shows the error and stores nothing', (
+    tester,
+  ) async {
+    final (backend, storage) = await openOnce(tester);
+    await _tapText(tester, english.editMyInfo);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.offline = true;
+    await _tapText(tester, english.calculateButton);
+    expect(find.text(english.errorConnection), findsOneWidget);
+
+    await restartApp(tester, backend, storage);
+
+    expect(find.text('2210'), findsOneWidget);
+    expect(find.text(english.goalRow('lose')), findsOneWidget);
+  });
 }
