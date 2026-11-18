@@ -21,7 +21,7 @@ Status values: **Accepted**, **Provisional** (we'll revisit after a set point), 
 
 ## 2. Architecture: modular monolith
 
-**Status:** Accepted, 2026-10-07
+**Status:** Accepted, 2026-10-07. Nutrition's module list is superseded by 26: the backend has `foods` and, later, `food_log`.
 
 One FastAPI application, split into modules by domain (`profiles`, `nutrition`, `training`, later `coach` and `referrals`). Each module owns its routes, models and logic, and modules talk through plain function calls.
 
@@ -368,3 +368,30 @@ Hebrew search come with Hebrew as an app language (#25).
   limit the catalog's size.
 - A Hebrew name column is a normal migration later, and search gets its Hebrew
   cleaning rules at the same time.
+
+---
+
+## 26. One `foods` table
+
+**Status:** Accepted, 2026-11-18 (#53).
+
+Catalog foods, packaged products, and trainees' own foods share one table. A
+diary entry links to one kind of thing, search uses one query, and the phone's
+copy uses one table. The owner rule is the privacy cost paid once: catalog rows
+have no owner; a trainee row has an owner and no source ID. Database constraints
+enforce this boundary.
+
+Units stay in one JSONB map on the food row. A food and its units are read and
+synced together, and units are not queried on their own. We would reconsider a
+split if own foods gain sharing or recipes.
+
+---
+
+## 27. Seed data
+
+**Status:** Accepted, 2026-11-18 (#53).
+
+Curated catalog foods live in CSV files in the repo, one per source. Changes go
+through pull requests so health numbers are reviewed. A command loads the files,
+not a migration: it validates all rows before writing and is safe to rerun.
+There is no scheduled refetch. Removed CSV rows remain in the table.

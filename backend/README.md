@@ -45,6 +45,13 @@ Never change the database by hand. Instead:
 
 Commit the model and its migration together.
 
+## Loading catalog foods
+
+Put curated CSV files in `seed/` as described in [seed/README.md](seed/README.md),
+then run `uv run python -m ghbot.foods.seed` from `backend/`. The command checks
+all files before writing and is safe to rerun. To load a different folder, pass
+its path as the argument.
+
 ## Dependencies
 
 Add one with `uv add <package>` (or `uv add --dev <package>` for tools). Commit `pyproject.toml` and `uv.lock` together.
