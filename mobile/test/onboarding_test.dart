@@ -126,6 +126,43 @@ void main() {
     }
   });
 
+  testWidgets('two users on one phone each keep only their own data', (
+    tester,
+  ) async {
+    final backend = FakeBackend();
+    final storage = PhoneStorage();
+    Future<void> signInAndOnboard(String name) async {
+      await _type(tester, find.byType(TextField), name);
+      await _tapText(tester, english.continueButton);
+      expect(find.text(english.profileTitle), findsOneWidget);
+      await _fillForm(tester, english);
+      await _tapText(tester, english.calculateButton);
+    }
+
+    await pumpApp(tester, backend, storage: storage);
+    await signInAndOnboard('alice');
+    expect(find.text('2210'), findsOneWidget);
+
+    // There is no sign-out yet, so the test forgets the stored user. The fake
+    // backend holds one profile, so bob starts without one.
+    await SharedPreferencesAsync().remove('dev_subject');
+    await SharedPreferencesAsync().remove('user_id');
+    backend
+      ..profile = null
+      ..targets = {...exampleTargets, 'calories': 1990};
+    await restartApp(tester, backend, storage);
+    await signInAndOnboard('bob');
+    expect(find.text('1990'), findsOneWidget);
+
+    backend.offline = true;
+    for (final (name, calories) in [('alice', '2210'), ('bob', '1990')]) {
+      await SharedPreferencesAsync().setString('dev_subject', name);
+      await SharedPreferencesAsync().setString('user_id', userIdFor(name));
+      await restartApp(tester, backend, storage);
+      expect(find.text(calories), findsOneWidget, reason: name);
+    }
+  });
+
   testWidgets('sign-in Retry does not send an empty name', (tester) async {
     final backend = FakeBackend()..offline = true;
     await pumpApp(tester, backend);

@@ -163,15 +163,18 @@ Future<void> pumpApp(
   await restartApp(tester, backend, storage ?? PhoneStorage());
 }
 
-/// Starts a new app, as after closing it. What the last one stored stays.
+/// Closes the app, if one is open, and starts a new one. What the last one
+/// stored stays.
 Future<void> restartApp(
   WidgetTester tester,
   FakeBackend backend,
   PhoneStorage storage,
 ) async {
+  // Closing first lets the old app close its database before the new one
+  // opens a database.
+  await tester.pumpWidget(const SizedBox());
   await tester.pumpWidget(
     GhbotApp(
-      key: UniqueKey(),
       client: backend.client,
       apiBaseUrl: 'http://backend.test',
       openDatabase: storage.open,
