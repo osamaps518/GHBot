@@ -39,7 +39,9 @@ class AppFlow extends ChangeNotifier {
   Targets? targets;
   Exception? failure;
   bool ageWarningSeen = false;
-  int _saveVersion = 0;
+  // Each refresh and save takes a number when it starts. Only results newer
+  // than the ones shown are stored and shown.
+  int _startedVersion = 0;
   int _shownVersion = 0;
 
   Future<void> start() async {
@@ -85,12 +87,18 @@ class AppFlow extends ChangeNotifier {
 
   /// Gets the profile and targets from the server and stores them.
   Future<void> _refresh(AppDatabase database) async {
+    final version = ++_startedVersion;
     final results = await Future.wait([
       _profilesApi.getProfile(),
       _targetsApi.getTargets(),
     ]);
     final loadedProfile = results[0] as Profile?;
     final loadedTargets = results[1] as Targets?;
+    if (loadedProfile != null && loadedTargets == null) {
+      throw const ServerFailure(404);
+    }
+    if (version < _shownVersion) return;
+    _shownVersion = version;
     if (loadedProfile == null) {
       // The server is the authority for the profile.
       await database.clearProfileAndTargets();
@@ -100,8 +108,7 @@ class AppFlow extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (loadedTargets == null) throw const ServerFailure(404);
-    await database.storeProfileAndTargets(loadedProfile, loadedTargets);
+    await database.storeProfileAndTargets(loadedProfile, loadedTargets!);
     _showTargets(loadedProfile, loadedTargets);
   }
 
@@ -116,7 +123,7 @@ class AppFlow extends ChangeNotifier {
   /// it throws and stores nothing.
   Future<void> save(Profile changed) async {
     final database = _database!;
-    final version = ++_saveVersion;
+    final version = ++_startedVersion;
     await _profilesApi.putProfile(changed);
     final updatedTargets = await _targetsApi.getTargets();
     if (updatedTargets == null) throw const ServerFailure(404);
