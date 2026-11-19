@@ -78,6 +78,8 @@ def _row(row: dict[str, str], source: str) -> dict[str, object]:
 
 
 def read_rows(folder: Path) -> list[dict[str, object]]:
+    if not folder.is_dir():
+        raise ValueError(f"{folder}: no such folder")
     rows: list[dict[str, object]] = []
     barcodes: dict[str, str] = {}
     for path in sorted(folder.glob("*.csv")):

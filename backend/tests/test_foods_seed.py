@@ -1,5 +1,6 @@
 import csv
 import asyncio
+import sys
 from pathlib import Path
 from uuid import uuid7
 
@@ -8,7 +9,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
 from ghbot.config import Settings
-from ghbot.foods.seed import load
+from ghbot.foods.seed import load, main
 
 
 @pytest.fixture
@@ -386,6 +387,30 @@ def test_non_utf8_csv_reports_file_name(tmp_path):
 
     with pytest.raises(ValueError, match="usda.csv: not UTF-8"):
         seed(tmp_path)
+
+
+def test_missing_seed_folder_exits_nonzero_and_writes_nothing(
+    tmp_path, monkeypatch, capsys
+):
+    missing = tmp_path / "missing"
+    engine = create_engine(Settings().database_url.get_secret_value())
+    try:
+        with engine.connect() as connection:
+            before = connection.execute(text("SELECT count(*) FROM foods")).scalar_one()
+        monkeypatch.setattr(sys, "argv", ["seed", str(missing)])
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code != 0
+        assert f"{missing}: no such folder" in capsys.readouterr().err
+        with engine.connect() as connection:
+            after = connection.execute(text("SELECT count(*) FROM foods")).scalar_one()
+        assert after == before
+    finally:
+        engine.dispose()
+
+
+def test_existing_empty_seed_folder_loads_nothing(tmp_path):
+    seed(tmp_path)
 
 
 @pytest.mark.parametrize("source", ["trainee", "mystery"])
