@@ -349,6 +349,29 @@ def test_duplicate_barcode_reports_second_file_and_line(tmp_path, across_files):
         engine.dispose()
 
 
+def test_non_utf8_csv_reports_file_name(tmp_path):
+    row = {
+        "source_id": str(uuid7()),
+        "name_ar": "تفاح",
+        "name_en": "Apple",
+        "other_names": "",
+        "calories": "50",
+        "protein": "0",
+        "carbs": "12",
+        "fat": "0",
+        "units": "",
+        "density": "",
+        "barcode": "",
+    }
+    with (tmp_path / "usda.csv").open("w", newline="", encoding="cp1256") as file:
+        writer = csv.DictWriter(file, fieldnames=CSV_COLUMNS)
+        writer.writeheader()
+        writer.writerow(row)
+
+    with pytest.raises(ValueError, match="usda.csv: not UTF-8"):
+        seed(tmp_path)
+
+
 @pytest.mark.parametrize("source", ["trainee", "mystery"])
 def test_non_catalog_csv_is_refused(tmp_path, source):
     write_csv(tmp_path, source, [])

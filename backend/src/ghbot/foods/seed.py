@@ -85,30 +85,33 @@ def read_rows(folder: Path) -> list[dict[str, object]]:
         if source not in SOURCES:
             raise ValueError(f"{path.name}: unknown seed source")
         seen: set[str] = set()
-        with path.open(newline="", encoding="utf-8-sig") as file:
-            reader = csv.DictReader(file)
-            if reader.fieldnames != list(COLUMNS):
-                raise ValueError(f"{path.name}:1: expected seed columns")
-            for raw in reader:
-                line = reader.line_num
-                try:
-                    if None in raw or any(value is None for value in raw.values()):
-                        raise ValueError("incorrect number of columns")
-                    row = _row(raw, source)
-                    source_id = str(row["source_id"])
-                    if source_id in seen:
-                        raise ValueError(f"duplicate source_id: {source_id}")
-                    barcode = row["barcode"]
-                    if isinstance(barcode, str):
-                        if barcode in barcodes:
-                            raise ValueError(
-                                f"duplicate barcode: {barcode} (also {barcodes[barcode]})"
-                            )
-                        barcodes[barcode] = f"{path.name}:{line}"
-                    seen.add(source_id)
-                    rows.append(row)
-                except ValueError as exc:
-                    raise ValueError(f"{path.name}:{line}: {exc}") from exc
+        try:
+            with path.open(newline="", encoding="utf-8-sig") as file:
+                reader = csv.DictReader(file)
+                if reader.fieldnames != list(COLUMNS):
+                    raise ValueError(f"{path.name}:1: expected seed columns")
+                for raw in reader:
+                    line = reader.line_num
+                    try:
+                        if None in raw or any(value is None for value in raw.values()):
+                            raise ValueError("incorrect number of columns")
+                        row = _row(raw, source)
+                        source_id = str(row["source_id"])
+                        if source_id in seen:
+                            raise ValueError(f"duplicate source_id: {source_id}")
+                        barcode = row["barcode"]
+                        if isinstance(barcode, str):
+                            if barcode in barcodes:
+                                raise ValueError(
+                                    f"duplicate barcode: {barcode} (also {barcodes[barcode]})"
+                                )
+                            barcodes[barcode] = f"{path.name}:{line}"
+                        seen.add(source_id)
+                        rows.append(row)
+                    except ValueError as exc:
+                        raise ValueError(f"{path.name}:{line}: {exc}") from exc
+        except UnicodeDecodeError as exc:
+            raise ValueError(f"{path.name}: not UTF-8 ({exc.reason})") from exc
     return rows
 
 
