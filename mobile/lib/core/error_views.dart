@@ -4,7 +4,8 @@ import '../l10n/app_localizations.dart';
 import 'api_failure.dart';
 
 /// "Couldn't connect" with a Retry action. Used wherever the user submits
-/// something, so what they typed stays on screen.
+/// something, so what they typed stays on screen. The icon takes the text
+/// color, since the snackbar colors its text but not icons.
 SnackBar connectionSnackBar(
   AppLocalizations l10n, {
   required VoidCallback onRetry,
@@ -12,7 +13,6 @@ SnackBar connectionSnackBar(
   content: Row(
     spacing: 10,
     children: [
-      // The snackbar colors its text but not icons.
       Builder(
         builder: (context) => Icon(
           Icons.wifi_off,

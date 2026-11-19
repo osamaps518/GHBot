@@ -24,8 +24,10 @@ PROFILE = {
 
 
 def test_failed_profile_insert_does_not_log_health_values(client, caplog):
-    # A missing user makes Postgres reject this profile insert. The bound
-    # height must stay out of the exception that a server would log.
+    """A missing user makes Postgres reject this profile insert.
+
+    The bound height must stay out of the exception that a server would log.
+    """
     height = float("171.37")
 
     async def fail_insert():
@@ -167,8 +169,8 @@ def test_invalid_put_does_not_replace_saved_profile(client, auth_headers, invali
     [(math.nan, "NaN"), (math.inf, "Infinity"), (-math.inf, "-Infinity")],
 )
 def test_non_finite_number_gives_422(client, auth_headers, height_cm, sent):
+    """json= in the test client refuses NaN and Infinity, so this sends raw text."""
     headers = auth_headers()
-    # json= in the test client refuses NaN and Infinity, so send the raw text.
     body = json.dumps({**PROFILE, "height_cm": height_cm})
 
     response = client.put(
@@ -244,13 +246,13 @@ def test_agreed_choice_codes_are_accepted(client, auth_headers, field, code):
 @pytest.mark.parametrize(
     ("today", "birth_year", "birth_month", "expected"),
     [
-        (date(2026, 10, 25), 2008, 10, 422),  # Could still be 17.
-        (date(2026, 10, 25), 2008, 9, 201),
-        (date(2026, 10, 31), 2008, 10, 201),  # Exactly 18.
-        (date(2026, 10, 31), 1926, 10, 201),  # Exactly 100.
-        (date(2026, 10, 25), 1925, 11, 201),  # Still 100.
-        (date(2026, 10, 31), 1925, 10, 422),  # Now 101.
-        (date(2026, 10, 25), 2026, 11, 422),  # Future birth month.
+        pytest.param(date(2026, 10, 25), 2008, 10, 422, id="could-still-be-17"),
+        pytest.param(date(2026, 10, 25), 2008, 9, 201, id="18-since-september"),
+        pytest.param(date(2026, 10, 31), 2008, 10, 201, id="exactly-18"),
+        pytest.param(date(2026, 10, 31), 1926, 10, 201, id="exactly-100"),
+        pytest.param(date(2026, 10, 25), 1925, 11, 201, id="still-100"),
+        pytest.param(date(2026, 10, 31), 1925, 10, 422, id="now-101"),
+        pytest.param(date(2026, 10, 25), 2026, 11, 422, id="future-birth-month"),
     ],
 )
 def test_age_is_checked_at_save_using_last_day_of_birth_month(

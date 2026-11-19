@@ -30,6 +30,6 @@ def app():
 
 @pytest.fixture
 def client(app):
-    # Entering the TestClient runs the app's startup and shutdown (lifespan).
+    """Entering the TestClient runs the app's startup and shutdown (lifespan)."""
     with TestClient(app) as client:
         yield client

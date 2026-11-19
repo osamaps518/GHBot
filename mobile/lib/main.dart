@@ -79,7 +79,8 @@ class _GhbotAppState extends State<GhbotApp> {
     _targetsApi,
     widget.openDatabase,
   );
-  // Edit my info opens the form on top, so the back button returns.
+
+  /// Edit my info opens the form on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
 
   @override
@@ -94,6 +95,8 @@ class _GhbotAppState extends State<GhbotApp> {
     super.dispose();
   }
 
+  /// Opens the form for Edit my info. After a save it closes only this form:
+  /// Back may have closed it while it saved, and another may be open now.
   void _edit() {
     _navigator.currentState!.push(
       MaterialPageRoute<void>(
@@ -101,8 +104,6 @@ class _GhbotAppState extends State<GhbotApp> {
           initial: _flow.profile,
           onSubmit: (profile) async {
             await _flow.save(profile);
-            // Back may have closed this form while it saved, and another
-            // may be open now. Close only this one.
             if (context.mounted && ModalRoute.of(context)!.isCurrent) {
               Navigator.pop(context);
             }
@@ -128,16 +129,17 @@ class _GhbotAppState extends State<GhbotApp> {
     ),
   };
 
+  /// For the language, Flutter matches the phone's ordered preferences against
+  /// `supportedLocales`, then falls back to the first entry when none match.
+  /// With both `theme` and `darkTheme` set, the app follows the phone's light
+  /// or dark setting.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigator,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // Flutter matches the phone's ordered preferences, then falls back to
-      // the first entry when none match.
       supportedLocales: const [Locale('en'), Locale('ar')],
-      // With both set, the app follows the phone's light or dark setting.
       theme: lightTheme,
       darkTheme: darkTheme,
       home: ListenableBuilder(

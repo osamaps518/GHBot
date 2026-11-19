@@ -24,12 +24,16 @@ def create_app() -> FastAPI:
     async def lifespan(
         app: FastAPI,
     ) -> AsyncIterator[dict[str, async_sessionmaker[AsyncSession]]]:
-        # The engine connects lazily, so the app starts even if Postgres is down.
+        """Open the database engine for the app's lifetime.
+
+        The engine connects lazily, so the app starts even if Postgres is down.
+        Sessions keep their fields after commit (expire_on_commit=False);
+        otherwise reading a field would trigger a hidden query, which async
+        SQLAlchemy can't do.
+        """
         engine = create_async_engine(
             settings.database_url.get_secret_value(), hide_parameters=True
         )
-        # Without expire_on_commit=False, reading a field after commit would
-        # trigger a hidden query, which async SQLAlchemy can't do.
         try:
             yield {"sessions": async_sessionmaker(engine, expire_on_commit=False)}
         finally:
@@ -47,10 +51,13 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        # Same as FastAPI's default, except for values the JSON parser accepts
-        # but the response can't hold: NaN and Infinity (json.dumps gives the
-        # text that was sent), and lone surrogates like \ud800, which UTF-8
-        # can't encode (backslashreplace sends them back as text).
+        """Return FastAPI's default 422 body, safe for every value it echoes.
+
+        The JSON parser accepts values the response can't hold: NaN and
+        Infinity (json.dumps gives the text that was sent), and lone surrogates
+        like \\ud800, which UTF-8 can't encode (backslashreplace sends them back
+        as text).
+        """
         errors = jsonable_encoder(
             exc.errors(),
             custom_encoder={

@@ -1,3 +1,9 @@
+"""Run Alembic migrations on the app's database.
+
+The model imports register the users, foods and profiles tables, so Alembic can
+see them.
+"""
+
 import asyncio
 from logging.config import fileConfig
 
@@ -5,11 +11,11 @@ from alembic import context
 from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from ghbot.auth import User  # noqa: F401 -- register the users table for Alembic
+from ghbot.auth import User  # noqa: F401
 from ghbot.config import Settings
 from ghbot.database import Base
-from ghbot.foods import Food  # noqa: F401 -- register foods
-from ghbot.profiles import Profile  # noqa: F401 -- register profiles
+from ghbot.foods import Food  # noqa: F401
+from ghbot.profiles import Profile  # noqa: F401
 
 target_metadata = Base.metadata
 
@@ -24,9 +30,12 @@ def run_migrations(connection: Connection) -> None:
 
 
 async def main() -> None:
+    """Run the migrations.
+
+    Alembic's migration API is synchronous; run_sync bridges it.
+    """
     engine = create_async_engine(Settings().database_url.get_secret_value())
     async with engine.connect() as connection:
-        # Alembic's migration API is synchronous; run_sync bridges it.
         await connection.run_sync(run_migrations)
     await engine.dispose()
 

@@ -161,7 +161,7 @@ def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
 def test_get_targets_flags_ages_above_78(
     app, client, auth_headers, today, above_tested_age
 ):
-    # The birthday is the last day of the birth month: 31 October.
+    """The birthday is the last day of the birth month: 31 October."""
     app.dependency_overrides[utc_today] = lambda: today
     headers = auth_headers()
     profile = {

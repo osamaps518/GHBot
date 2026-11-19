@@ -7,7 +7,7 @@ import 'package:ghbot/main.dart' show validateApiBaseUrl;
 
 import 'fake_backend.dart';
 
-// A fresh install opens on the sign-in screen.
+/// A fresh install opens on the sign-in screen.
 Future<void> _pumpApp(WidgetTester tester) => pumpApp(tester, FakeBackend());
 
 TextDirection _direction(WidgetTester tester) =>

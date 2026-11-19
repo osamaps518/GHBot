@@ -55,7 +55,8 @@ class FakeBackend {
 
   late final http.Client client = MockClient(_handle);
 
-  /// Makes every token issued so far invalid, as when they expire.
+  /// Makes every token issued so far invalid, as when they expire. Tokens last
+  /// 15 minutes; the app may stay open longer.
   void expireTokens() => _validTokens.clear();
 
   Iterable<http.Request> requestsTo(String method, String path) => requests

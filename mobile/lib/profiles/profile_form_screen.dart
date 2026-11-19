@@ -17,12 +17,13 @@ class ProfileFormScreen extends StatefulWidget {
 }
 
 class _ProfileFormScreenState extends State<ProfileFormScreen> {
-  // The backend uses UTC dates for the age check.
+  /// The backend uses UTC dates for the age check.
   final _today = DateTime.now().toUtc();
 
-  // Nothing is chosen by default, so we never guess someone's sex.
   late int? _month = widget.initial?.birthMonth;
   late int? _year = widget.initial?.birthYear;
+
+  /// Nothing is chosen by default, so we never guess someone's sex.
   late Sex? _sex = widget.initial?.sex;
   late final _height = TextEditingController(
     text: formatSavedNumber(widget.initial?.heightCm),
@@ -36,7 +37,7 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
   var _errors = <ProfileField, String>{};
   var _busy = false;
 
-  // The form's own snackbars, so they and their Retry go when it closes.
+  /// The form's own snackbars, so they and their Retry go when it closes.
   final _messenger = GlobalKey<ScaffoldMessengerState>();
 
   @override
@@ -84,6 +85,8 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
     };
   }
 
+  /// Checks the form, then submits it. Back may have closed the form while it
+  /// saved, so a failure shows only while the form is still open.
   Future<void> _submit() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = _messenger.currentState!..hideCurrentSnackBar();
@@ -105,7 +108,6 @@ class _ProfileFormScreenState extends State<ProfileFormScreen> {
         ),
       );
     } on ApiFailure catch (failure) {
-      // Back may have closed this form while it saved.
       if (!mounted) return;
       switch (failure) {
         case ValidationFailure(:final types):
@@ -287,6 +289,8 @@ class _MonthField extends StatelessWidget {
   }
 }
 
+/// Birth years for ages 18 to 100. The oldest year only fits birth months
+/// later in the year; the age check catches the others.
 class _YearField extends StatelessWidget {
   const _YearField({
     required this.thisYear,
@@ -313,8 +317,6 @@ class _YearField extends StatelessWidget {
         errorText: error,
         onSelected: onChanged,
         dropdownMenuEntries: [
-          // Ages 18 to 100. The oldest year only fits birth months later in
-          // the year; the age check catches the others.
           for (var year = thisYear - 18; year >= thisYear - 101; year--)
             DropdownMenuEntry(value: year, label: '$year'),
         ],
@@ -323,7 +325,8 @@ class _YearField extends StatelessWidget {
   }
 }
 
-/// One option out of a few, as a row of segments. Starts with none chosen.
+/// One option out of a few, as a row of segments. Starts with none chosen,
+/// and tapping the chosen option keeps it chosen.
 class _ChoiceField<T> extends StatelessWidget {
   const _ChoiceField({
     required this.label,
@@ -360,7 +363,6 @@ class _ChoiceField<T> extends StatelessWidget {
         showSelectedIcon: false,
         expandedInsets: EdgeInsets.zero,
         onSelectionChanged: (selected) {
-          // Tapping the chosen option keeps it chosen.
           if (selected.isEmpty) return;
           onChanged(selected.single);
         },

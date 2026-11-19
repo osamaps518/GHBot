@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Environment variables win over the .env file.
+    """App settings. Environment variables win over the .env file."""
+
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env"
     )

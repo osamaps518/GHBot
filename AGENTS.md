@@ -14,6 +14,7 @@ Rules for AI coding agents (and people) working on GHBot.
 - Follow CONTRIBUTING.md: branch `<type>/<issue>-<description>`, `Closes #<issue>` in the PR, squash merge.
 - PR titles look like `feat(targets): calculate daily targets`. The title becomes the commit on `main`.
 - Commit in small steps, one behavior each with its tests, so the history shows what changed and why. Generated files and lockfiles go in the commit that causes them.
+- No AI attribution in commits or PRs: no `Co-Authored-By` lines for Claude, Codex or any other tool, and no "Generated with" footer. Instead, start the PR description with "Co-developed with AI assistance."
 
 ## Arabic first (app)
 - No user-facing text in Dart. Add every string to `lib/l10n/app_ar.arb` (the template) and `app_en.arb`; commit the generated files.
@@ -37,7 +38,7 @@ Rules for AI coding agents (and people) working on GHBot.
 
 ## Docs
 - Short and plain. Decisions go in docs/decisions.md, in the same style as existing entries.
-- Never write inline comments, use docstrings.
+- Never write inline comments, use docstrings. One exception: in Dart tests, an inline comment inside a test body is fine, since a `testWidgets` callback has no declaration to hold a doc comment.
 
 ## Before a PR
 - Run the checks in the README of each part you changed (backend/README.md, mobile/README.md).

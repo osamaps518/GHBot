@@ -15,6 +15,8 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 import 'fake_backend.dart';
 
+/// The labels the tests look for. All tests but the Arabic one run with an
+/// English (en_US) phone, the default.
 final english = lookupAppLocalizations(const Locale('en'));
 
 Future<void> _choose(WidgetTester tester, String field, String option) async {
@@ -87,7 +89,6 @@ void main() {
       await _tapText(tester, arabic.continueButton);
 
       expect(find.text(arabic.profileTitle), findsOneWidget);
-      // Some Arabic keyboards send Arabic-Indic digits and the Arabic comma.
       await _fillForm(tester, arabic, height: '١٨٠', weight: '٨٠٫٠');
       await _tapText(tester, arabic.calculateButton);
 
@@ -98,8 +99,6 @@ void main() {
       expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
     },
   );
-
-  // The other tests run with an English (en_US) phone, the default.
 
   testWidgets('only the name and ID are stored and tokens stay in backend '
       'headers', (tester) async {
@@ -216,7 +215,7 @@ void main() {
   });
 
   group('the form', () {
-    // A stored name without a profile opens the form directly.
+    /// A stored name without a profile opens the form directly.
     Future<FakeBackend> openForm(WidgetTester tester) async {
       final backend = FakeBackend();
       await pumpApp(tester, backend, storedName: 'alice');
@@ -268,7 +267,8 @@ void main() {
   });
 
   group('Back from Edit while saving', () {
-    // Opens Edit, starts a save the backend holds, and goes back.
+    /// Opens Edit, starts a save the backend holds, and goes back. It settles
+    /// after going back, since a pending request schedules no frames.
     Future<FakeBackend> leaveDuringSave(WidgetTester tester) async {
       final backend = FakeBackend()..profile = savedProfile();
       await pumpApp(tester, backend, storedName: 'alice');
@@ -277,7 +277,6 @@ void main() {
       await tester.tap(find.text(english.calculateButton));
       await tester.pump();
       await tester.pageBack();
-      // Settles: a pending request schedules no frames.
       await tester.pumpAndSettle();
       expect(find.byType(ProfileFormScreen), findsNothing);
       return backend;
@@ -400,7 +399,6 @@ void main() {
   testWidgets('gets a new token and retries once after a 401', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
-    // Tokens last 15 minutes; the app may stay open longer.
     backend.expireTokens();
 
     await _tapText(tester, english.editMyInfo);
@@ -554,8 +552,8 @@ void main() {
       expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
     });
 
-    // The backend decides who is above the tested age, so the form's
-    // values don't matter here.
+    /// The backend decides who is above the tested age, so the form's
+    /// values don't matter here.
     Future<void> onboard(WidgetTester tester, FakeBackend backend) async {
       await pumpApp(tester, backend, storedName: 'alice');
       await _fillForm(tester, english);
@@ -659,7 +657,6 @@ void main() {
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
-      // The warning replaces the targets, so Back can't skip it.
       final warning = tester.element(find.text(english.ageWarning));
       expect(Navigator.of(warning).canPop(), isFalse);
 
@@ -679,7 +676,6 @@ void main() {
   ) async {
     final body = StreamController<List<int>>();
     addTearDown(body.close);
-    // Headers arrive at once; the body never finishes.
     final stalling = MockClient.streaming(
       (request, _) async => http.StreamedResponse(body.stream, 200),
     );

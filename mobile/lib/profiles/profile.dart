@@ -76,7 +76,7 @@ Set<ProfileField> validateProfileDraft(ProfileDraft draft, DateTime today) {
   return errors;
 }
 
-// Written this way round so NaN, which double.tryParse accepts, fails.
+/// Written this way round so NaN, which `double.tryParse` accepts, fails.
 bool _inRange(double? value, double min, double max) =>
     value != null && value >= min && value <= max;
 
