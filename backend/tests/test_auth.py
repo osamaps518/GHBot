@@ -23,7 +23,7 @@ def test_dev_auth_refuses_other_environments(monkeypatch, environment):
 
 
 def test_dev_auth_requires_an_explicit_environment(monkeypatch):
-    # Don't read the developer's .env.
+    """Ignores the developer's .env, so only the test's environment counts."""
     monkeypatch.setattr(
         Settings, "model_config", {**Settings.model_config, "env_file": None}
     )

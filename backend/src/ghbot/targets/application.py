@@ -1,6 +1,12 @@
-"""Calculate daily calories and macros from an onboarding profile."""
+"""Calculate daily calories and macros from an onboarding profile.
 
-# The agreed calculation writes all Decimal constants as strings.
+The agreed calculation writes all Decimal constants as strings, so FURB157 is
+off for this file.
+
+Mifflin-St Jeor was tested on adults aged 19 to 78 (OLDEST_TESTED_AGE). Above
+that, the app warns that the estimate may be less accurate.
+"""
+
 # ruff: noqa: FURB157
 
 from decimal import ROUND_HALF_UP, Decimal
@@ -21,8 +27,6 @@ class Targets(TypedDict):
     goal_adjustment_percent: int
 
 
-# Mifflin-St Jeor was tested on adults aged 19 to 78. Above that, the app
-# warns that the estimate may be less accurate.
 OLDEST_TESTED_AGE = 78
 
 ACTIVITY_FACTORS = {

@@ -11,8 +11,11 @@ class Base(DeclarativeBase):
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
-    # One session per request. Closing it rolls back anything not committed,
-    # so code that writes data must commit explicitly.
+    """Give each request its own session.
+
+    Closing it rolls back anything not committed, so code that writes data must
+    commit explicitly.
+    """
     async with request.state.sessions() as session:
         yield session
 
