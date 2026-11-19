@@ -10,7 +10,7 @@ class ProfilesApi {
   Future<Profile?> getProfile() =>
       _session.get<Profile>('/me/profile', Profile.fromJson, absentOn404: true);
 
-  Future<void> putProfile(Profile profile) async {
-    await _session.put('/me/profile', profile.toJson());
-  }
+  /// Saves [profile] and returns the profile the server saved.
+  Future<Profile> putProfile(Profile profile) =>
+      _session.put('/me/profile', profile.toJson(), Profile.fromJson);
 }

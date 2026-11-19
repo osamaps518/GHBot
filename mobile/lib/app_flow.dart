@@ -134,19 +134,20 @@ class AppFlow extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Saves on the server, then stores and shows what it returned. Offline,
-  /// it throws and stores nothing.
+  /// Saves [changed] on the server, then stores and shows the profile the
+  /// server saved and the targets it calculated. Offline, it throws and
+  /// stores nothing.
   Future<void> save(Profile changed) async {
     final database = _database!;
     final version = ++_startedVersion;
-    await _profilesApi.putProfile(changed);
+    final savedProfile = await _profilesApi.putProfile(changed);
     final updatedTargets = await _targetsApi.getTargets();
     if (updatedTargets == null) throw const ServerFailure(404);
     if (_disposed || version < _shownVersion) return;
     _shownVersion = version;
-    await database.storeProfileAndTargets(changed, updatedTargets);
+    await database.storeProfileAndTargets(savedProfile, updatedTargets);
     if (_disposed) return;
-    _showTargets(changed, updatedTargets);
+    _showTargets(savedProfile, updatedTargets);
   }
 
   Future<void> acceptAgeWarning() async {

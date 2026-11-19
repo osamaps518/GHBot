@@ -61,8 +61,13 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
-  Future<void> put(String path, Object body) async {
-    _client.decode(await _sendAuthorized('PUT', path, body: body));
+  Future<T> put<T>(
+    String path,
+    Object body,
+    T Function(Map<String, Object?>) parse,
+  ) async {
+    final response = await _sendAuthorized('PUT', path, body: body);
+    return _parse(() => parse(_client.decode(response)));
   }
 
   Future<http.Response> _sendAuthorized(

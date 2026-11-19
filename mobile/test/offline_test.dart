@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
-import 'package:ghbot/profiles/profile.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -98,22 +98,34 @@ void main() {
     });
   }
 
-  testWidgets('a save stores what the server returned', (tester) async {
+  testWidgets('a save stores and shows the profile and targets the server '
+      'returned', (tester) async {
     final (backend, storage) = await openOnce(tester);
     await _tapText(tester, english.editMyInfo);
     await _tapText(tester, english.goalName('maintain'));
-    backend.targets = {...exampleTargets, 'calories': 1990};
+    backend
+      ..targets = {...exampleTargets, 'calories': 1990}
+      ..intercept = (request) => request.method == 'PUT'
+          ? http.Response(
+              jsonEncode({
+                ...savedProfile(goal: 'maintain'),
+                'weight_kg': 81.5,
+              }),
+              200,
+            )
+          : null;
     await _tapText(tester, english.calculateButton);
+
+    expect(find.text('1990'), findsOneWidget);
+    await _tapText(tester, english.editMyInfo);
+    expect(find.text('81.5'), findsOneWidget);
 
     backend.offline = true;
     await restartApp(tester, backend, storage);
 
     expect(find.text('1990'), findsOneWidget);
     await _tapText(tester, english.editMyInfo);
-    final goal = tester.widget<SegmentedButton<Goal>>(
-      find.byType(SegmentedButton<Goal>),
-    );
-    expect(goal.selected, {Goal.maintain});
+    expect(find.text('81.5'), findsOneWidget);
   });
 
   testWidgets('an offline save shows the error and stores nothing', (
