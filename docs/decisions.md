@@ -21,7 +21,7 @@ Status values: **Accepted**, **Provisional** (we'll revisit after a set point), 
 
 ## 2. Architecture: modular monolith
 
-**Status:** Accepted, 2026-10-07. Nutrition's module list is superseded by 26: the backend has `foods` and, later, `food_log`.
+**Status:** Superseded, 2026-11-18 by 26 for the `nutrition` module: the backend has `foods` and, later, `food_log`; other choices remain accepted.
 
 One FastAPI application, split into modules by domain (`profiles`, `nutrition`, `training`, later `coach` and `referrals`). Each module owns its routes, models and logic, and modules talk through plain function calls.
 
