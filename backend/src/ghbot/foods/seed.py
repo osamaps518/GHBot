@@ -5,7 +5,6 @@ import asyncio
 import csv
 import math
 from pathlib import Path
-from uuid import uuid7
 
 from sqlalchemy import func, or_
 from sqlalchemy.dialects.postgresql import insert
@@ -59,10 +58,8 @@ def _row(row: dict[str, str], source: str) -> dict[str, object]:
                 raise ValueError(f"invalid unit: {part}")
             units[code] = _number(amount, f"unit {code}")
     return {
-        "id": uuid7(),
         "source": source,
         "source_id": row["source_id"].strip(),
-        "owner_id": None,
         "name_ar": row["name_ar"].strip(),
         "name_en": row["name_en"].strip() or None,
         "other_names": [
