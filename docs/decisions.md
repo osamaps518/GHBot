@@ -484,3 +484,120 @@ Curated catalog foods live in CSV files in the repo, one per source. Changes go
 through pull requests so health numbers are reviewed. A command loads the files,
 not a migration: it validates all rows before writing and is safe to rerun.
 There is no scheduled refetch. Removed CSV rows remain in the table.
+
+---
+
+## 28. Food data licenses
+
+**Status:** Accepted, 2026-11-18 (#50)
+
+This is what we concluded from the license texts and each source's own terms,
+not legal advice. Product images are out of scope: M2a uses none.
+
+**USDA FoodData Central (#54)**
+- **License:** public domain. The [API guide](https://fdc.nal.usda.gov/api-guide/)
+  says: "USDA FoodData Central data are in the public domain and they are not
+  copyrighted. They are published under CC0 1.0 Universal (CC0 1.0)".
+- **Requires:** nothing. "No permission is needed for their use, but we request
+  that users list FoodData Central as the source of the data".
+  [CC0](https://creativecommons.org/publicdomain/zero/1.0/legalcode.en) has no
+  attribution condition.
+- **For us:** the rows can sit in the MIT repo and next to anything in `foods`.
+  We list the source anyway, because it is asked and costs nothing.
+
+**Open Food Facts (#56)**
+- **License:** the [terms of use](https://world.openfoodfacts.org/terms-of-use)
+  say: "The Open Food Facts database is available under the Open Database
+  License. Individual contents of the database are available under the Database
+  Contents License." The [DbCL](https://opendatacommons.org/licenses/dbcl/1-0/)
+  only adds "You must comply with the ODbL", so the
+  [ODbL](https://opendatacommons.org/licenses/odbl/1-0/) is what binds us.
+- **Requires:** attribution and share-alike. Re-users "have to mention the
+  licence and to attribute the authorship to Open Food Facts with a link to
+  https://openfoodfacts.org, the appropriate local version [...] or the product
+  page" (terms of use). The rest depends on what the ODbL calls each place the
+  data appears:
+  - **The CSV in `backend/seed/` is a Derivative Database.** Picking and
+    cleaning products is an "arrangement, modification, or any other
+    alteration" (section 1). A few hundred products may sound insubstantial,
+    but "repeated and systematic Extraction [...] may amount to [...] a
+    Substantial part" (section 1, repeated in 6.2), so we assume it is. A public repo
+    lets anyone copy it, so we Publicly Convey it. Section 4.2: it goes out only
+    under the ODbL, with the license's link next to it and in its documentation,
+    keeping any notices that came with the data; a CSV can't hold a notice, so
+    it goes "in a location (such as a relevant directory) where users would be
+    likely to look for it". Section 4.4: the file is ODbL, not MIT, and we "must
+    not add Contents [...] that are incompatible". Section 4.6 lets us offer
+    either the whole Derivative Database or a file of the changes; we offer the
+    whole one, and the public CSV is it, so it must match what the server serves.
+  - **The server's `foods` table is a Collective Database, while its parts stay
+    independent.** We mean it as separate datasets side by side: the OFF CSV,
+    USDA foods, our dishes, and each trainee's foods, each made on its own and
+    usable without the others. Neither one table nor the `source` column decides
+    this: `source` only tracks where a row came from. Section 4.5a: "You are not
+    required to license Collective Databases under this License if You
+    incorporate this Database or a Derivative Database in the collection, but
+    this License still applies to this Database or a Derivative Database as a
+    part of the Collective Database". While the parts stay independent,
+    share-alike covers the OFF part only, not our dishes or trainees' foods.
+  - **What the app shows is a Produced Work:** search results, barcode results,
+    food details, and foods shown from the trainee's log. A Produced Work is "a
+    work [...] resulting from using the whole or a Substantial part of the
+    Contents (via a search or other query)", and making one "does not create a
+    Derivative Database" (4.5b). Section 4.3: "if you Publicly Use a Produced
+    Work, You must include a notice associated with the Produced Work reasonably
+    calculated to make any Person that uses, views [...] aware that Content was
+    obtained from the Database [...] and that it is available under this
+    License." Sections 4.4c and 4.6: the results come from our Derivative
+    Database, so the notice also offers it, with a link to the CSV.
+  - **The food records the API sends, and the foods that build up on the phone,
+    are copies of part of the Derivative Database.** The network exception
+    holds only "where no transfer of a copy of the Database or a Derivative
+    Database occurs", and the API does send records. One response holds a few
+    foods, but a trainee who logs many products collects more over time, so we
+    treat these copies like the CSV: they travel with the notice. The API's only
+    client is our app, so the app carries the notice and the API sends each
+    food's `source` so the app knows which foods it covers. The API itself needs
+    no notice text while that is true; if anyone else ever uses it, it needs one
+    first.
+- **For us:** the app shows an Open Food Facts notice wherever one of its
+  products appears (#71). The [data page](https://world.openfoodfacts.org/data)
+  asks for it "on product pages, search screens, and in the "About" or
+  "Settings" sections" with "clickable links back to Open Food Facts and the
+  ODbL license", and gives the wording: "Contains data from Open Food Facts,
+  available under the Open Database License". Testing among ourselves is not
+  public use (section 4.5c), but no build with OFF products goes to beta testers
+  before #71 ships.
+
+Our own rule, stricter than the license asks: no row mixes OFF values with
+another source's (for example, a missing value filled from USDA), and OFF rows
+are loaded as they are in the CSV. If a change would make the parts stop being
+independent, we stop and revisit this decision before it ships. Publishing
+trainees' foods is never the way out. A separate table for OFF rows wouldn't
+settle it either: independence is about the data, not where it is stored.
+
+The data page also asks apps to "send those contributions back" when users add
+products. We don't: it is a request, not a license term, and trainees' own foods
+are their private data.
+
+**Checklist for #54 and #56**
+- [ ] #54: the seed README names FoodData Central as the source of the USDA file,
+  with the data type, the release, its CC0 license and the suggested citation:
+  "U.S. Department of Agriculture, Agricultural Research Service. FoodData
+  Central, <year>. fdc.nal.usda.gov."
+- [ ] #56: OFF rows live in their own CSV, with nothing else in it: none of our
+  rows, no values from other sources.
+- [ ] #56: the seed README says that file "Contains data from Open Food Facts
+  (https://world.openfoodfacts.org), available under the Open Database License
+  (https://opendatacommons.org/licenses/odbl/1-0/)", that its contents are under
+  the DbCL (https://opendatacommons.org/licenses/dbcl/1-0/), that the MIT license
+  does not cover it, and the date of the export used. Any copyright,
+  database-right or license notice that came with the export is kept there too.
+- [ ] #56: one line in the root `README.md`: the MIT license covers the code; the
+  Open Food Facts file is ODbL, see `backend/seed/README.md`.
+- [ ] #56: any change to a product's names or values is made in the CSV, so the
+  public file stays the full copy we offer under section 4.6.
+- [ ] App: [#71](https://github.com/osamaps518/GHBot/issues/71) shows the notice
+  on every screen that shows an OFF food, including foods from the trainee's
+  log, with an About entry linking to Open Food Facts, the ODbL and our CSV. It
+  ships before any build with OFF products reaches beta testers.
