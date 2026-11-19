@@ -9,6 +9,7 @@ import 'package:ghbot/core/database.dart';
 import 'package:ghbot/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -166,14 +167,13 @@ Future<void> pumpApp(
 }
 
 /// Closes the app, if one is open, and starts a new one. What the last one
-/// stored stays.
+/// stored stays. Closing first lets the old app close its database before
+/// the new one opens a database.
 Future<void> restartApp(
   WidgetTester tester,
   FakeBackend backend,
   PhoneStorage storage,
 ) async {
-  // Closing first lets the old app close its database before the new one
-  // opens a database.
   await tester.pumpWidget(const SizedBox());
   await tester.pumpWidget(
     GhbotApp(
@@ -183,4 +183,18 @@ Future<void> restartApp(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// Stores [name] and its ID as the signed-in user for the next start, or
+/// forgets the user when [name] is null. There is no sign-out yet, so tests
+/// switch users this way.
+Future<void> storeSignedInUser(String? name) async {
+  final preferences = SharedPreferencesAsync();
+  if (name == null) {
+    await preferences.remove('dev_subject');
+    await preferences.remove('user_id');
+  } else {
+    await preferences.setString('dev_subject', name);
+    await preferences.setString('user_id', userIdFor(name));
+  }
 }

@@ -30,9 +30,10 @@ class AppFlow extends ChangeNotifier {
   final TargetsApi _targetsApi;
   final AppDatabase Function(String userId) _openDatabase;
   AppDatabase? _database;
-  // Kept on the phone for each user, so after a reinstall the warning shows
-  // once more.
+  // Kept on the phone, so after a reinstall the warning shows once more.
   final _preferences = SharedPreferencesAsync();
+
+  /// The age-warning mark has one key for each user.
   String get _ageWarningSeenKey => 'age_warning_seen_${_session.userId!}';
 
   AppStage stage = AppStage.loading;
@@ -40,8 +41,9 @@ class AppFlow extends ChangeNotifier {
   Targets? targets;
   Exception? failure;
   bool ageWarningSeen = false;
-  // Each refresh and save takes a number when it starts. Only results newer
-  // than the ones shown are stored and shown.
+
+  /// Each refresh and save takes a number when it starts. Only results newer
+  /// than the ones shown are stored and shown.
   int _startedVersion = 0;
   int _shownVersion = 0;
 
@@ -67,7 +69,8 @@ class AppFlow extends ChangeNotifier {
   }
 
   /// Opens the user's database and shows what it holds, then refreshes it in
-  /// the background. With nothing stored, it waits for the server instead.
+  /// the background. A failed background refresh keeps the stored data and
+  /// shows nothing. With nothing stored, it waits for the server instead.
   Future<void> load() async {
     stage = AppStage.loading;
     notifyListeners();
@@ -84,7 +87,6 @@ class AppFlow extends ChangeNotifier {
         return;
       }
       _showTargets(stored.profile, stored.targets);
-      // A failed refresh keeps the stored data and shows nothing.
       unawaited(
         _refresh(database)
             .catchError((_) {}, test: (error) => error is Exception),
@@ -97,7 +99,9 @@ class AppFlow extends ChangeNotifier {
     }
   }
 
-  /// Gets the profile and targets from the server and stores them.
+  /// Gets the profile and targets from the server and stores them. The
+  /// server is the authority for the profile: when it has none, the stored
+  /// one is cleared.
   Future<void> _refresh(AppDatabase database) async {
     final version = ++_startedVersion;
     final results = await Future.wait([
@@ -113,7 +117,6 @@ class AppFlow extends ChangeNotifier {
     if (version < _shownVersion) return;
     _shownVersion = version;
     if (loadedProfile == null) {
-      // The server is the authority for the profile.
       await database.clearProfileAndTargets();
       if (_disposed) return;
       profile = null;

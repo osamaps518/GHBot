@@ -143,10 +143,7 @@ void main() {
     await signInAndOnboard('alice');
     expect(find.text('2210'), findsOneWidget);
 
-    // There is no sign-out yet, so the test forgets the stored user. The fake
-    // backend holds one profile, so bob starts without one.
-    await SharedPreferencesAsync().remove('dev_subject');
-    await SharedPreferencesAsync().remove('user_id');
+    await storeSignedInUser(null);
     backend
       ..profile = null
       ..targets = {...exampleTargets, 'calories': 1990};
@@ -156,8 +153,7 @@ void main() {
 
     backend.offline = true;
     for (final (name, calories) in [('alice', '2210'), ('bob', '1990')]) {
-      await SharedPreferencesAsync().setString('dev_subject', name);
-      await SharedPreferencesAsync().setString('user_id', userIdFor(name));
+      await storeSignedInUser(name);
       await restartApp(tester, backend, storage);
       expect(find.text(calories), findsOneWidget, reason: name);
     }
@@ -633,9 +629,7 @@ void main() {
       await pumpApp(tester, backend, storedName: 'alice', storage: storage);
       await _tapText(tester, english.understandButton);
 
-      // There is no sign-out yet, so the test switches the stored user.
-      await SharedPreferencesAsync().setString('dev_subject', 'bob');
-      await SharedPreferencesAsync().setString('user_id', 'id-bob');
+      await storeSignedInUser('bob');
       await restartApp(tester, backend, storage);
 
       expect(find.text(english.ageWarning), findsOneWidget);

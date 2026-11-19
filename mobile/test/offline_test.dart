@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_backend.dart';
 
@@ -18,7 +17,7 @@ Future<void> _tapText(WidgetTester tester, String text) async {
 }
 
 void main() {
-  // Opens online once, so the profile and targets are stored on the phone.
+  /// Opens online once, so the profile and targets are stored on the phone.
   Future<(FakeBackend, PhoneStorage)> openOnce(WidgetTester tester) async {
     final backend = FakeBackend()..profile = savedProfile();
     final storage = PhoneStorage();
@@ -180,8 +179,7 @@ void main() {
     backend.holdNextTargets = aliceReply;
     await restartApp(tester, backend, storage);
 
-    await SharedPreferencesAsync().setString('dev_subject', 'bob');
-    await SharedPreferencesAsync().setString('user_id', userIdFor('bob'));
+    await storeSignedInUser('bob');
     backend.targets = {...exampleTargets, 'calories': 1990};
     await restartApp(tester, backend, storage);
     expect(find.text('1990'), findsOneWidget);
