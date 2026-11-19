@@ -21,7 +21,7 @@ Status values: **Accepted**, **Provisional** (we'll revisit after a set point), 
 
 ## 2. Architecture: modular monolith
 
-**Status:** Accepted, 2026-10-07
+**Status:** Superseded, 2026-11-18 by 26 for the `nutrition` module: the backend has `foods` and, later, `food_log`; other choices remain accepted.
 
 One FastAPI application, split into modules by domain (`profiles`, `nutrition`, `training`, later `coach` and `referrals`). Each module owns its routes, models and logic, and modules talk through plain function calls.
 
@@ -308,3 +308,91 @@ The module's own HTTP files, `router.py` and `dependencies.py`, turn its errors 
 This rule covers the backend only, not the mobile app.
 
 We considered a shared `AppError` base class with one global handler, and a try/except in every route. This rule keeps FastAPI's own 401 and 422 answers and keeps HTTP codes out of the logic.
+
+---
+
+## 20. Food search needs internet
+
+**Status:** Accepted, 2026-11-18 (#48). Changes Ahmad's [answer 1](https://github.com/osamaps518/GHBot/issues/8#issuecomment-6397389553) in #8, that only the coach needs internet.
+
+Food search and barcode lookup run on the server. The phone keeps the foods a
+trainee has logged and their own foods. Offline, a trainee logs from those, or
+adds a new food of their own.
+
+Size is not the reason: the first catalog is about 1,000 foods, under 1 MB. The reasons:
+- Search would be built twice. SQLite has no `pg_trgm`, so offline results would
+  differ from online ones, and the ranking and the name cleaning rules would need
+  a second copy in Dart.
+- The catalog will outgrow the phone: unknown barcodes from Open Food Facts (#68),
+  and maybe search by meaning with the coach.
+- A fixed food has one copy to fix.
+
+We accept: offline, a trainee can't find a food they have never logged. Most
+logging repeats foods already logged, and those work offline.
+
+We considered keeping the whole catalog on the phone with a plain "contains"
+filter. It is cheap today, but it is a weaker second search, and it stops working
+once the catalog grows.
+
+---
+
+## 21. An entry keeps the values it was logged with
+
+**Status:** Accepted, 2026-11-18 (#48). Changes Ahmad's [answer 3](https://github.com/osamaps518/GHBot/issues/8#issuecomment-6397389553) in #8, that past days update to corrected values with a "Corrected" label.
+
+A diary entry stores the food's values per 100 g when it was logged, and the
+totals calculated from them. When a food's values are fixed later, old entries
+keep their values, so a past day's totals never change.
+
+- History stays what the trainee saw.
+- Changing an old entry's amount uses the entry's own values, not the food's current ones.
+- The server can check an entry's totals against the entry's own values.
+
+The "Corrected" label waits. It stays possible: the entry has the values it was
+logged with and the food has its current ones, so the app can show both later.
+
+Storing only the totals was rejected: an edit would silently use today's food
+values, and the server would have nothing to check the totals against.
+
+---
+
+## 22. Food names in Arabic and English
+
+**Status:** Accepted, 2026-11-18 (#48). Changes Ahmad's [answer 9](https://github.com/osamaps518/GHBot/issues/8#issuecomment-6391833695) in #8, that every food needs a Hebrew name and Hebrew search.
+
+The first catalog has Arabic and English names only. Hebrew food names and
+Hebrew search come with Hebrew as an app language (#25).
+
+- The app has no Hebrew yet, so a Hebrew name would have no one to show to.
+- Every name needs review by someone who reads it, and reviewed names already
+  limit the catalog's size.
+- A Hebrew name column is a normal migration later, and search gets its Hebrew
+  cleaning rules at the same time.
+
+---
+
+## 26. One `foods` table
+
+**Status:** Accepted, 2026-11-18 (#53).
+
+Catalog foods, packaged products, and trainees' own foods share one table. A
+diary entry links to one kind of thing, search uses one query, and the phone's
+copy uses one table. We considered separate catalog and own-food tables, which
+make privacy simpler. With one table, we pay that cost once: catalog rows have
+no owner; a trainee row has an owner and no source ID. Database constraints
+enforce this boundary. We would reconsider a split if own foods gain sharing
+or recipes.
+
+Units stay in one JSONB map on the food row. A food and its units are read and
+synced together, and units are not queried on their own.
+
+---
+
+## 27. Seed data
+
+**Status:** Accepted, 2026-11-18 (#53).
+
+Curated catalog foods live in CSV files in the repo, one per source. Changes go
+through pull requests so health numbers are reviewed. A command loads the files,
+not a migration: it validates all rows before writing and is safe to rerun.
+There is no scheduled refetch. Removed CSV rows remain in the table.
