@@ -75,15 +75,6 @@ Future<void> _fillForm(
   await _tapText(tester, l10n.goalName('lose'));
 }
 
-/// Notes on some tests:
-///
-/// - Sign-in counts a name in characters: 200 emoji are 200 characters but
-///   400 UTF-16 units.
-/// - Retries a 401 only once: the backend answers with a 401 that a new token
-///   doesn't fix. The 500 stops a retry loop, so the test fails instead of
-///   hanging.
-/// - Explains a target raised to the minimum: worked example C from #8,
-///   female, 45, 52 kg, 155 cm, sedentary, lose.
 void main() {
   testWidgets(
     'first launch: sign in, fill in the form in Arabic, see targets',
@@ -184,6 +175,7 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester, FakeBackend());
+    // 200 characters, but 400 UTF-16 units.
     await _type(tester, find.byType(TextField), '😀' * 200);
 
     final button = tester.widget<FilledButton>(find.byType(FilledButton));
@@ -424,6 +416,8 @@ void main() {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
     var puts = 0;
+    // A 401 that a new token doesn't fix. The 500 stops a retry loop, so
+    // the test fails instead of hanging.
     backend.intercept = (request) => request.method == 'PUT'
         ? http.Response('', ++puts <= 3 ? 401 : 500)
         : null;
@@ -519,6 +513,7 @@ void main() {
   });
 
   testWidgets('explains a target raised to the minimum', (tester) async {
+    // Worked example C from #8: female, 45, 52 kg, 155 cm, sedentary, lose.
     final backend = FakeBackend()
       ..profile = savedProfile()
       ..targets = {

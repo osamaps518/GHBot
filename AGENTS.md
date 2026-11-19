@@ -38,7 +38,7 @@ Rules for AI coding agents (and people) working on GHBot.
 
 ## Docs
 - Short and plain. Decisions go in docs/decisions.md, in the same style as existing entries.
-- Never write inline comments, use docstrings.
+- Never write inline comments, use docstrings. One exception: in Dart tests, an inline comment inside a test body is fine, since a `testWidgets` callback has no declaration to hold a doc comment.
 
 ## Before a PR
 - Run the checks in the README of each part you changed (backend/README.md, mobile/README.md).
