@@ -1,5 +1,5 @@
-import csv
 import asyncio
+import csv
 import sys
 from pathlib import Path
 from uuid import uuid7
@@ -352,16 +352,23 @@ def test_duplicate_barcode_reports_second_file_and_line(tmp_path, across_files):
         write_csv(tmp_path, "usda", [row, second])
         expected_line = 3
 
-    with pytest.raises(ValueError, match=f"usda.csv:{expected_line}: duplicate barcode"):
+    with pytest.raises(
+        ValueError, match=f"usda.csv:{expected_line}: duplicate barcode"
+    ):
         seed(tmp_path)
 
     engine = create_engine(Settings().database_url.get_secret_value())
     try:
         with engine.connect() as connection:
-            assert connection.execute(
-                text("SELECT count(*) FROM foods WHERE source_id IN (:first, :second)"),
-                {"first": first_id, "second": second_id},
-            ).scalar_one() == 0
+            assert (
+                connection.execute(
+                    text(
+                        "SELECT count(*) FROM foods WHERE source_id IN (:first, :second)"
+                    ),
+                    {"first": first_id, "second": second_id},
+                ).scalar_one()
+                == 0
+            )
     finally:
         engine.dispose()
 
