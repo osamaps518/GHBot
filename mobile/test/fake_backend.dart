@@ -44,7 +44,8 @@ class FakeBackend {
   /// can act while a save is pending.
   Completer<void>? holdSave;
 
-  /// Holds one targets response with the values captured when requested.
+  /// Holds one targets response with the values captured when requested,
+  /// including a 404 when there was no profile then.
   Completer<void>? holdNextTargets;
 
   /// The subject each valid token was issued for.
@@ -90,14 +91,15 @@ class FakeBackend {
         profile = (jsonDecode(request.body) as Map).cast<String, Object?>();
         return _json(profile, created ? 201 : 200);
       case 'GET /me/targets':
-        if (profile == null) return _notFound();
-        final snapshot = Map<String, Object?>.of(targets);
+        final snapshot = profile == null
+            ? null
+            : Map<String, Object?>.of(targets);
         final hold = holdNextTargets;
         if (hold != null) {
           holdNextTargets = null;
           await hold.future;
         }
-        return _json(snapshot);
+        return snapshot == null ? _notFound() : _json(snapshot);
     }
     return _notFound();
   }

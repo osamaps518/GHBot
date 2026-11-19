@@ -132,28 +132,33 @@ void main() {
     expect(find.text(english.goalRow('lose')), findsOneWidget);
   });
 
-  testWidgets('a refresh that started before a save does not replace it', (
-    tester,
-  ) async {
-    final (backend, storage) = await openOnce(tester);
-    final refreshReply = Completer<void>();
-    backend.holdNextTargets = refreshReply;
-    await restartApp(tester, backend, storage);
+  for (final (oldReply, setUpOldReply) in [
+    ('the old targets', (FakeBackend backend) {}),
+    ('no profile', (FakeBackend backend) => backend.profile = null),
+  ]) {
+    testWidgets('a refresh that started before a save does not replace it '
+        '($oldReply)', (tester) async {
+      final (backend, storage) = await openOnce(tester);
+      setUpOldReply(backend);
+      final refreshReply = Completer<void>();
+      backend.holdNextTargets = refreshReply;
+      await restartApp(tester, backend, storage);
 
-    await _tapText(tester, english.editMyInfo);
-    await _tapText(tester, english.goalName('maintain'));
-    backend.targets = {...exampleTargets, 'calories': 1990};
-    await _tapText(tester, english.calculateButton);
-    expect(find.text('1990'), findsOneWidget);
+      await _tapText(tester, english.editMyInfo);
+      await _tapText(tester, english.goalName('maintain'));
+      backend.targets = {...exampleTargets, 'calories': 1990};
+      await _tapText(tester, english.calculateButton);
+      expect(find.text('1990'), findsOneWidget);
 
-    refreshReply.complete();
-    await tester.pumpAndSettle();
-    expect(find.text('1990'), findsOneWidget);
+      refreshReply.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('1990'), findsOneWidget);
 
-    backend.offline = true;
-    await restartApp(tester, backend, storage);
-    expect(find.text('1990'), findsOneWidget);
-  });
+      backend.offline = true;
+      await restartApp(tester, backend, storage);
+      expect(find.text('1990'), findsOneWidget);
+    });
+  }
 
   testWidgets('a refresh that finishes after the app closed is dropped', (
     tester,

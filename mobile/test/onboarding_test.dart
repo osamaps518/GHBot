@@ -641,6 +641,19 @@ void main() {
       expect(find.text(english.ageWarning), findsOneWidget);
     });
 
+    testWidgets('ignores the old mark kept once for the phone', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+
+      await SharedPreferencesAsync().setBool('age_warning_seen', true);
+      await restartApp(tester, backend, storage);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+    });
+
     testWidgets('stays until acknowledged, even after a restart', (
       tester,
     ) async {
