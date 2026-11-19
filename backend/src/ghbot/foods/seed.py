@@ -108,6 +108,8 @@ def read_rows(folder: Path) -> list[dict[str, object]]:
 
 async def load(folder: Path = DEFAULT_FOLDER) -> None:
     rows = read_rows(folder)
+    if not rows:
+        return
     engine = create_async_engine(Settings().database_url.get_secret_value())
     table = Food.__table__
     changed_columns = (
@@ -122,28 +124,25 @@ async def load(folder: Path = DEFAULT_FOLDER) -> None:
         "density",
         "barcode",
     )
+    statement = insert(Food)
+    excluded = statement.excluded
+    statement = statement.on_conflict_do_update(
+        index_elements=[table.c.source, table.c.source_id],
+        index_where=table.c.owner_id.is_(None),
+        set_={
+            **{name: getattr(excluded, name) for name in changed_columns},
+            "updated_at": func.clock_timestamp(),
+        },
+        where=or_(
+            *(
+                getattr(table.c, name).is_distinct_from(getattr(excluded, name))
+                for name in changed_columns
+            )
+        ),
+    )
     try:
         async with engine.begin() as connection:
-            for row in rows:
-                statement = insert(Food).values(**row)
-                excluded = statement.excluded
-                statement = statement.on_conflict_do_update(
-                    index_elements=[table.c.source, table.c.source_id],
-                    index_where=table.c.owner_id.is_(None),
-                    set_={
-                        **{name: getattr(excluded, name) for name in changed_columns},
-                        "updated_at": func.clock_timestamp(),
-                    },
-                    where=or_(
-                        *(
-                            getattr(table.c, name).is_distinct_from(
-                                getattr(excluded, name)
-                            )
-                            for name in changed_columns
-                        )
-                    ),
-                )
-                await connection.execute(statement)
+            await connection.execute(statement, rows)
     finally:
         await engine.dispose()
 
