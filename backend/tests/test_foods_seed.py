@@ -1,6 +1,5 @@
 import csv
-import subprocess
-import sys
+import asyncio
 from pathlib import Path
 from uuid import uuid7
 
@@ -9,6 +8,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
 from ghbot.config import Settings
+from ghbot.foods.seed import load
 
 
 @pytest.fixture
@@ -110,13 +110,8 @@ def write_csv(folder: Path, source: str, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-def seed(folder: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, "-m", "ghbot.foods.seed", str(folder)],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+def seed(folder: Path) -> None:
+    asyncio.run(load(folder))
 
 
 def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
@@ -156,7 +151,7 @@ def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
                 {"id": owned_id, "owner_id": owner_id},
             )
         write_csv(tmp_path, "usda", [first, second])
-        assert seed(tmp_path).returncode == 0
+        seed(tmp_path)
         with engine.connect() as connection:
             original = (
                 connection.execute(
@@ -181,7 +176,7 @@ def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
         assert original[0]["other_names"] == ["تفاح أحمر", "Red apple"]
         assert original[0]["units"] == {"cup": 240, "piece": 50}
         assert original[0]["density"] == 0.8
-        assert seed(tmp_path).returncode == 0
+        seed(tmp_path)
         with engine.connect() as connection:
             unchanged = (
                 connection.execute(
@@ -198,7 +193,7 @@ def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
             row["source_id"]: row["updated_at"] for row in original
         }
         write_csv(tmp_path, "usda", [{**first, "calories": "55"}, second])
-        assert seed(tmp_path).returncode == 0
+        seed(tmp_path)
         with engine.connect() as connection:
             current = (
                 connection.execute(
@@ -224,7 +219,7 @@ def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
         )
         assert owned == ("Mine", 1, owned_before)
         write_csv(tmp_path, "usda", [{**first, "calories": "55"}])
-        assert seed(tmp_path).returncode == 0
+        seed(tmp_path)
         with engine.connect() as connection:
             assert (
                 connection.execute(
@@ -279,11 +274,10 @@ def test_refused_row_names_file_and_line_and_writes_nothing(
     write_csv(tmp_path, "regional", [valid])
     write_csv(tmp_path, "usda", [{**valid, "source_id": bad_id, **bad_change}])
 
-    result = seed(tmp_path)
-
-    assert result.returncode != 0
-    assert "usda.csv:2:" in result.stderr
-    assert expected in result.stderr
+    with pytest.raises(ValueError) as error:
+        seed(tmp_path)
+    assert "usda.csv:2:" in str(error.value)
+    assert expected in str(error.value)
     engine = create_engine(Settings().database_url.get_secret_value())
     try:
         with engine.connect() as connection:
@@ -312,17 +306,13 @@ def test_duplicate_source_id_in_file_is_refused_at_second_row(tmp_path):
     }
     write_csv(tmp_path, "usda", [row, row])
 
-    result = seed(tmp_path)
-
-    assert result.returncode != 0
-    assert "usda.csv:3: duplicate source_id" in result.stderr
+    with pytest.raises(ValueError, match="usda.csv:3: duplicate source_id"):
+        seed(tmp_path)
 
 
 @pytest.mark.parametrize("source", ["trainee", "mystery"])
 def test_non_catalog_csv_is_refused(tmp_path, source):
     write_csv(tmp_path, source, [])
 
-    result = seed(tmp_path)
-
-    assert result.returncode != 0
-    assert f"{source}.csv: unknown seed source" in result.stderr
+    with pytest.raises(ValueError, match=f"{source}.csv: unknown seed source"):
+        seed(tmp_path)
