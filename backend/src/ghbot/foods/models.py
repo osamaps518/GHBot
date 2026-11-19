@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid7
 
 from sqlalchemy import (
@@ -61,7 +60,7 @@ class Food(Base):
     protein: Mapped[float] = mapped_column(Double)
     carbs: Mapped[float] = mapped_column(Double)
     fat: Mapped[float] = mapped_column(Double)
-    units: Mapped[dict[str, Any]] = mapped_column(
+    units: Mapped[dict[str, float]] = mapped_column(
         JSONB, server_default=text("'{}'::jsonb")
     )
     density: Mapped[float | None] = mapped_column(Double)
