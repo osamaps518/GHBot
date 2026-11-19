@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/profiles/profile.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_backend.dart';
 
@@ -147,6 +148,30 @@ void main() {
 
     refreshReply.complete();
     await tester.pumpAndSettle();
+    expect(find.text('1990'), findsOneWidget);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+    expect(find.text('1990'), findsOneWidget);
+  });
+
+  testWidgets('a refresh that finishes after the app closed is dropped', (
+    tester,
+  ) async {
+    final (backend, storage) = await openOnce(tester);
+    final aliceReply = Completer<void>();
+    backend.holdNextTargets = aliceReply;
+    await restartApp(tester, backend, storage);
+
+    await SharedPreferencesAsync().setString('dev_subject', 'bob');
+    await SharedPreferencesAsync().setString('user_id', userIdFor('bob'));
+    backend.targets = {...exampleTargets, 'calories': 1990};
+    await restartApp(tester, backend, storage);
+    expect(find.text('1990'), findsOneWidget);
+
+    aliceReply.complete();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
     expect(find.text('1990'), findsOneWidget);
 
     backend.offline = true;

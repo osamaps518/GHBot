@@ -45,8 +45,14 @@ class AppFlow extends ChangeNotifier {
   int _startedVersion = 0;
   int _shownVersion = 0;
 
+  /// Set when the app closes. Work still pending then stops before it uses
+  /// the database or notifies listeners.
+  bool _disposed = false;
+
   Future<void> start() async {
-    if (await _session.restoreSignIn()) {
+    final signedIn = await _session.restoreSignIn();
+    if (_disposed) return;
+    if (signedIn) {
       await load();
     } else {
       stage = AppStage.signIn;
@@ -56,6 +62,7 @@ class AppFlow extends ChangeNotifier {
 
   Future<void> signIn(String name) async {
     await _session.signIn(name);
+    if (_disposed) return;
     await load();
   }
 
@@ -66,9 +73,12 @@ class AppFlow extends ChangeNotifier {
     notifyListeners();
     try {
       if (_session.userId == null) await _session.fetchUserId();
+      if (_disposed) return;
       final database = _database ??= _openDatabase(_session.userId!);
       ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
+      if (_disposed) return;
       final stored = await database.readProfileAndTargets();
+      if (_disposed) return;
       if (stored == null) {
         await _refresh(database);
         return;
@@ -80,6 +90,7 @@ class AppFlow extends ChangeNotifier {
             .catchError((_) {}, test: (error) => error is Exception),
       );
     } on Exception catch (error) {
+      if (_disposed) return;
       failure = error;
       stage = AppStage.failed;
       notifyListeners();
@@ -95,6 +106,7 @@ class AppFlow extends ChangeNotifier {
     ]);
     final loadedProfile = results[0] as Profile?;
     final loadedTargets = results[1] as Targets?;
+    if (_disposed) return;
     if (loadedProfile != null && loadedTargets == null) {
       throw const ServerFailure(404);
     }
@@ -103,6 +115,7 @@ class AppFlow extends ChangeNotifier {
     if (loadedProfile == null) {
       // The server is the authority for the profile.
       await database.clearProfileAndTargets();
+      if (_disposed) return;
       profile = null;
       targets = null;
       stage = AppStage.onboarding;
@@ -110,6 +123,7 @@ class AppFlow extends ChangeNotifier {
       return;
     }
     await database.storeProfileAndTargets(loadedProfile, loadedTargets!);
+    if (_disposed) return;
     _showTargets(loadedProfile, loadedTargets);
   }
 
@@ -128,9 +142,10 @@ class AppFlow extends ChangeNotifier {
     await _profilesApi.putProfile(changed);
     final updatedTargets = await _targetsApi.getTargets();
     if (updatedTargets == null) throw const ServerFailure(404);
-    if (version < _shownVersion) return;
+    if (_disposed || version < _shownVersion) return;
     _shownVersion = version;
     await database.storeProfileAndTargets(changed, updatedTargets);
+    if (_disposed) return;
     _showTargets(changed, updatedTargets);
   }
 
@@ -142,6 +157,7 @@ class AppFlow extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _database?.close();
     super.dispose();
   }
