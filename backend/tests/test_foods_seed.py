@@ -63,6 +63,11 @@ def test_database_refuses_invalid_ownership_and_duplicate_catalog_barcode(db):
 
 
 def test_database_requires_names_and_unique_catalog_source_id(db):
+    user_id = uuid7()
+    db.execute(
+        text("INSERT INTO users (id, auth_subject) VALUES (:id, :subject)"),
+        {"id": user_id, "subject": str(user_id)},
+    )
     base = {
         "id": uuid7(),
         "name_ar": "تفاح",
@@ -86,6 +91,17 @@ def test_database_requires_names_and_unique_catalog_source_id(db):
         with pytest.raises(IntegrityError):
             db.execute(insert, invalid)
         savepoint.rollback()
+
+    savepoint = db.begin_nested()
+    with pytest.raises(IntegrityError):
+        db.execute(
+            text("""
+                INSERT INTO foods (id, source, owner_id, calories, protein, carbs, fat)
+                VALUES (:id, 'trainee', :owner_id, 50, 0, 12, 0)
+            """),
+            {"id": uuid7(), "owner_id": user_id},
+        )
+    savepoint.rollback()
 
 
 CSV_COLUMNS = [
