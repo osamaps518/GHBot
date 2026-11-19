@@ -53,17 +53,6 @@ Future<void> _tapText(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _restartApp(WidgetTester tester, FakeBackend backend) async {
-  await tester.pumpWidget(
-    GhbotApp(
-      key: UniqueKey(),
-      client: backend.client,
-      apiBaseUrl: 'http://backend.test',
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 /// Fills in the form with [savedProfile]'s values, using [l10n]'s labels.
 Future<void> _fillForm(
   WidgetTester tester,
@@ -106,14 +95,14 @@ void main() {
       expect(jsonDecode(put.body), savedProfile());
       expect(find.text('2210'), findsOneWidget);
       expect(await SharedPreferencesAsync().getString('dev_subject'), 'alice');
+      expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
     },
   );
 
   // The other tests run with an English (en_US) phone, the default.
 
-  testWidgets('only the name is stored and tokens stay in backend headers', (
-    tester,
-  ) async {
+  testWidgets('only the name and ID are stored and tokens stay in backend '
+      'headers', (tester) async {
     final backend = FakeBackend();
     await pumpApp(tester, backend);
     await _type(tester, find.byType(TextField), 'alice');
@@ -121,7 +110,10 @@ void main() {
     await _fillForm(tester, english);
     await _tapText(tester, english.calculateButton);
 
-    expect(await SharedPreferencesAsync().getKeys(), {'dev_subject'});
+    expect(await SharedPreferencesAsync().getKeys(), {
+      'dev_subject',
+      'user_id',
+    });
     for (final request in backend.requests) {
       expect(request.url.host, 'backend.test');
       expect(request.url.toString(), isNot(contains('token-alice-1')));
@@ -131,6 +123,39 @@ void main() {
       } else {
         expect(request.headers['authorization'], 'Bearer token-alice-1');
       }
+    }
+  });
+
+  testWidgets('two users on one phone each keep only their own data', (
+    tester,
+  ) async {
+    final backend = FakeBackend();
+    final storage = PhoneStorage();
+    Future<void> signInAndOnboard(String name) async {
+      await _type(tester, find.byType(TextField), name);
+      await _tapText(tester, english.continueButton);
+      expect(find.text(english.profileTitle), findsOneWidget);
+      await _fillForm(tester, english);
+      await _tapText(tester, english.calculateButton);
+    }
+
+    await pumpApp(tester, backend, storage: storage);
+    await signInAndOnboard('alice');
+    expect(find.text('2210'), findsOneWidget);
+
+    await storeSignedInUser(null);
+    backend
+      ..profile = null
+      ..targets = {...exampleTargets, 'calories': 1990};
+    await restartApp(tester, backend, storage);
+    await signInAndOnboard('bob');
+    expect(find.text('1990'), findsOneWidget);
+
+    backend.offline = true;
+    for (final (name, calories) in [('alice', '2210'), ('bob', '1990')]) {
+      await storeSignedInUser(name);
+      await restartApp(tester, backend, storage);
+      expect(find.text(calories), findsOneWidget, reason: name);
     }
   });
 
@@ -425,6 +450,22 @@ void main() {
     expect(find.text(english.signInTitle), findsNothing);
   });
 
+  testWidgets('a name stored without an ID gets the ID at the next start '
+      'with a connection', (tester) async {
+    final backend = FakeBackend()
+      ..profile = savedProfile()
+      ..offline = true;
+
+    await pumpApp(tester, backend, storedName: 'alice', storedId: false);
+
+    expect(find.text(english.errorConnection), findsOneWidget);
+    backend.offline = false;
+    await _tapText(tester, english.retry);
+
+    expect(find.text('2210'), findsOneWidget);
+    expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
+  });
+
   testWidgets('TLS handshake failure shows the connection error', (
     tester,
   ) async {
@@ -538,7 +579,8 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
       expect(await SharedPreferencesAsync().getKeys(), {
         'dev_subject',
-        'age_warning_seen',
+        'user_id',
+        'age_warning_seen_id-alice',
       });
     });
 
@@ -569,15 +611,41 @@ void main() {
       final backend = FakeBackend()
         ..profile = savedProfile()
         ..targets = {...exampleTargets, 'above_tested_age': true};
-      await pumpApp(tester, backend, storedName: 'alice');
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
       await _tapText(tester, english.understandButton);
 
-      // A new key makes a new app, as after closing it. What the app stored
-      // on the phone stays.
-      await _restartApp(tester, backend);
+      await restartApp(tester, backend, storage);
 
       expect(find.text('2210'), findsOneWidget);
       expect(find.text(english.ageWarning), findsNothing);
+    });
+
+    testWidgets('shows once for each user on the phone', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      await _tapText(tester, english.understandButton);
+
+      await storeSignedInUser('bob');
+      await restartApp(tester, backend, storage);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
+    });
+
+    testWidgets('ignores the old mark kept once for the phone', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = {...exampleTargets, 'above_tested_age': true};
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+
+      await SharedPreferencesAsync().setBool('age_warning_seen', true);
+      await restartApp(tester, backend, storage);
+
+      expect(find.text(english.ageWarning), findsOneWidget);
     });
 
     testWidgets('stays until acknowledged, even after a restart', (
@@ -586,7 +654,8 @@ void main() {
       final backend = FakeBackend()
         ..profile = savedProfile()
         ..targets = {...exampleTargets, 'above_tested_age': true};
-      await pumpApp(tester, backend, storedName: 'alice');
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -594,7 +663,7 @@ void main() {
       final warning = tester.element(find.text(english.ageWarning));
       expect(Navigator.of(warning).canPop(), isFalse);
 
-      await _restartApp(tester, backend);
+      await restartApp(tester, backend, storage);
 
       expect(find.text(english.ageWarning), findsOneWidget);
       expect(find.text('2210'), findsNothing);
@@ -618,7 +687,11 @@ void main() {
         InMemorySharedPreferencesAsync.withData({'dev_subject': 'alice'});
 
     await tester.pumpWidget(
-      GhbotApp(client: stalling, apiBaseUrl: 'http://backend.test'),
+      GhbotApp(
+        client: stalling,
+        apiBaseUrl: 'http://backend.test',
+        openDatabase: PhoneStorage().open,
+      ),
     );
     await tester.pump(const Duration(seconds: 6));
     await tester.pump();

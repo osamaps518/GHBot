@@ -8,28 +8,47 @@ import '../core/api_failure.dart';
 ///
 /// Dev sign-in (docs/decisions.md, 17): the name is the token subject. We
 /// store the name, not the token, because tokens last 15 minutes. A token is
-/// fetched on the first call after each start, and again on a 401.
+/// fetched on the first call that needs one, and again on a 401.
+///
+/// The user's ID from `GET /me` is stored with the name: it names the user's
+/// database file (decision 25).
 class AuthSession {
   AuthSession(this._client);
 
   final ApiClient _client;
   final _preferences = SharedPreferencesAsync();
   static const _subjectKey = 'dev_subject';
+  static const _userIdKey = 'user_id';
 
   String? _subject;
+  String? _userId;
   Future<String>? _token;
 
-  /// Loads the name from an earlier sign-in. False on a fresh install.
+  /// The signed-in user's ID. Null before sign-in, and for a name stored
+  /// before IDs were, until [fetchUserId].
+  String? get userId => _userId;
+
+  /// Loads the name and ID from an earlier sign-in. False on a fresh install.
   Future<bool> restoreSignIn() async {
     _subject = await _preferences.getString(_subjectKey);
+    _userId = await _preferences.getString(_userIdKey);
     return _subject != null;
   }
 
+  /// Signs in and stores the name and ID only once both calls succeed.
   Future<void> signIn(String name) async {
     final token = await _requestToken(name);
-    await _preferences.setString(_subjectKey, name);
     _subject = name;
     _token = Future.value(token);
+    await fetchUserId();
+    await _preferences.setString(_subjectKey, name);
+  }
+
+  /// Gets the signed-in user's ID from the server and stores it.
+  Future<void> fetchUserId() async {
+    final id = await get('/me', (json) => json['id'] as String);
+    await _preferences.setString(_userIdKey, id!);
+    _userId = id;
   }
 
   Future<T?> get<T>(
@@ -42,8 +61,13 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
-  Future<void> put(String path, Object body) async {
-    _client.decode(await _sendAuthorized('PUT', path, body: body));
+  Future<T> put<T>(
+    String path,
+    Object body,
+    T Function(Map<String, Object?>) parse,
+  ) async {
+    final response = await _sendAuthorized('PUT', path, body: body);
+    return _parse(() => parse(_client.decode(response)));
   }
 
   Future<http.Response> _sendAuthorized(

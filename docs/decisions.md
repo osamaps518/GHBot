@@ -257,7 +257,7 @@ default.
 
 ## 17. Mobile dev sign-in
 
-**Status:** Accepted, 2026-10-31 (#11)
+**Status:** Superseded, 2026-11-18 by 25 for the new token at every start; other choices remain accepted.
 
 Until a real sign-in provider exists, the app asks for a name and uses it as the
 token subject for `POST /dev/token`. It stores the name with `shared_preferences`,
@@ -277,7 +277,7 @@ development build only.
 
 ## 18. Mobile code layout
 
-**Status:** Accepted, 2026-11-02 (#11)
+**Status:** Superseded, 2026-11-18 by 25 for what `AppFlow` loads at start; other choices remain accepted.
 
 Folders in `mobile/lib/` mirror the backend modules: `auth`, `profiles`, and
 `targets`. `core/` holds the API client, failures, error views, and theme that
@@ -368,6 +368,94 @@ Hebrew search come with Hebrew as an app language (#25).
   limit the catalog's size.
 - A Hebrew name column is a normal migration later, and search gets its Hebrew
   cleaning rules at the same time.
+
+---
+
+## 23. Phone database: Drift on SQLite
+
+**Status:** Accepted, 2026-11-18 (#52)
+
+The app keeps data on the phone in SQLite, through [Drift](https://drift.simonbinder.eu/).
+What we needed: real transactions (an offline diary entry exists nowhere else),
+relational data like the server's, safe schema changes on users' phones, a
+library that will still be maintained, and screens that update when sync
+brings changes. SQLite has shipped inside Android for over 15 years and has a
+stable file format. Drift checks queries before the app runs and has tools for
+testing migrations.
+
+Each module declares its own tables, with typed columns rather than JSON, so
+Drift checks them. The database class is in `mobile/lib/core/database.dart`.
+Each schema version is exported to `mobile/drift_schemas/`, so upgrades can be
+tested against it.
+
+Options ruled out:
+- sqflite: SQL in strings that nothing checks, and no live queries. It's the
+  fallback if we ever want no code generation.
+- ObjectBox: not SQL, its sync needs its own server, and the engine isn't open source.
+- Isar and Hive CE: not relational, and both are community forks of abandoned libraries.
+- Realm: MongoDB retired its SDKs in September 2025.
+- PowerSync and ElectricSQL: a second service to run, and access rules written twice.
+
+We accept a code generation step (`build_runner`) and generated files committed
+in the repo.
+
+---
+
+## 24. Profile and targets: cached to read, online to save
+
+**Status:** Accepted, 2026-11-18 (#52)
+
+The phone keeps the last profile and targets the server sent and shows them
+without a connection. Saving a profile needs internet: the server's result is
+stored, then shown. Offline, the save shows the no-connection error and changes
+nothing.
+
+- The server can refuse a profile (age rule, ranges). Saving offline would need
+  a "your change was rejected" flow.
+- Targets offline would need the formula and the safe minimum a second time, in
+  Dart. A health rule must have one copy.
+- A profile changes a few times a year; a meal is logged several times a day.
+
+The server is the authority. A refresh replaces what is stored, and if the
+server has no profile, the stored one is cleared and onboarding opens.
+
+---
+
+## 25. Sign-in when a call needs one, one database file per user
+
+**Status:** Accepted, 2026-11-18 (#52). Supersedes parts of 17 and 18.
+
+The app opens from the data on the phone. It no longer loads the profile and
+targets from the server at every start, so it gets a token only when a call
+needs one. Sign-in protects the server's data; data already on the phone is
+protected by the lock screen and Android's app storage.
+
+At sign-in the app gets the user's ID from `GET /me` and stores it with the
+name. At start:
+- Name and ID stored: open that user's database, show the stored profile and
+  targets at once, then refresh them in the background. A failed refresh
+  changes nothing and shows nothing. With nothing stored, load from the server
+  as before.
+- Name but no ID (installs from before #52): get the ID first. Offline, this
+  shows the error screen with Retry.
+- No name: the sign-in screen.
+
+Each user has their own database, `<userId>.sqlite` in a `user_data/` folder
+under the app support folder. Each refresh and save writes only to the database
+it started with, and a refresh that started before a save never replaces what
+the save returned. The age-warning mark is kept for each user too. `user_data/`
+is left out of Android backup and device transfer; the name and ID stay in backup.
+
+Rejected:
+- Wiping the database when the user changes: it would destroy unsent diary entries.
+- One shared database with a user filter on every query: one forgotten filter
+  shows someone else's data.
+
+We accept:
+- A stolen unlocked phone shows the cached data.
+- A blocked account keeps its cached data until the server refuses its sign-in.
+  This starts with the real provider: dev sign-in never refuses.
+- The first sign-in and onboarding need internet.
 
 ---
 

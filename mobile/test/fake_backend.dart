@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ghbot/core/database.dart';
 import 'package:ghbot/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -41,10 +45,12 @@ class FakeBackend {
   /// can act while a save is pending.
   Completer<void>? holdSave;
 
-  /// Holds one targets response with the values captured when requested.
+  /// Holds one targets response with the values captured when requested,
+  /// including a 404 when there was no profile then.
   Completer<void>? holdNextTargets;
 
-  final _validTokens = <String>{};
+  /// The subject each valid token was issued for.
+  final _validTokens = <String, String>{};
   var _tokensIssued = 0;
 
   late final http.Client client = MockClient(_handle);
@@ -66,15 +72,18 @@ class FakeBackend {
     if (route == 'POST /dev/token') {
       final subject = (jsonDecode(request.body) as Map)['subject'];
       final token = 'token-$subject-${++_tokensIssued}';
-      _validTokens.add(token);
+      _validTokens[token] = subject as String;
       return _json({'access_token': token, 'token_type': 'bearer'});
     }
 
     final token = request.headers['authorization']?.replaceFirst('Bearer ', '');
-    if (!_validTokens.contains(token)) {
+    final subject = _validTokens[token];
+    if (subject == null) {
       return _json({'detail': 'Not authenticated'}, 401);
     }
     switch (route) {
+      case 'GET /me':
+        return _json({'id': userIdFor(subject)});
       case 'GET /me/profile':
         final saved = profile;
         return saved == null ? _notFound() : _json(saved);
@@ -83,18 +92,22 @@ class FakeBackend {
         profile = (jsonDecode(request.body) as Map).cast<String, Object?>();
         return _json(profile, created ? 201 : 200);
       case 'GET /me/targets':
-        if (profile == null) return _notFound();
-        final snapshot = Map<String, Object?>.of(targets);
+        final snapshot = profile == null
+            ? null
+            : Map<String, Object?>.of(targets);
         final hold = holdNextTargets;
         if (hold != null) {
           holdNextTargets = null;
           await hold.future;
         }
-        return _json(snapshot);
+        return snapshot == null ? _notFound() : _json(snapshot);
     }
     return _notFound();
   }
 }
+
+/// The user ID the fake backend gives a name.
+String userIdFor(String name) => 'id-$name';
 
 http.Response _json(Object? body, [int status = 200]) => http.Response(
   jsonEncode(body),
@@ -115,13 +128,30 @@ Map<String, Object?> savedProfile({String goal = 'lose'}) => {
   'goal': goal,
 };
 
+/// The phone's app storage for one test: each user's database file in a
+/// temporary folder, so a restarted app finds what the last one stored.
+class PhoneStorage {
+  PhoneStorage() {
+    addTearDown(() => _folder.deleteSync(recursive: true));
+  }
+
+  final _folder = Directory.systemTemp.createTempSync('ghbot_test_');
+
+  AppDatabase open(String userId) =>
+      AppDatabase(NativeDatabase(File('${_folder.path}/$userId.sqlite')));
+}
+
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
-/// an earlier sign-in; without it, this is a fresh install.
+/// an earlier sign-in, with its ID unless [storedId] is false (an install
+/// from before IDs were stored); without a name, this is a fresh install.
+/// [storage] starts empty unless given.
 Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
+  bool storedId = true,
   bool ageWarningSeen = false,
+  PhoneStorage? storage,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
@@ -129,11 +159,42 @@ Future<void> pumpApp(
   SharedPreferencesAsyncPlatform.instance =
       InMemorySharedPreferencesAsync.withData({
         'dev_subject': ?storedName,
-        if (ageWarningSeen) 'age_warning_seen': true,
+        if (storedName != null && storedId) 'user_id': userIdFor(storedName),
+        if (storedName != null && ageWarningSeen)
+          'age_warning_seen_${userIdFor(storedName)}': true,
       });
+  await restartApp(tester, backend, storage ?? PhoneStorage());
+}
 
+/// Closes the app, if one is open, and starts a new one. What the last one
+/// stored stays. Closing first lets the old app close its database before
+/// the new one opens a database.
+Future<void> restartApp(
+  WidgetTester tester,
+  FakeBackend backend,
+  PhoneStorage storage,
+) async {
+  await tester.pumpWidget(const SizedBox());
   await tester.pumpWidget(
-    GhbotApp(client: backend.client, apiBaseUrl: 'http://backend.test'),
+    GhbotApp(
+      client: backend.client,
+      apiBaseUrl: 'http://backend.test',
+      openDatabase: storage.open,
+    ),
   );
   await tester.pumpAndSettle();
+}
+
+/// Stores [name] and its ID as the signed-in user for the next start, or
+/// forgets the user when [name] is null. There is no sign-out yet, so tests
+/// switch users this way.
+Future<void> storeSignedInUser(String? name) async {
+  final preferences = SharedPreferencesAsync();
+  if (name == null) {
+    await preferences.remove('dev_subject');
+    await preferences.remove('user_id');
+  } else {
+    await preferences.setString('dev_subject', name);
+    await preferences.setString('user_id', userIdFor(name));
+  }
 }

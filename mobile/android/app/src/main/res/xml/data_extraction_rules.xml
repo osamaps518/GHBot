@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and higher. user_data/ holds each user's database with their
+     profile and targets (docs/decisions.md, 25), so it stays on this phone.
+     getApplicationSupportDirectory() is the "file" domain on Android. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="user_data/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="user_data/" />
+    </device-transfer>
+</data-extraction-rules>

@@ -37,6 +37,7 @@ Rules for AI coding agents (and people) working on GHBot.
 
 ## Docs
 - Short and plain. Decisions go in docs/decisions.md, in the same style as existing entries.
+- Never write inline comments, use docstrings.
 
 ## Before a PR
 - Run the checks in the README of each part you changed (backend/README.md, mobile/README.md).
