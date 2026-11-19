@@ -79,6 +79,7 @@ def _row(row: dict[str, str], source: str) -> dict[str, object]:
 
 def read_rows(folder: Path) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
+    barcodes: dict[str, str] = {}
     for path in sorted(folder.glob("*.csv")):
         source = path.stem
         if source not in SOURCES:
@@ -97,6 +98,13 @@ def read_rows(folder: Path) -> list[dict[str, object]]:
                     source_id = str(row["source_id"])
                     if source_id in seen:
                         raise ValueError(f"duplicate source_id: {source_id}")
+                    barcode = row["barcode"]
+                    if isinstance(barcode, str):
+                        if barcode in barcodes:
+                            raise ValueError(
+                                f"duplicate barcode: {barcode} (also {barcodes[barcode]})"
+                            )
+                        barcodes[barcode] = f"{path.name}:{line}"
                     seen.add(source_id)
                     rows.append(row)
                 except ValueError as exc:

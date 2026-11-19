@@ -310,6 +310,45 @@ def test_duplicate_source_id_in_file_is_refused_at_second_row(tmp_path):
         seed(tmp_path)
 
 
+@pytest.mark.parametrize("across_files", [False, True])
+def test_duplicate_barcode_reports_second_file_and_line(tmp_path, across_files):
+    first_id, second_id = str(uuid7()), str(uuid7())
+    row = {
+        "source_id": first_id,
+        "name_ar": "تفاح",
+        "name_en": "",
+        "other_names": "",
+        "calories": "50",
+        "protein": "0",
+        "carbs": "12",
+        "fat": "0",
+        "units": "",
+        "density": "",
+        "barcode": "000123",
+    }
+    second = {**row, "source_id": second_id}
+    if across_files:
+        write_csv(tmp_path, "regional", [row])
+        write_csv(tmp_path, "usda", [second])
+        expected_line = 2
+    else:
+        write_csv(tmp_path, "usda", [row, second])
+        expected_line = 3
+
+    with pytest.raises(ValueError, match=f"usda.csv:{expected_line}: duplicate barcode"):
+        seed(tmp_path)
+
+    engine = create_engine(Settings().database_url.get_secret_value())
+    try:
+        with engine.connect() as connection:
+            assert connection.execute(
+                text("SELECT count(*) FROM foods WHERE source_id IN (:first, :second)"),
+                {"first": first_id, "second": second_id},
+            ).scalar_one() == 0
+    finally:
+        engine.dispose()
+
+
 @pytest.mark.parametrize("source", ["trainee", "mystery"])
 def test_non_catalog_csv_is_refused(tmp_path, source):
     write_csv(tmp_path, source, [])
