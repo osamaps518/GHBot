@@ -29,6 +29,7 @@ COLUMNS = (
     "density",
     "barcode",
 )
+UPDATED_COLUMNS = tuple(name for name in COLUMNS if name != "source_id")
 DEFAULT_FOLDER = Path(__file__).resolve().parents[3] / "seed"
 
 
@@ -112,31 +113,19 @@ async def load(folder: Path = DEFAULT_FOLDER) -> None:
         return
     engine = create_async_engine(Settings().database_url.get_secret_value())
     table = Food.__table__
-    changed_columns = (
-        "name_ar",
-        "name_en",
-        "other_names",
-        "calories",
-        "protein",
-        "carbs",
-        "fat",
-        "units",
-        "density",
-        "barcode",
-    )
     statement = insert(Food)
     excluded = statement.excluded
     statement = statement.on_conflict_do_update(
         index_elements=[table.c.source, table.c.source_id],
         index_where=table.c.owner_id.is_(None),
         set_={
-            **{name: getattr(excluded, name) for name in changed_columns},
+            **{name: getattr(excluded, name) for name in UPDATED_COLUMNS},
             "updated_at": func.clock_timestamp(),
         },
         where=or_(
             *(
                 getattr(table.c, name).is_distinct_from(getattr(excluded, name))
-                for name in changed_columns
+                for name in UPDATED_COLUMNS
             )
         ),
     )
