@@ -70,6 +70,8 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
+  /// Sends with the current token, and once more with a new one after a 401.
+  /// Calls made in parallel share one new token.
   Future<http.Response> _sendAuthorized(
     String method,
     String path, {
@@ -83,7 +85,6 @@ class AuthSession {
       headers: {'authorization': 'Bearer ${await token}'},
     );
     if (response.statusCode != 401) return response;
-    // Calls made in parallel share one new token.
     if (identical(_token, token)) _token = null;
     return _client.send(
       method,

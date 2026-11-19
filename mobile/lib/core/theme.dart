@@ -71,6 +71,22 @@ const _darkCard = Color(0xFF1D1D20);
 TextStyle targetsRowValueStyle(ThemeData theme) =>
     theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
 
+/// Builds a theme from [colors] and the [targets] colors.
+///
+/// - Text fields and dropdowns share one look. `DropdownMenu` doesn't read the
+///   app-wide `inputDecorationTheme`, so it gets this too.
+/// - Field errors get two lines: height and weight sit side by side.
+/// - A button's `textStyle` replaces the default one instead of merging with
+///   it, so button text starts from the text theme to keep the Rubik font.
+/// - `displayLarge` is the daily calories number on the targets screen.
+/// - Segmented buttons are the gender and goal pickers: a pill-shaped track,
+///   the chosen option filled.
+/// - Progress indicators are the macro bars on the targets screen. Each bar's
+///   color is its macro's.
+/// - "How we calculated this" sits in a card, so expansion tiles have no
+///   divider lines.
+/// - The snackbar is the "no connection" message. Its colors already come
+///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
   final base = ThemeData(colorScheme: colors, fontFamily: 'Rubik');
 
@@ -78,8 +94,6 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
     borderRadius: BorderRadius.circular(16),
     borderSide: BorderSide(color: color, width: width),
   );
-  // Text fields and dropdowns share one look. DropdownMenu doesn't read the
-  // app-wide inputDecorationTheme, so it gets this too.
   final fields = InputDecorationThemeData(
     filled: true,
     fillColor: colors.surfaceContainer,
@@ -87,13 +101,10 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
     focusedBorder: border(colors.primary, 2),
     errorBorder: border(colors.error, 2),
     focusedErrorBorder: border(colors.error, 2),
-    // Height and weight sit side by side; their errors need a second line.
     errorMaxLines: 2,
   );
 
   const buttonSize = Size(64, 54);
-  // A button's textStyle replaces the default one instead of merging with
-  // it, so these start from the text theme to keep the Rubik font.
   final buttonText = base.textTheme.titleMedium!.copyWith(
     fontSize: 16,
     fontWeight: FontWeight.w600,
@@ -101,7 +112,6 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
 
   return base.copyWith(
     textTheme: base.textTheme.copyWith(
-      // The daily calories number on the targets screen.
       displayLarge: base.textTheme.displayLarge!.copyWith(
         fontSize: 80,
         fontWeight: FontWeight.w600,
@@ -128,7 +138,6 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
         side: BorderSide(color: colors.outline, width: 1.5),
       ),
     ),
-    // Gender and goal pickers: a pill-shaped track, the chosen option filled.
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
         minimumSize: const Size(0, 48),
@@ -146,19 +155,15 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
-    // The macro bars on the targets screen. Each bar's color is its macro's.
     progressIndicatorTheme: ProgressIndicatorThemeData(
       linearMinHeight: 8,
       linearTrackColor: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(999),
     ),
-    // "How we calculated this" sits in a card, so no divider lines.
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),
       collapsedShape: Border(),
     ),
-    // The "no connection" message. Its colors already come from the inverse
-    // roles in the color scheme.
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

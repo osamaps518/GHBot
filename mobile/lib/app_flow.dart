@@ -30,7 +30,9 @@ class AppFlow extends ChangeNotifier {
   final TargetsApi _targetsApi;
   final AppDatabase Function(String userId) _openDatabase;
   AppDatabase? _database;
-  // Kept on the phone, so after a reinstall the warning shows once more.
+
+  /// Holds the age-warning mark. It's kept on the phone, so after a reinstall
+  /// the warning shows once more.
   final _preferences = SharedPreferencesAsync();
 
   /// The age-warning mark has one key for each user.

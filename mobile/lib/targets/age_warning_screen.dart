@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 
 /// Shown before the targets to users older than the calorie formula was
-/// tested for.
+/// tested for. It scrolls when the phone's text size is large.
 class AgeWarningScreen extends StatelessWidget {
   const AgeWarningScreen({super.key, required this.onUnderstood});
 
@@ -16,7 +16,6 @@ class AgeWarningScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          // Scrolls when the phone's text size is large.
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
