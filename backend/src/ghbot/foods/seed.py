@@ -117,7 +117,7 @@ async def load(folder: Path = DEFAULT_FOLDER) -> None:
         index_where=table.c.owner_id.is_(None),
         set_={
             **{name: getattr(excluded, name) for name in UPDATED_COLUMNS},
-            "updated_at": func.clock_timestamp(),
+            "updated_at": func.now(),
         },
         where=or_(
             *(

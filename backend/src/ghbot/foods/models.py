@@ -69,5 +69,5 @@ class Food(Base):
     source_id: Mapped[str | None] = mapped_column(Text)
     owner_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.clock_timestamp()
+        DateTime(timezone=True), server_default=func.now()
     )

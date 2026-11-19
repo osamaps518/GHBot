@@ -48,7 +48,7 @@ def upgrade() -> None:
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("clock_timestamp()"),
+            server_default=sa.text("now()"),
             nullable=False,
         ),
         sa.CheckConstraint(
