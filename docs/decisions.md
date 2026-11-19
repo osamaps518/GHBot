@@ -377,13 +377,14 @@ Hebrew search come with Hebrew as an app language (#25).
 
 Catalog foods, packaged products, and trainees' own foods share one table. A
 diary entry links to one kind of thing, search uses one query, and the phone's
-copy uses one table. The owner rule is the privacy cost paid once: catalog rows
-have no owner; a trainee row has an owner and no source ID. Database constraints
-enforce this boundary.
+copy uses one table. We considered separate catalog and own-food tables, which
+make privacy simpler. With one table, we pay that cost once: catalog rows have
+no owner; a trainee row has an owner and no source ID. Database constraints
+enforce this boundary. We would reconsider a split if own foods gain sharing
+or recipes.
 
 Units stay in one JSONB map on the food row. A food and its units are read and
-synced together, and units are not queried on their own. We would reconsider a
-split if own foods gain sharing or recipes.
+synced together, and units are not queried on their own.
 
 ---
 
