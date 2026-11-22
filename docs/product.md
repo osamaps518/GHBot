@@ -70,7 +70,9 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 - A trainee can change this information at any time.
 - A trainee can enter their training experience (#27).
 - A trainee can enter the equipment they have (#27).
-- A trainee can choose the app's language: Arabic or English (#28). Hebrew comes later (#25).
+- The app follows the phone's language by default.
+- A trainee can change the language in the app's settings: Arabic or English (#28).
+- Hebrew comes later (#25).
 - A trainee can choose metric or imperial units (#26).
 
 ### Targets
