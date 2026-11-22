@@ -1,0 +1,132 @@
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Annotated, Literal, Self
+from uuid import UUID
+
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    Field,
+    PlainSerializer,
+    StringConstraints,
+    model_validator,
+)
+
+from ghbot.food_log.models import FoodLogEntry
+
+Grams = Annotated[
+    Decimal,
+    Field(gt=0, le=5000, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Calories = Annotated[
+    Decimal,
+    Field(ge=0, le=900, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Macro = Annotated[
+    Decimal,
+    Field(ge=0, le=100, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Total = Annotated[
+    Decimal, Field(ge=0, decimal_places=1), PlainSerializer(float, when_used="json")
+]
+NUTRIENTS = ("calories", "protein", "carbs", "fat")
+
+
+class Nutrients(BaseModel):
+    calories: Calories
+    protein: Macro
+    carbs: Macro
+    fat: Macro
+
+
+class Totals(BaseModel):
+    calories: Total
+    protein: Total
+    carbs: Total
+    fat: Total
+
+
+class EntryBody(BaseModel):
+    revision: int = Field(ge=1, le=2_147_483_647)
+    food_id: UUID
+    meal: Literal["breakfast", "lunch", "dinner", "extra"]
+    meal_name: Annotated[str, StringConstraints(pattern=r"^[^\x00]*$")] | None = None
+    diary_day: date
+    grams: Grams
+    logged_at: AwareDatetime
+    per_100g: Nutrients
+    totals: Totals
+
+    @model_validator(mode="after")
+    def check_entry(self) -> Self:
+        if self.meal == "extra":
+            if (
+                self.meal_name is None
+                or not 1 <= len(self.meal_name) <= 40
+                or not self.meal_name.strip()
+            ):
+                raise ValueError("Extra meals need a name of 1 to 40 characters")
+        elif self.meal_name is not None:
+            raise ValueError("Only extra meals may have a name")
+        for name in NUTRIENTS:
+            value = getattr(self.per_100g, name)
+            expected = (value * self.grams / 100).quantize(
+                Decimal("0.1"), rounding=ROUND_HALF_UP
+            )
+            if getattr(self.totals, name) != expected:
+                raise ValueError(f"Incorrect {name} total")
+        return self
+
+
+class EntryResponse(BaseModel):
+    id: UUID
+    revision: int
+    deleted: bool
+    food_id: UUID | None
+    meal: str | None
+    meal_name: str | None
+    diary_day: date | None
+    grams: Grams | None
+    logged_at: AwareDatetime | None
+    per_100g: Nutrients | None
+    totals: Totals | None
+
+
+def response_for(row: FoodLogEntry) -> EntryResponse:
+    """Present a stored row with the contract's nested nutrient groups."""
+    per_100g = (
+        Nutrients(
+            calories=row.calories_per_100g,
+            protein=row.protein_per_100g,
+            carbs=row.carbs_per_100g,
+            fat=row.fat_per_100g,
+        )
+        if row.food_id is not None
+        else None
+    )
+    totals = (
+        Totals(
+            calories=row.calories,
+            protein=row.protein,
+            carbs=row.carbs,
+            fat=row.fat,
+        )
+        if row.food_id is not None
+        else None
+    )
+    return EntryResponse(
+        id=row.id,
+        revision=row.revision,
+        deleted=row.deleted,
+        food_id=row.food_id,
+        meal=row.meal,
+        meal_name=row.meal_name,
+        diary_day=row.diary_day,
+        grams=row.grams,
+        logged_at=row.logged_at,
+        per_100g=per_100g,
+        totals=totals,
+    )
