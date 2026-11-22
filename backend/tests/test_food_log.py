@@ -189,6 +189,7 @@ def test_worked_number_examples_are_accepted(
     "change",
     [
         {"revision": 0},
+        {"revision": 2147483648},
         {"grams": "0"},
         {"grams": "5000.1"},
         {"grams": "1.11"},

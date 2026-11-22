@@ -32,7 +32,7 @@ class Totals(BaseModel):
 
 
 class EntryBody(BaseModel):
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=2_147_483_647)
     food_id: UUID
     meal: Literal["breakfast", "lunch", "dinner", "extra"]
     meal_name: str | None = None
