@@ -186,6 +186,31 @@ def test_worked_number_examples_are_accepted(
     assert response.json()["totals"] == totals
 
 
+def test_entry_sent_as_json_numbers(client, auth_headers, food):
+    body = {
+        **entry(food),
+        "grams": 150.0,
+        "per_100g": {
+            "calories": 130.0,
+            "protein": 2.7,
+            "carbs": 28.2,
+            "fat": 0.3,
+        },
+        "totals": {"calories": 195.0, "protein": 4.1, "carbs": 42.3, "fat": 0.5},
+    }
+    headers = auth_headers()
+
+    accepted = client.put(f"/me/food-log/entries/{uuid7()}", headers=headers, json=body)
+    refused = client.put(
+        f"/me/food-log/entries/{uuid7()}",
+        headers=headers,
+        json={**body, "grams": 1.11},
+    )
+
+    assert accepted.status_code == 201
+    assert refused.status_code == 422
+
+
 @pytest.mark.parametrize(
     "change",
     [
