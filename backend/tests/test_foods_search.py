@@ -62,9 +62,7 @@ def test_generated_search_cleans_names_on_insert(food_rows):
 def test_arabic_trigrams_are_available():
     engine = create_engine(Settings().database_url.get_secret_value())
     with engine.connect() as connection:
-        trigrams = connection.execute(
-            text("SELECT show_trgm('مقلوبه')")
-        ).scalar_one()
+        trigrams = connection.execute(text("SELECT show_trgm('مقلوبه')")).scalar_one()
     engine.dispose()
 
     assert trigrams
@@ -83,7 +81,10 @@ def test_visible_foods_include_catalog_and_only_the_users_own(
 
     async def read():
         async with client.app_state["sessions"]() as session:
-            return [str(row.id) for row in (await session.scalars(visible_foods(alice_id))).all()]
+            return [
+                str(row.id)
+                for row in (await session.scalars(visible_foods(alice_id))).all()
+            ]
 
     assert set(client.portal.call(read)) == {catalog, own}
 
@@ -160,7 +161,9 @@ def test_search_finds_partial_words_typos_and_both_languages(
     assert [food["id"] for food in response.json()] == [food_id]
 
 
-def test_search_ranks_own_then_name_starts_then_contains(client, auth_headers, food_rows):
+def test_search_ranks_own_then_name_starts_then_contains(
+    client, auth_headers, food_rows
+):
     headers = auth_headers()
     user_id = client.get("/me", headers=headers).json()["id"]
     contains = food_rows("صدر دجاج مشوي")
@@ -198,7 +201,9 @@ def test_search_keeps_other_trainees_food_private(client, auth_headers, food_row
 
 
 @pytest.mark.parametrize("symbol", ["%", "_", "\\"])
-def test_search_treats_like_wildcards_literally(client, auth_headers, food_rows, symbol):
+def test_search_treats_like_wildcards_literally(
+    client, auth_headers, food_rows, symbol
+):
     matching = food_rows(f"خليط {symbol} خاص")
     food_rows("خليط عادي")
 
@@ -210,7 +215,11 @@ def test_search_treats_like_wildcards_literally(client, auth_headers, food_rows,
 
 @pytest.mark.parametrize("query", [None, "", "x" * 101])
 def test_search_requires_one_to_one_hundred_characters(client, auth_headers, query):
-    response = client.get("/foods", params={"q": query} if query is not None else {}, headers=auth_headers())
+    response = client.get(
+        "/foods",
+        params={"q": query} if query is not None else {},
+        headers=auth_headers(),
+    )
 
     assert response.status_code == 422
 

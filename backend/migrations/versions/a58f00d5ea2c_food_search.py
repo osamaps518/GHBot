@@ -50,7 +50,9 @@ def upgrade() -> None:
         sa.Column(
             "search",
             sa.Text(),
-            sa.Computed("food_search_names(name_ar, name_en, other_names)", persisted=True),
+            sa.Computed(
+                "food_search_names(name_ar, name_en, other_names)", persisted=True
+            ),
             nullable=False,
         ),
     )
