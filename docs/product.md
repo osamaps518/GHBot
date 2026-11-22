@@ -49,7 +49,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | **Supervision** | Other people linked to a trainee's account. | Accounts, Targets, the logs |
 | **Gyms and referrals** | Partner gyms and their codes (#29). | Accounts, Subscriptions, the payout provider |
 | **Subscriptions** | Free and premium. | Accounts, app store billing |
-| **Notifications** | What the app tells a trainee without being asked. | The push notification service |
+| **Notifications** | What the app tells a trainee without being asked. | Food log, the push notification service |
 | **Analytics** | Numbers about the whole app, for admins. | Every other module, possibly an analytics tool |
 
 ## Requirements
@@ -158,7 +158,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 - The coach never recommends eating below the safe minimum.
 - The coach never uses BMI to describe a trainee.
 - The coach gives no calorie advice to a trainee whose targets were set by a health professional.
-- A trainee can read their past conversations. *(proposed)*
+- A trainee can read their past conversations.
 - A trainee can get a training program built from the research.
 - An admin can run a set of test questions to check the coach's answers and sources.
 
@@ -186,7 +186,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 - An admin can add a partner gym.
 - Each partner gym gets its own code and a QR poster.
 - A trainee can enter a gym's code when signing up.
-- A trainee who signed up with a code gets a longer free trial (not final).
+- A trainee who signed up with a code gets a free trial 2 weeks longer than the normal one.
 - A gym owner can see how many trainees signed up with the gym's code.
 - A gym owner can see how many of them are subscribed.
 - A gym owner can see the gym's earnings.
@@ -206,9 +206,9 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 
 ### Notifications
 
-- A trainee gets a reminder to log. *(proposed)*
+- A trainee gets a reminder when a meal hasn't been logged 1 to 2 hours after its usual time.
 - A trainee is notified when their weekly report is ready.
-- A trainee can turn each kind of notification off. *(proposed)*
+- A trainee can turn each kind of notification off.
 
 ### Analytics
 
