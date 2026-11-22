@@ -610,8 +610,9 @@ are their private data.
 
 Search catalog foods and a trainee's own foods with PostgreSQL trigrams. Dish
 names are short, search must work while typing, and misspellings are common.
-Full-text search matches word starts but misses mistakes inside a word. A search
-engine would add a second service for a few thousand foods. We chose option C
+Full-text search matches the start of a word, but not the middle of one or a
+misspelling. A search engine would add a second service for a few thousand
+foods. We chose option C
 from #57: cleaned text contains the cleaned query, or word similarity meets
 the `<%` operator's 0.5 threshold. A GIN trigram index supports it. Own foods
 rank first, then names beginning with the query, then the other matches.
