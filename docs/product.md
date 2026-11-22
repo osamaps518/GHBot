@@ -12,10 +12,8 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | **Health professional** | A trainee's doctor or dietitian. Can set that trainee's targets. |
 | **Trainer** | A human trainer at a gym. Sees the logs of trainees who allowed it. |
 | **Gym owner** | Runs a partner gym. Sees the sign-ups and earnings from its code. |
+| **Expert advisor** | A dietitian or exercise scientist. Approves the research library and the regional dishes in the app. |
 | **Admin** | Manages foods, exercises, partner gyms and the research library. |
-
-
-Expert advisors (a dietitian, an exercise scientist) approve the research library and the regional dishes. Whether they do that inside the app or outside it is open.
 
 ## Outside systems
 
@@ -64,7 +62,7 @@ Expert advisors (a dietitian, an exercise scientist) approve the research librar
 - A person can delete their account and their data. 
 - A person under 18 can't sign up.
 - A person sees the terms, the privacy policy and a "not medical advice" notice before using the app.
-- Health professionals, trainers and gym owners each have their own kind of account. 
+- Health professionals, trainers, gym owners and expert advisors each have their own kind of account.
 
 ### Profiles
 
@@ -97,7 +95,7 @@ Expert advisors (a dietitian, an exercise scientist) approve the research librar
 - A trainee can find a packaged food by scanning its barcode.
 - An admin can add a food.
 - An admin can fix a food's values.
-- A dietitian approves the regional dishes (#34).
+- An expert advisor approves the regional dishes.
 
 ### Food log
 
