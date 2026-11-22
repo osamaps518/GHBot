@@ -4,17 +4,38 @@ from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from fastapi import APIRouter, Response
-from pydantic import AwareDatetime, BaseModel, Field, StringConstraints, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    Field,
+    PlainSerializer,
+    StringConstraints,
+    model_validator,
+)
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
 from ghbot.food_log.application import delete_entry, put_entry
 from ghbot.food_log.models import FoodLogEntry
 
-Grams = Annotated[Decimal, Field(gt=0, le=5000, decimal_places=1)]
-Calories = Annotated[Decimal, Field(ge=0, le=900, decimal_places=1)]
-Macro = Annotated[Decimal, Field(ge=0, le=100, decimal_places=1)]
-Total = Annotated[Decimal, Field(ge=0, decimal_places=1)]
+Grams = Annotated[
+    Decimal,
+    Field(gt=0, le=5000, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Calories = Annotated[
+    Decimal,
+    Field(ge=0, le=900, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Macro = Annotated[
+    Decimal,
+    Field(ge=0, le=100, decimal_places=1),
+    PlainSerializer(float, when_used="json"),
+]
+Total = Annotated[
+    Decimal, Field(ge=0, decimal_places=1), PlainSerializer(float, when_used="json")
+]
 NUTRIENTS = ("calories", "protein", "carbs", "fat")
 
 
@@ -72,7 +93,7 @@ class EntryResponse(BaseModel):
     meal: str | None
     meal_name: str | None
     diary_day: date | None
-    grams: Decimal | None
+    grams: Grams | None
     logged_at: AwareDatetime | None
     per_100g: Nutrients | None
     totals: Totals | None
