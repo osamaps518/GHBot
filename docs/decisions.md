@@ -601,3 +601,51 @@ are their private data.
   on every screen that shows an OFF food, including foods from the trainee's
   log, with an About entry linking to Open Food Facts, the ODbL and our CSV. It
   ships before any build with OFF products reaches beta testers.
+
+---
+
+## 30. Diary numbers
+
+**Status:** Accepted, 2026-11-22 (#59)
+
+**What an entry keeps**
+- **Grams:** greater than 0, at most 1 decimal (37.5 g).
+- **Values per 100 g:** at most 1 decimal. The API sends a food's values already
+  rounded half up to 1 decimal (#58), so the phone copies them as they come. The
+  `foods` table keeps whatever precision its source has; rounding happens once,
+  when the API sends a food.
+- **Totals** (calories, protein, carbs, fat): value per 100 g × grams ÷ 100,
+  rounded half up to 1 decimal. Calories keep 1 decimal too.
+
+All of these are whole numbers of tenths, so the total is calculated in integers:
+`total_tenths = (value_tenths × grams_tenths + 500) div 1000`. In Python,
+`Decimal` with `ROUND_HALF_UP` gives the same result. Half up matches the
+targets (15). All values are ≥ 0, so half up and half away from zero are the
+same here.
+
+**Where**
+- The phone calculates an entry's totals when it is logged and when its grams change.
+- The server recalculates them from the entry's own values and grams (21) and
+  refuses the entry if any total differs, with no tolerance.
+- A day's totals add the entries' stored totals, exact in tenths, and show them
+  rounded half up to whole numbers, like the targets. A day total of 42.5 g shows as 43.
+- JSON carries plain numbers. The server refuses any of these values with more
+  than 1 decimal.
+
+**Why integers in tenths:** no floating point, so the phone and the server can't
+disagree on a tie. A float can't hold most tenths exactly: in Python,
+`round(0.15, 1)` gives 0.1. With integers, Dart and Python get the same totals,
+and the server's check needs no tolerance.
+
+**Worked examples.** Rice = cooked white rice: 130.0 kcal, 2.7 g protein, 28.2 g
+carbs, 0.3 g fat per 100 g. Oil = olive oil: 884.0 kcal, 0 protein, 0 carbs,
+100.0 g fat.
+
+| Entry | Calories | Protein | Carbs | Fat | What it shows |
+|---|---|---|---|---|---|
+| Rice, 150 g | 195.0 | 4.1 | 42.3 | 0.5 | ties: 4.05 → 4.1, 0.45 → 0.5 |
+| Oil, 12.3 g | 108.7 | 0.0 | 0.0 | 12.3 | fractional grams (108.732) |
+| Rice, 2.5 g | 3.3 | 0.1 | 0.7 | 0.0 | fractional grams and a tie (3.25 → 3.3); 0.0075 → 0.0 |
+| Day: rice 150 g + oil 12.3 g | 303.7 → shows 304 | 4.1 → 4 | 42.3 → 42 | 12.8 → 13 | day totals add stored totals, then round for display |
+
+A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
