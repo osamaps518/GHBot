@@ -176,6 +176,18 @@ def test_search_ranks_own_then_name_starts_then_contains(
     assert [food["id"] for food in response.json()] == [own, starts, contains]
 
 
+def test_search_ranks_an_other_name_start_before_a_contains_match(
+    client, auth_headers, food_rows
+):
+    contains = food_rows("صدر دجاج مشوي")
+    alias_starts = food_rows("وجبة مشوية", other_names=["دجاج بلدي"])
+
+    response = client.get("/foods", params={"q": "دجاج"}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [alias_starts, contains]
+
+
 def test_search_returns_at_most_twenty_results(client, auth_headers, food_rows):
     ids = [food_rows(f"اختبار خاص {number}") for number in range(21)]
 
