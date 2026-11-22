@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from ghbot.auth import DevAuthProvider, create_dev_router, router
 from ghbot.config import Settings
+from ghbot.foods import router as foods_router
 from ghbot.profiles import router as profiles_router
 from ghbot.targets import router as targets_router
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
     app.include_router(profiles_router)
     app.include_router(targets_router)
+    app.include_router(foods_router)
     app.include_router(create_dev_router(provider))
 
     @app.exception_handler(RequestValidationError)

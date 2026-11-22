@@ -12,6 +12,11 @@ Every protected route gets the user through `CurrentUser`, which verifies the to
 
 Routes take the user from the token, never from the request. Profile reads and writes use that user's id, and targets are calculated from that user's saved profile, so ids sent in the body change nothing (`test_profiles_are_private_to_each_user`, `test_profile_owner_cannot_be_changed_by_body_ids`). The API sends no CORS headers, so other websites can't call it from a browser (`test_api_does_not_enable_cors`).
 
+Own foods are private. Every trainee food read uses `visible_foods`, which
+selects catalog rows plus only that trainee's own rows. Search takes the user
+from the token (`test_search_keeps_other_trainees_food_private`,
+`test_visible_foods_include_catalog_and_only_the_users_own`).
+
 ## Health data stays out of logs
 
 Profiles hold health data. The database engine hides bound parameters in its errors and logs, so a failed insert doesn't log the values (`test_failed_profile_insert_does_not_log_health_values`). Bad input gets a 422 instead of a 500: ranges and the age limit are checked before saving, and NaN, Infinity and lone surrogates come back as text in the 422 (`test_non_finite_number_gives_422`, `test_lone_surrogate_in_token_subject_returns_422`).

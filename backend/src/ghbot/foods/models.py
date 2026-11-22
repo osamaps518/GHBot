@@ -4,6 +4,7 @@ from uuid import UUID, uuid7
 from sqlalchemy import (
     ARRAY,
     CheckConstraint,
+    Computed,
     DateTime,
     Double,
     ForeignKey,
@@ -48,6 +49,12 @@ class Food(Base):
             unique=True,
             postgresql_where=text("owner_id IS NULL"),
         ),
+        Index(
+            "ix_foods_search_trgm",
+            "search",
+            postgresql_using="gin",
+            postgresql_ops={"search": "gin_trgm_ops"},
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
@@ -55,6 +62,10 @@ class Food(Base):
     name_en: Mapped[str | None] = mapped_column(Text)
     other_names: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{}'::text[]")
+    )
+    search: Mapped[str] = mapped_column(
+        Text,
+        Computed("food_search_names(name_ar, name_en, other_names)", persisted=True),
     )
     calories: Mapped[float] = mapped_column(Double)
     protein: Mapped[float] = mapped_column(Double)
