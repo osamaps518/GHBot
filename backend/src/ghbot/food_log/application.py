@@ -41,7 +41,10 @@ async def _stored_entry(
 async def put_entry(
     session: AsyncSession, user_id: UUID, entry_id: UUID, values: dict[str, object]
 ) -> tuple[FoodLogEntry, bool]:
-    """Write a newer owned entry, or return the stored row unchanged."""
+    """Write a newer owned entry, or return the stored row unchanged.
+
+    The flag is true when the row was created.
+    """
     food_id = values["food_id"]
     visible = await session.scalar(visible_foods(user_id).where(Food.id == food_id))
     if visible is None:
@@ -64,7 +67,7 @@ async def put_entry(
                     FoodLogEntry.revision < statement.excluded.revision,
                 ),
             ).returning(
-                FoodLogEntry, literal_column("(xmax = 0)", Boolean).label("created")
+                FoodLogEntry, literal_column("old.id IS NULL", Boolean).label("created")
             ),
         )
     ).first()
