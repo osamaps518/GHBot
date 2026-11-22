@@ -72,3 +72,71 @@ def test_put_creates_entry_and_repeat_returns_same_row(client, auth_headers, foo
         **body,
         "logged_at": "2026-11-22T12:00:00Z",
     }
+
+
+def test_newer_revision_replaces_entry_and_lower_revision_returns_stored_one(
+    client, auth_headers, food
+):
+    headers = auth_headers()
+    url = f"/me/food-log/entries/{uuid7()}"
+    first = entry(food)
+    assert client.put(url, headers=headers, json=first).status_code == 201
+    newer = {**first, "revision": 2, "meal": "dinner"}
+    changed = client.put(url, headers=headers, json=newer)
+    stale = client.put(url, headers=headers, json=first)
+
+    assert changed.status_code == 200
+    assert changed.json()["revision"] == 2
+    assert changed.json()["meal"] == "dinner"
+    assert stale.status_code == 200
+    assert stale.json() == changed.json()
+
+
+def test_other_trainee_cannot_replace_or_delete_entry(client, auth_headers, food):
+    owner = auth_headers()
+    other = auth_headers()
+    url = f"/me/food-log/entries/{uuid7()}"
+    original = client.put(url, headers=owner, json=entry(food)).json()
+
+    replaced = client.put(url, headers=other, json={**entry(food), "revision": 2})
+    deleted = client.delete(url, headers=other)
+
+    assert replaced.status_code == 409
+    assert deleted.status_code == 409
+    assert client.put(url, headers=owner, json=entry(food)).json() == original
+
+
+def test_delete_is_final_and_repeating_it_returns_stored_row(
+    client, auth_headers, food
+):
+    headers = auth_headers()
+    url = f"/me/food-log/entries/{uuid7()}"
+    assert client.put(url, headers=headers, json=entry(food)).status_code == 201
+
+    deleted = client.delete(url, headers=headers)
+    repeated = client.delete(url, headers=headers)
+    late = client.put(url, headers=headers, json={**entry(food), "revision": 3})
+
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
+    assert deleted.json()["revision"] == 1
+    assert repeated.json() == deleted.json()
+    assert late.status_code == 200
+    assert late.json() == deleted.json()
+
+
+def test_delete_before_put_records_tombstone(client, auth_headers, food):
+    headers = auth_headers()
+    url = f"/me/food-log/entries/{uuid7()}"
+
+    deleted = client.delete(url, headers=headers)
+    late = client.put(url, headers=headers, json=entry(food))
+
+    assert deleted.status_code == 200
+    assert deleted.json() == {
+        "id": url.rsplit("/", 1)[1], "revision": 0, "deleted": True,
+        "food_id": None, "meal": None, "meal_name": None, "diary_day": None,
+        "grams": None, "logged_at": None, "per_100g": None, "totals": None,
+    }
+    assert late.status_code == 200
+    assert late.json() == deleted.json()
