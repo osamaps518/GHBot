@@ -21,7 +21,8 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | System | Used for |
 |---|---|
 | **Authentication provider** | Sign-up, sign-in and passwords (decision 5). |
-| **Model provider** | The coach's answers, and searching the research library (decision 7). |
+| **Model provider** | The coach's answers, searching the research library (decision 7), and recognizing meals in photos. |
+| **File storage** | Meal photos. |
 | **Food data sources** | USDA FoodData Central and Open Food Facts, also for barcodes. Licenses still to check. |
 | **Research sources** | PubMed and PubMed Central, for the research library. |
 | **App store billing** | Google Play subscriptions. |
@@ -39,7 +40,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | **Profiles** | What a trainee tells us about themselves, and their preferences. | Accounts |
 | **Targets** | Daily calories and macros. | Profiles |
 | **Food database** | The foods a trainee can log. | The food data sources |
-| **Food log** | What a trainee ate. | Food database, Targets |
+| **Food log** | What a trainee ate. | Food database, Targets, the model provider, file storage |
 | **Exercise library** | The exercises a trainee can log. | Nothing |
 | **Workout log** | What a trainee trained. | Exercise library |
 | **Progress** | How it's going over time. | Food log, Workout log, Targets |
@@ -102,6 +103,8 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 ### Food log
 
 - A trainee can log a food they ate.
+- A trainee logs each food under a meal: Breakfast, Lunch, Dinner, or an extra meal they named.
+- The app suggests adding an extra meal the trainee uses often: 3 days in a row, or after 3 training sessions in a row on training days (#77).
 - A trainee can change a logged entry.
 - A trainee can delete a logged entry.
 - A trainee can see the day's totals next to their targets.
@@ -113,6 +116,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 - The app suggests a later day start to a trainee who often eats late (#36).
 - A trainee sees a "Corrected" label on past entries of a food whose values were fixed.
 - A trainee can log a meal from a photo.
+- A trainee's meal photos are used to improve photo recognition only if the trainee allowed it.
 
 ### Exercise library
 
