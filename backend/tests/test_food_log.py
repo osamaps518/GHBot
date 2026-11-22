@@ -2,11 +2,11 @@ import json
 from uuid import uuid7
 
 import pytest
-from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 
 from ghbot.config import Settings
 from ghbot.food_log.application import put_entry
+from ghbot.food_log.exceptions import EntryWriteFailed
 
 
 @pytest.fixture
@@ -332,6 +332,14 @@ def test_other_trainees_own_food_cannot_be_logged(client, auth_headers, engine):
             json=entry(str(food_id)),
         )
         assert response.status_code == 422
+        assert response.json()["detail"] == [
+            {
+                "type": "food_not_visible",
+                "loc": ["body", "food_id"],
+                "msg": "Food is not visible",
+                "input": str(food_id),
+            }
+        ]
     finally:
         with engine.begin() as connection:
             connection.execute(
@@ -367,10 +375,9 @@ def test_failed_write_keeps_entry_values_out_of_logs(
             }
             await put_entry(session, user_id, uuid7(), values)
 
-    with pytest.raises(HTTPException) as error:
+    with pytest.raises(EntryWriteFailed):
         client.portal.call(fail_write)
 
-    assert error.value.status_code == 500
     assert "DBAPIError" in caplog.text or "IntegrityError" in caplog.text
     assert secret_name not in caplog.text
     assert "171.37" not in caplog.text

@@ -2,7 +2,6 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from fastapi import HTTPException
 from sqlalchemy import Boolean, and_, func, literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Result, Row
@@ -10,6 +9,11 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Executable
 
+from ghbot.food_log.exceptions import (
+    EntryOfAnotherUser,
+    EntryWriteFailed,
+    FoodNotVisible,
+)
 from ghbot.food_log.models import FoodLogEntry
 from ghbot.foods import Food, visible_foods
 
@@ -23,7 +27,7 @@ async def _write(session: AsyncSession, statement: Executable) -> Result[Any]:
     except DBAPIError as exc:
         await session.rollback()
         logger.error("Food log write failed: %s %s", type(exc).__name__, exc.statement)
-        raise HTTPException(status_code=500, detail="Food log write failed") from None
+        raise EntryWriteFailed from None
 
 
 async def _stored_entry(
@@ -34,7 +38,7 @@ async def _stored_entry(
     if stored is None:
         raise RuntimeError("Food log conflict row disappeared")
     if stored.user_id != user_id:
-        raise HTTPException(status_code=409, detail="Entry belongs to another user")
+        raise EntryOfAnotherUser
     return stored
 
 
@@ -48,7 +52,7 @@ async def put_entry(
     food_id = values["food_id"]
     visible = await session.scalar(visible_foods(user_id).where(Food.id == food_id))
     if visible is None:
-        raise HTTPException(status_code=422, detail="Food is not visible")
+        raise FoodNotVisible
 
     statement = insert(FoodLogEntry).values(
         id=entry_id, user_id=user_id, deleted=False, **values
