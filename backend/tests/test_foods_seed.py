@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
 from ghbot.config import Settings
-from ghbot.foods.seed import load, main
+from ghbot.foods.seed import DEFAULT_FOLDER, load, main, read_rows
 
 
 @pytest.fixture
@@ -426,3 +426,8 @@ def test_non_catalog_csv_is_refused(tmp_path, source):
 
     with pytest.raises(ValueError, match=f"{source}.csv: unknown seed source"):
         seed(tmp_path)
+
+
+def test_committed_seed_files_are_valid():
+    """A hand edit that breaks a file in backend/seed/ fails CI, not the next load."""
+    assert read_rows(DEFAULT_FOLDER)
