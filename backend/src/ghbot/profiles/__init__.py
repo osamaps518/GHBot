@@ -7,7 +7,9 @@ For other modules:
     utc_today: dependency that gives today's date in UTC. Tests override it.
 
 For wiring the app (main.py):
-    router: GET and PUT /me/profile.
+    router:
+        GET /me/profile: the signed-in user's saved profile, or 404.
+        PUT /me/profile: create or replace it.
 """
 
 from ghbot.profiles.application import ProfileSnapshot

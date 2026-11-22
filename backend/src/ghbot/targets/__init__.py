@@ -8,8 +8,9 @@ For other modules:
         fat and carbs (whole numbers), plus maintenance calories and flags.
 
 For wiring the app (main.py):
-    router: GET /me/targets, the signed-in user's targets from their saved
-        profile, or 404 if they have none.
+    router:
+        GET /me/targets: the signed-in user's targets from their saved profile,
+            or 404 if they have none.
 """
 
 from ghbot.targets.application import calculate_targets

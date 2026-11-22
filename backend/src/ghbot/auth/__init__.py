@@ -7,8 +7,10 @@ For routes in other modules:
 
 For wiring the app (main.py):
     DevAuthProvider: issues and verifies local development tokens.
-    router: GET /me.
-    create_dev_router: POST /dev/token, for development only.
+    router:
+        GET /me: our user id for the signed-in user.
+    create_dev_router:
+        POST /dev/token: a signed token for the given subject, for development only.
 """
 
 from ghbot.auth.dependencies import CurrentUser
