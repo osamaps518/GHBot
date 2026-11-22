@@ -171,7 +171,7 @@ A module's routes live in `router.py`.
 
 **Status:** Accepted, 2026-10-24 (#7)
 
-Use the phone's ordered language preferences to select the first supported language, Arabic or English. If none matches or the list is empty, use English. Keep Flutter's default locale resolution with English first in `supportedLocales`; no custom callback is needed. Arabic stays the ARB template, which does not set the runtime fallback. An in-app switch remains deferred (question 9 in #8).
+Use the phone's ordered language preferences to select the first supported language, Arabic or English. If none matches or the list is empty, use English. Keep Flutter's default locale resolution with English first in `supportedLocales`; no custom callback is needed. Arabic stays the ARB template, which does not set the runtime fallback. This stays the default once a trainee can change the language in the app's settings (#28).
 
 The earlier Arabic fallback was considered, but it would show Arabic when the phone prefers an unsupported language. The trade-off is that these phones now show English.
 
