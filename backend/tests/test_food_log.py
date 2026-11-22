@@ -41,19 +41,19 @@ def entry(food):
         "meal": "lunch",
         "meal_name": None,
         "diary_day": "2026-11-22",
-        "grams": "150.0",
+        "grams": 150.0,
         "logged_at": "2026-11-22T12:00:00+00:00",
         "per_100g": {
-            "calories": "130.0",
-            "protein": "2.7",
-            "carbs": "28.2",
-            "fat": "0.3",
+            "calories": 130.0,
+            "protein": 2.7,
+            "carbs": 28.2,
+            "fat": 0.3,
         },
         "totals": {
-            "calories": "195.0",
-            "protein": "4.1",
-            "carbs": "42.3",
-            "fat": "0.5",
+            "calories": 195.0,
+            "protein": 4.1,
+            "carbs": 42.3,
+            "fat": 0.5,
         },
     }
 
@@ -157,19 +157,19 @@ def test_delete_before_put_records_tombstone(client, auth_headers, food):
     ("grams", "per_100g", "totals"),
     [
         (
-            "150",
-            {"calories": "130.0", "protein": "2.7", "carbs": "28.2", "fat": "0.3"},
-            {"calories": "195.0", "protein": "4.1", "carbs": "42.3", "fat": "0.5"},
+            150.0,
+            {"calories": 130.0, "protein": 2.7, "carbs": 28.2, "fat": 0.3},
+            {"calories": 195.0, "protein": 4.1, "carbs": 42.3, "fat": 0.5},
         ),
         (
-            "12.3",
-            {"calories": "884.0", "protein": "0", "carbs": "0", "fat": "100.0"},
-            {"calories": "108.7", "protein": "0.0", "carbs": "0.0", "fat": "12.3"},
+            12.3,
+            {"calories": 884.0, "protein": 0.0, "carbs": 0.0, "fat": 100.0},
+            {"calories": 108.7, "protein": 0.0, "carbs": 0.0, "fat": 12.3},
         ),
         (
-            "2.5",
-            {"calories": "130.0", "protein": "2.7", "carbs": "28.2", "fat": "0.3"},
-            {"calories": "3.3", "protein": "0.1", "carbs": "0.7", "fat": "0.0"},
+            2.5,
+            {"calories": 130.0, "protein": 2.7, "carbs": 28.2, "fat": 0.3},
+            {"calories": 3.3, "protein": 0.1, "carbs": 0.7, "fat": 0.0},
         ),
     ],
 )
