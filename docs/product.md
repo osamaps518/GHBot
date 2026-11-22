@@ -27,7 +27,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | **Research sources** | PubMed and PubMed Central, for the research library. |
 | **App store billing** | Google Play subscriptions. |
 | **Payout provider** | Paying gyms their commission. May be limited by where we are. |
-| **Push notification service** | Reminders on the phone. |
+| **Push notification service** | Messages from the server, such as the weekly report being ready. Meal reminders are set on the phone. |
 | **Email sender** | Account emails. May come with the authentication provider. |
 | **Analytics tool** | Possibly, for the Analytics module. We may not need one. |
 | **Hosting and database provider** | Where the backend runs (decision 6). |
@@ -206,7 +206,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 
 ### Notifications
 
-- A trainee gets a reminder when a meal hasn't been logged 1 to 2 hours after its usual time.
+- A trainee gets a reminder when a meal hasn't been logged 1 hour after its usual time.
 - A trainee is notified when their weekly report is ready.
 - A trainee can turn each kind of notification off.
 
