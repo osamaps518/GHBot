@@ -604,6 +604,42 @@ are their private data.
 
 ---
 
+## 29. Food search
+
+**Status:** Accepted, 2026-11-22 (#58).
+
+Search catalog foods and a trainee's own foods with PostgreSQL trigrams. Dish
+names are short, search must work while typing, and misspellings are common.
+Full-text search matches word starts but misses mistakes inside a word. A search
+engine would add a second service for a few thousand foods. We chose option C
+from #57: cleaned text contains the cleaned query, or word similarity meets
+the `<%` operator's 0.5 threshold. A GIN trigram index supports it. Own foods
+rank first, then names beginning with the query, then the other matches.
+
+Cleaning is a search requirement of its own. Lowercase, apply Unicode NFKC,
+remove Arabic diacritics, Latin accents and tatweel, normalize أ إ آ ٱ to ا,
+ة to ه, ى ئ ی to ي, ک to ك, and Arabic-Indic digits to Western digits. Keep
+ء. NFD splits hamza from some letters before marks are removed; this also
+turns ؤ into و. #57 did not test ؤ, and no test has shown that this hurts.
+One immutable SQL function cleans both stored names and typed text. A stored
+generated column joins the Arabic, English and other names using a separator
+that cannot occur inside a cleaned name. This keeps all write paths and old
+rows consistent without duplicate cleaning code in Python.
+
+Meaning lives in the data: every catalog food has an Arabic name, so a user can
+find the same row through Arabic or English without translating the query.
+Search by meaning with embeddings would need a model call for every search and
+a provider (decision 7); it also performs poorly for half-typed words and
+brands. It may make sense later with the coach, but this is not a final ban.
+
+Check a hosted database by running `show_trgm` on an Arabic word, not by its
+locale name: `C.UTF-8` can still leave `LC_CTYPE` at `C`, which ignores Arabic
+letters. A known gap is that `رز` also finds كرز and برز through contains.
+Names beginning with the query rank first. Whole-word aliases could fix the
+gap later.
+
+---
+
 ## 30. Diary numbers
 
 **Status:** Accepted, 2026-11-22 (#59)
