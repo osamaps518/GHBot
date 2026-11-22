@@ -110,3 +110,115 @@ def test_food_search_requires_sign_in_and_returns_rounded_food(
             "fat": 3.4,
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("stored", "typed"),
+    [
+        ("مقلوبة", "مقلوبه"),
+        ("أرز", "ارز"),
+        ("Maqluba", "maqluba"),
+        ("قطايف", "قطائف"),
+        ("بیض", "بيض"),
+        ("کنافه", "كنافة"),
+        ("٧ اب", "7 أب"),
+        ("Crème caramel", "creme"),
+        ("ﻣﻘﻠﻮﺑﺔ", "مقلوبة"),
+        ("أرز", "أرز"),
+    ],
+)
+def test_search_cleans_arabic_and_latin_equivalents(
+    client, auth_headers, food_rows, stored, typed
+):
+    food_id = food_rows(stored)
+
+    response = client.get("/foods", params={"q": typed}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [food_id]
+
+
+@pytest.mark.parametrize(
+    ("stored_ar", "stored_en", "typed"),
+    [
+        ("مقلوبة", "Maqluba", "مقلو"),
+        ("شاورما", "Chicken shawarma", "shaw"),
+        ("صدر دجاج مشوي", "Grilled chicken breast", "دجاج"),
+        ("شاورما دجاج", "Chicken shawarma", "shawerma"),
+        ("شاورما", "Chicken shawarma", "شاورما"),
+        ("شاورما", "Chicken shawarma", "chicken"),
+    ],
+)
+def test_search_finds_partial_words_typos_and_both_languages(
+    client, auth_headers, food_rows, stored_ar, stored_en, typed
+):
+    food_id = food_rows(stored_ar, stored_en)
+
+    response = client.get("/foods", params={"q": typed}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [food_id]
+
+
+def test_search_ranks_own_then_name_starts_then_contains(client, auth_headers, food_rows):
+    headers = auth_headers()
+    user_id = client.get("/me", headers=headers).json()["id"]
+    contains = food_rows("صدر دجاج مشوي")
+    starts = food_rows("دجاج مشوي")
+    own = food_rows("صدر دجاج خاص", owner_id=user_id)
+
+    response = client.get("/foods", params={"q": "دجاج"}, headers=headers)
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [own, starts, contains]
+
+
+def test_search_returns_at_most_twenty_results(client, auth_headers, food_rows):
+    ids = [food_rows(f"اختبار خاص {number}") for number in range(21)]
+
+    response = client.get("/foods", params={"q": "اختبار"}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert len(response.json()) == 20
+    assert {food["id"] for food in response.json()}.issubset(set(ids))
+
+
+def test_search_keeps_other_trainees_food_private(client, auth_headers, food_rows):
+    alice = auth_headers()
+    bob = auth_headers()
+    alice_id = client.get("/me", headers=alice).json()["id"]
+    bob_id = client.get("/me", headers=bob).json()["id"]
+    own = food_rows("طعام خاص", owner_id=alice_id)
+    food_rows("طعام خاص جدا", owner_id=bob_id)
+
+    response = client.get("/foods", params={"q": "طعام"}, headers=alice)
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [own]
+
+
+@pytest.mark.parametrize("symbol", ["%", "_", "\\"])
+def test_search_treats_like_wildcards_literally(client, auth_headers, food_rows, symbol):
+    matching = food_rows(f"خليط {symbol} خاص")
+    food_rows("خليط عادي")
+
+    response = client.get("/foods", params={"q": symbol}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert [food["id"] for food in response.json()] == [matching]
+
+
+@pytest.mark.parametrize("query", [None, "", "x" * 101])
+def test_search_requires_one_to_one_hundred_characters(client, auth_headers, query):
+    response = client.get("/foods", params={"q": query} if query is not None else {}, headers=auth_headers())
+
+    assert response.status_code == 422
+
+
+def test_search_with_only_diacritics_returns_no_foods(client, auth_headers, food_rows):
+    food_rows("مقلوبة")
+
+    response = client.get("/foods", params={"q": "َُ"}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert response.json() == []
