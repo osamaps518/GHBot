@@ -4,7 +4,7 @@ from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from fastapi import APIRouter, Response
-from pydantic import AwareDatetime, BaseModel, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, Field, StringConstraints, model_validator
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
@@ -35,7 +35,7 @@ class EntryBody(BaseModel):
     revision: int = Field(ge=1, le=2_147_483_647)
     food_id: UUID
     meal: Literal["breakfast", "lunch", "dinner", "extra"]
-    meal_name: str | None = None
+    meal_name: Annotated[str, StringConstraints(pattern=r"^[^\x00]*$")] | None = None
     diary_day: date
     grams: Grams
     logged_at: AwareDatetime
