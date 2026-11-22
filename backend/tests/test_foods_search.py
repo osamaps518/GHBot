@@ -94,7 +94,7 @@ def test_arabic_trigrams_are_available(engine):
     [
         ("CRÈME", "creme"),
         ("ﻣﻘﻠﻮﺑﺔ", "مقلوبه"),
-        ("أرز", "ارز"),
+        ("\u0627\u0654رز", "ارز"),
         ("أإآٱ", "اااا"),
         ("ة ى ئ ی ک", "ه ي ي ي ك"),
         ("٠١٢٣٤٥٦٧٨٩ ۰۱۲۳۴۵۶۷۸۹", "0123456789 0123456789"),
@@ -168,7 +168,7 @@ def test_food_search_requires_sign_in_and_returns_rounded_food(
         ("٧ اب", "7 أب"),
         ("Crème caramel", "creme"),
         ("ﻣﻘﻠﻮﺑﺔ", "مقلوبة"),
-        ("أرز", "أرز"),
+        ("أرز", "\u0627\u0654رز"),
     ],
 )
 def test_search_cleans_arabic_and_latin_equivalents(
