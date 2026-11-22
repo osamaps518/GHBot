@@ -65,9 +65,7 @@ class Food(Base):
     )
     search: Mapped[str] = mapped_column(
         Text,
-        Computed(
-            "food_search_names(name_ar, name_en, other_names)", persisted=True
-        ),
+        Computed("food_search_names(name_ar, name_en, other_names)", persisted=True),
     )
     calories: Mapped[float] = mapped_column(Double)
     protein: Mapped[float] = mapped_column(Double)
