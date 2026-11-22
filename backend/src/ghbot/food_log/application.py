@@ -39,7 +39,9 @@ async def put_entry(
                         FoodLogEntry.deleted.is_(False),
                         FoodLogEntry.revision < statement.excluded.revision,
                     ),
-                ).returning(FoodLogEntry, literal_column("(xmax = 0)", Boolean).label("created"))
+                ).returning(
+                    FoodLogEntry, literal_column("(xmax = 0)", Boolean).label("created")
+                )
             )
         ).first()
     except DBAPIError as exc:

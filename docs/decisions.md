@@ -638,3 +638,19 @@ locale name: `C.UTF-8` can still leave `LC_CTYPE` at `C`, which ignores Arabic
 letters. A known gap is that `رز` also finds كرز and برز through contains.
 Names beginning with the query rank first. Whole-word aliases could fix the
 gap later.
+
+---
+
+## 31. Sync calls
+
+**Status:** Accepted, 2026-11-22 (#60).
+
+The phone makes each diary row's ID, so repeating a call is harmless. A higher
+revision replaces an active row; a lower or equal one leaves it unchanged.
+Deletes are final and are recorded even for an ID the server has not seen. Every
+answer carries the stored row so the phone learns when its copy was not kept;
+otherwise it could mark an ignored entry as sent.
+
+The server checks totals against the entry's own per-100 g values (decision 21).
+`food_log` uses `foods` only to check that the food is visible to the trainee;
+it does not use `targets`. The phone's sending and pulling come in #61 and #62.
