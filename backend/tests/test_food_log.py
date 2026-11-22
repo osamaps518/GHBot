@@ -1,3 +1,4 @@
+import json
 from uuid import uuid7
 
 import pytest
@@ -237,6 +238,7 @@ def test_worked_number_examples_are_accepted(
         {"meal": "extra", "meal_name": None},
         {"meal": "extra", "meal_name": "   "},
         {"meal": "extra", "meal_name": "x" * 41},
+        {"meal": "extra", "meal_name": "a\x00b"},
         {"meal": "lunch", "meal_name": "Snack"},
     ],
 )
@@ -245,6 +247,19 @@ def test_invalid_entry_is_refused(client, auth_headers, food, change):
 
     response = client.put(
         f"/me/food-log/entries/{uuid7()}", headers=auth_headers(), json=body
+    )
+
+    assert response.status_code == 422
+
+
+def test_lone_surrogate_in_meal_name_is_refused(client, auth_headers, food):
+    body = json.dumps({**entry(food), "meal": "extra", "meal_name": "Snack"})
+    body = body.replace('"meal_name": "Snack"', r'"meal_name": "\ud800"')
+
+    response = client.put(
+        f"/me/food-log/entries/{uuid7()}",
+        headers={**auth_headers(), "Content-Type": "application/json"},
+        content=body,
     )
 
     assert response.status_code == 422
