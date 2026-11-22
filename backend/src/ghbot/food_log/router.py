@@ -35,7 +35,7 @@ class EntryBody(BaseModel):
     revision: int = Field(ge=1)
     food_id: UUID
     meal: Literal["breakfast", "lunch", "dinner", "extra"]
-    meal_name: str | None
+    meal_name: str | None = None
     diary_day: date
     grams: Grams
     logged_at: AwareDatetime

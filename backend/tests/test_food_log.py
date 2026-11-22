@@ -260,6 +260,18 @@ def test_extra_meal_with_name_is_accepted(client, auth_headers, food):
     assert response.json()["meal_name"] == "Evening snack"
 
 
+def test_regular_meal_can_omit_name(client, auth_headers, food):
+    body = entry(food)
+    del body["meal_name"]
+
+    response = client.put(
+        f"/me/food-log/entries/{uuid7()}", headers=auth_headers(), json=body
+    )
+
+    assert response.status_code == 201
+    assert response.json()["meal_name"] is None
+
+
 def test_other_trainees_own_food_cannot_be_logged(client, auth_headers, engine):
     owner = auth_headers()
     other = auth_headers()
