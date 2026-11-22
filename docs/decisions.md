@@ -140,13 +140,14 @@ first requests. Our IDs are UUIDv7; future tables reference these IDs.
 
 ## 10. Module layout
 
-**Status:** Accepted, 2026-10-21 (#6). Extended by 19 for the files inside a backend module.
+**Status:** Accepted, 2026-10-21 (#6). Extended by 19 for the files inside a backend module. Amended 2026-11-22 (#82): the docstring lists each route.
 
 Each module's `__init__.py` is its public API: it re-exports what other code may
-use, lists it in `__all__`, and says in its docstring what each name is for. Other
-modules and `main.py` import only from the package (`from ghbot.auth import
-CurrentUser`), never from its files. Inside a module, files import each other
-directly.
+use, lists it in `__all__`, and says in its docstring what each name is for. The
+`router` entry lists each route on its own line: method, path and what it does,
+so a reader sees every route without opening `router.py`. Other modules and
+`main.py` import only from the package (`from ghbot.auth import CurrentUser`),
+never from its files. Inside a module, files import each other directly.
 
 A module's routes live in `router.py`.
 
