@@ -90,6 +90,30 @@ def test_arabic_trigrams_are_available():
     assert trigrams
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("CRÈME", "creme"),
+        ("ﻣﻘﻠﻮﺑﺔ", "مقلوبه"),
+        ("أرز", "ارز"),
+        ("أإآٱ", "اااا"),
+        ("ة ى ئ ی ک", "ه ي ي ي ك"),
+        ("٠١٢٣٤٥٦٧٨٩ ۰۱۲۳۴۵۶۷۸۹", "0123456789 0123456789"),
+        ("مَـقْلوبةٰ", "مقلوبه"),
+        ("ماء", "ماء"),
+    ],
+)
+def test_food_search_clean_applies_each_normalization_rule(value, expected):
+    engine = create_engine(Settings().database_url.get_secret_value())
+    with engine.connect() as connection:
+        cleaned = connection.execute(
+            text("SELECT food_search_clean(:value)"), {"value": value}
+        ).scalar_one()
+    engine.dispose()
+
+    assert cleaned == expected
+
+
 def test_visible_foods_include_catalog_and_only_the_users_own(
     client, auth_headers, food_rows
 ):
