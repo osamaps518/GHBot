@@ -20,30 +20,26 @@ def upgrade() -> None:
     op.execute("""
         CREATE FUNCTION food_search_clean(t text) RETURNS text
         LANGUAGE sql IMMUTABLE PARALLEL SAFE
-        AS $$
-            SELECT translate(
-                regexp_replace(
-                    normalize(normalize(lower(t), NFKC), NFD),
-                    '[\u0300-\u036f\u0640\u064b-\u065f\u0670]', '', 'g'
-                ),
-                'أإآٱةىئیک٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
-                'ااااهيييك01234567890123456789'
-            )
-        $$
+        RETURN translate(
+            regexp_replace(
+                normalize(normalize(lower(t), NFKC), NFD),
+                '[\u0300-\u036f\u0640\u064b-\u065f\u0670]', '', 'g'
+            ),
+            'أإآٱةىئیک٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
+            'ااااهيييك01234567890123456789'
+        )
     """)
     op.execute("""
         CREATE FUNCTION food_search_names(ar text, en text, others text[])
         RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE
-        AS $$
-            SELECT array_to_string(
-                ARRAY(
-                    SELECT food_search_clean(name)
-                    FROM unnest(ARRAY[ar, en] || others) AS name
-                    WHERE name IS NOT NULL AND name <> ''
-                ),
-                ' | '
-            )
-        $$
+        RETURN array_to_string(
+            ARRAY(
+                SELECT food_search_clean(name)
+                FROM unnest(ARRAY[ar, en] || others) AS name
+                WHERE name IS NOT NULL AND name <> ''
+            ),
+            ' | '
+        )
     """)
     op.add_column(
         "foods",

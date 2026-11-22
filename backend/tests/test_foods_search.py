@@ -59,6 +59,28 @@ def test_generated_search_cleans_names_on_insert(food_rows):
     assert search == "مقلوبه | creme caramel | مقلوبه"
 
 
+def test_search_column_fills_with_an_empty_search_path():
+    """Mirror the empty search path used when pg_dump restores rows."""
+    engine = create_engine(Settings().database_url.get_secret_value())
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        try:
+            connection.execute(text("SELECT set_config('search_path', '', true)"))
+            search = connection.execute(
+                text("""
+                    INSERT INTO public.foods
+                        (id, name_ar, source, source_id, calories, protein, carbs, fat)
+                    VALUES (:id, 'مقلوبة', 'regional', :source_id, 100, 1, 2, 3)
+                    RETURNING search
+                """),
+                {"id": uuid7(), "source_id": str(uuid7())},
+            ).scalar_one()
+            assert search == "مقلوبه"
+        finally:
+            transaction.rollback()
+    engine.dispose()
+
+
 def test_arabic_trigrams_are_available():
     engine = create_engine(Settings().database_url.get_secret_value())
     with engine.connect() as connection:
