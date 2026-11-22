@@ -8,8 +8,14 @@ from ghbot.foods import visible_foods
 
 
 @pytest.fixture
-def food_rows():
+def engine():
     engine = create_engine(Settings().database_url.get_secret_value())
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def food_rows(engine):
     ids = []
 
     def add(name_ar, name_en=None, other_names=None, owner_id=None, **nutrients):
@@ -44,24 +50,20 @@ def food_rows():
 
     with engine.begin() as connection:
         connection.execute(text("DELETE FROM foods WHERE id = ANY(:ids)"), {"ids": ids})
-    engine.dispose()
 
 
-def test_generated_search_cleans_names_on_insert(food_rows):
+def test_generated_search_cleans_names_on_insert(food_rows, engine):
     food_id = food_rows("مقلوبة", "Crème caramel", ["ﻣﻘﻠﻮﺑﺔ"])
-    engine = create_engine(Settings().database_url.get_secret_value())
     with engine.connect() as connection:
         search = connection.execute(
             text("SELECT search FROM foods WHERE id = :id"), {"id": food_id}
         ).scalar_one()
-    engine.dispose()
 
     assert search == "مقلوبه | creme caramel | مقلوبه"
 
 
-def test_search_column_fills_with_an_empty_search_path():
+def test_search_column_fills_with_an_empty_search_path(engine):
     """Mirror the empty search path used when pg_dump restores rows."""
-    engine = create_engine(Settings().database_url.get_secret_value())
     with engine.connect() as connection:
         transaction = connection.begin()
         try:
@@ -78,14 +80,11 @@ def test_search_column_fills_with_an_empty_search_path():
             assert search == "مقلوبه"
         finally:
             transaction.rollback()
-    engine.dispose()
 
 
-def test_arabic_trigrams_are_available():
-    engine = create_engine(Settings().database_url.get_secret_value())
+def test_arabic_trigrams_are_available(engine):
     with engine.connect() as connection:
         trigrams = connection.execute(text("SELECT show_trgm('مقلوبه')")).scalar_one()
-    engine.dispose()
 
     assert trigrams
 
@@ -103,13 +102,11 @@ def test_arabic_trigrams_are_available():
         ("ماء", "ماء"),
     ],
 )
-def test_food_search_clean_applies_each_normalization_rule(value, expected):
-    engine = create_engine(Settings().database_url.get_secret_value())
+def test_food_search_clean_applies_each_normalization_rule(engine, value, expected):
     with engine.connect() as connection:
         cleaned = connection.execute(
             text("SELECT food_search_clean(:value)"), {"value": value}
         ).scalar_one()
-    engine.dispose()
 
     assert cleaned == expected
 
