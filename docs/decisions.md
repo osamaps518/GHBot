@@ -686,3 +686,19 @@ carbs, 0.3 g fat per 100 g. Oil = olive oil: 884.0 kcal, 0 protein, 0 carbs,
 | Day: rice 150 g + oil 12.3 g | 303.7 → shows 304 | 4.1 → 4 | 42.3 → 42 | 12.8 → 13 | day totals add stored totals, then round for display |
 
 A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
+
+---
+
+## 31. Sync calls
+
+**Status:** Accepted, 2026-11-22 (#60).
+
+The phone makes each diary row's ID, so repeating a call is harmless. A higher
+revision replaces an active row; a lower or equal one leaves it unchanged.
+Deletes are final and are recorded even for an ID the server has not seen. Every
+answer carries the stored row so the phone learns when its copy was not kept;
+otherwise it could mark an ignored entry as sent.
+
+The server checks totals against the entry's own per-100 g values (decision 21).
+`food_log` uses `foods` only to check that the food is visible to the trainee;
+it does not use `targets`. The phone's sending and pulling come in #61 and #62.
