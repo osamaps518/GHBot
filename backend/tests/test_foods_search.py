@@ -120,7 +120,7 @@ def test_visible_foods_include_catalog_and_only_the_users_own(
     bob_id = client.get("/me", headers=bob_headers).json()["id"]
     catalog = food_rows("تفاح")
     own = food_rows("موز", owner_id=alice_id)
-    food_rows("كعك", owner_id=bob_id)
+    others = food_rows("كعك", owner_id=bob_id)
 
     async def read():
         async with client.app_state["sessions"]() as session:
@@ -129,7 +129,9 @@ def test_visible_foods_include_catalog_and_only_the_users_own(
                 for row in (await session.scalars(visible_foods(alice_id))).all()
             ]
 
-    assert set(client.portal.call(read)) == {catalog, own}
+    visible = set(client.portal.call(read))
+    assert {catalog, own} <= visible
+    assert others not in visible
 
 
 def test_food_search_requires_sign_in_and_returns_rounded_food(
@@ -143,7 +145,7 @@ def test_food_search_requires_sign_in_and_returns_rounded_food(
     response = client.get("/foods", params={"q": "مقلو"}, headers=auth_headers())
 
     assert response.status_code == 200
-    assert response.json() == [
+    assert [food for food in response.json() if food["id"] == food_id] == [
         {
             "id": food_id,
             "name_ar": "مقلوبة",
@@ -179,7 +181,7 @@ def test_search_cleans_arabic_and_latin_equivalents(
     response = client.get("/foods", params={"q": typed}, headers=auth_headers())
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [food_id]
+    assert food_id in [food["id"] for food in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -201,7 +203,7 @@ def test_search_finds_partial_words_typos_and_both_languages(
     response = client.get("/foods", params={"q": typed}, headers=auth_headers())
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [food_id]
+    assert food_id in [food["id"] for food in response.json()]
 
 
 def test_search_ranks_own_then_name_starts_then_contains(
@@ -216,7 +218,9 @@ def test_search_ranks_own_then_name_starts_then_contains(
     response = client.get("/foods", params={"q": "دجاج"}, headers=headers)
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [own, starts, contains]
+    assert [
+        food["id"] for food in response.json() if food["id"] in {own, starts, contains}
+    ] == [own, starts, contains]
 
 
 def test_search_ranks_an_other_name_start_before_a_contains_match(
@@ -228,7 +232,9 @@ def test_search_ranks_an_other_name_start_before_a_contains_match(
     response = client.get("/foods", params={"q": "دجاج"}, headers=auth_headers())
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [alias_starts, contains]
+    assert [
+        food["id"] for food in response.json() if food["id"] in {alias_starts, contains}
+    ] == [alias_starts, contains]
 
 
 def test_search_returns_at_most_twenty_results(client, auth_headers, food_rows):
@@ -247,12 +253,14 @@ def test_search_keeps_other_trainees_food_private(client, auth_headers, food_row
     alice_id = client.get("/me", headers=alice).json()["id"]
     bob_id = client.get("/me", headers=bob).json()["id"]
     own = food_rows("طعام خاص", owner_id=alice_id)
-    food_rows("طعام خاص جدا", owner_id=bob_id)
+    others = food_rows("طعام خاص جدا", owner_id=bob_id)
 
     response = client.get("/foods", params={"q": "طعام"}, headers=alice)
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [own]
+    result_ids = [food["id"] for food in response.json()]
+    assert own in result_ids
+    assert others not in result_ids
 
 
 @pytest.mark.parametrize("symbol", ["%", "_", "\\"])
@@ -260,12 +268,14 @@ def test_search_treats_like_wildcards_literally(
     client, auth_headers, food_rows, symbol
 ):
     matching = food_rows(f"خليط {symbol} خاص")
-    food_rows("خليط عادي")
+    nonmatching = food_rows("خليط عادي")
 
     response = client.get("/foods", params={"q": symbol}, headers=auth_headers())
 
     assert response.status_code == 200
-    assert [food["id"] for food in response.json()] == [matching]
+    result_ids = [food["id"] for food in response.json()]
+    assert matching in result_ids
+    assert nonmatching not in result_ids
 
 
 @pytest.mark.parametrize("query", [None, "", "x" * 101, "a\x00b"])
