@@ -247,7 +247,7 @@ def test_search_treats_like_wildcards_literally(
     assert [food["id"] for food in response.json()] == [matching]
 
 
-@pytest.mark.parametrize("query", [None, "", "x" * 101])
+@pytest.mark.parametrize("query", [None, "", "x" * 101, "a\x00b"])
 def test_search_requires_one_to_one_hundred_characters(client, auth_headers, query):
     response = client.get(
         "/foods",
