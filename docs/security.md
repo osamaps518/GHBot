@@ -17,9 +17,19 @@ selects catalog rows plus only that trainee's own rows. Search takes the user
 from the token (`test_search_keeps_other_trainees_food_private`,
 `test_visible_foods_include_catalog_and_only_the_users_own`).
 
+Diary entries are private to each trainee. The owner comes from the token, and
+the ownership check and write are one database statement, so another trainee
+cannot replace or delete an entry (`test_other_trainee_cannot_replace_or_delete_entry`).
+An entry cannot refer to another trainee's own food
+(`test_other_trainees_own_food_cannot_be_logged`).
+
 ## Health data stays out of logs
 
 Profiles hold health data. The database engine hides bound parameters in its errors and logs, so a failed insert doesn't log the values (`test_failed_profile_insert_does_not_log_health_values`). Bad input gets a 422 instead of a 500: ranges and the age limit are checked before saving, and NaN, Infinity and lone surrogates come back as text in the 422 (`test_non_finite_number_gives_422`, `test_lone_surrogate_in_token_subject_returns_422`).
+
+Diary entry values stay out of logs when a database constraint rejects a write:
+the handler records only the error type and SQL statement
+(`test_failed_write_keeps_entry_values_out_of_logs`).
 
 ## The phone
 
