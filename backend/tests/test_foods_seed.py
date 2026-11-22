@@ -1,6 +1,9 @@
 import asyncio
 import csv
+import re
 import sys
+import unicodedata
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid7
 
@@ -9,7 +12,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
 from ghbot.config import Settings
-from ghbot.foods.seed import load, main
+from ghbot.foods.seed import DEFAULT_FOLDER, load, main, read_rows
 
 
 @pytest.fixture
@@ -426,3 +429,43 @@ def test_non_catalog_csv_is_refused(tmp_path, source):
 
     with pytest.raises(ValueError, match=f"{source}.csv: unknown seed source"):
         seed(tmp_path)
+
+
+def test_committed_seed_files_are_valid():
+    """A hand edit that breaks a file in backend/seed/ fails CI, not the next load."""
+    assert read_rows(DEFAULT_FOLDER)
+
+
+def test_open_food_facts_rows_keep_the_selection_rules():
+    """Every Open Food Facts row still meets the rules in seed/README.md.
+
+    The shared loader accepts any valid catalog row, so a hand edit that breaks
+    a rule only for this source is caught here.
+    """
+    path = DEFAULT_FOLDER / "open_food_facts.csv"
+    with path.open(newline="", encoding="utf-8") as file:
+        rows = list(csv.DictReader(file))
+    assert rows
+    for line, row in enumerate(rows, start=2):
+        nutrients = [
+            Decimal(row[name]) for name in ("calories", "protein", "carbs", "fat")
+        ]
+        calories, protein, carbs, fat = nutrients
+        estimate = 4 * protein + 4 * carbs + 9 * fat
+        code, _, grams = row["units"].partition("=")
+        assert any(
+            unicodedata.name(char, "").startswith("ARABIC LETTER")
+            for char in row["name_ar"]
+        ), line
+        assert re.fullmatch(r"[0-9]{8}|[0-9]{12,13}", row["barcode"]), line
+        assert row["source_id"] == row["barcode"], line
+        assert all(n.is_finite() and n >= 0 for n in nutrients), line
+        assert calories <= 900 and max(protein, carbs, fat) <= 100, line
+        assert protein + carbs + fat <= 105, line
+        assert abs(calories - estimate) <= max(estimate * Decimal("0.25"), 20), line
+        assert not row["units"] or (
+            code == "serving"
+            and Decimal(grams).is_finite()
+            and 1 <= Decimal(grams) <= 1000
+        ), line
+        assert not row["density"], line

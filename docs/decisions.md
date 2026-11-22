@@ -585,17 +585,17 @@ are their private data.
   with the data type, the release, its CC0 license and the suggested citation:
   "U.S. Department of Agriculture, Agricultural Research Service. FoodData
   Central, <year>. fdc.nal.usda.gov."
-- [ ] #56: OFF rows live in their own CSV, with nothing else in it: none of our
+- [x] #56: OFF rows live in their own CSV, with nothing else in it: none of our
   rows, no values from other sources.
-- [ ] #56: the seed README says that file "Contains data from Open Food Facts
+- [x] #56: the seed README says that file "Contains data from Open Food Facts
   (https://world.openfoodfacts.org), available under the Open Database License
   (https://opendatacommons.org/licenses/odbl/1-0/)", that its contents are under
   the DbCL (https://opendatacommons.org/licenses/dbcl/1-0/), that the MIT license
   does not cover it, and the date of the export used. Any copyright,
   database-right or license notice that came with the export is kept there too.
-- [ ] #56: one line in the root `README.md`: the MIT license covers the code; the
+- [x] #56: one line in the root `README.md`: the MIT license covers the code; the
   Open Food Facts file is ODbL, see `backend/seed/README.md`.
-- [ ] #56: any change to a product's names or values is made in the CSV, so the
+- [x] #56: any change to a product's names or values is made in the CSV, so the
   public file stays the full copy we offer under section 4.6.
 - [ ] App: [#71](https://github.com/osamaps518/GHBot/issues/71) shows the notice
   on every screen that shows an OFF food, including foods from the trainee's
