@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy import create_engine, text
 
 from ghbot.config import Settings
+from ghbot.foods import visible_foods
 
 
 @pytest.fixture
@@ -67,3 +68,21 @@ def test_arabic_trigrams_are_available():
     engine.dispose()
 
     assert trigrams
+
+
+def test_visible_foods_include_catalog_and_only_the_users_own(
+    client, auth_headers, food_rows
+):
+    alice_headers = auth_headers()
+    bob_headers = auth_headers()
+    alice_id = client.get("/me", headers=alice_headers).json()["id"]
+    bob_id = client.get("/me", headers=bob_headers).json()["id"]
+    catalog = food_rows("تفاح")
+    own = food_rows("موز", owner_id=alice_id)
+    food_rows("كعك", owner_id=bob_id)
+
+    async def read():
+        async with client.app_state["sessions"]() as session:
+            return [str(row.id) for row in (await session.scalars(visible_foods(alice_id))).all()]
+
+    assert set(client.portal.call(read)) == {catalog, own}
