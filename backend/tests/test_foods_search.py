@@ -86,3 +86,27 @@ def test_visible_foods_include_catalog_and_only_the_users_own(
             return [str(row.id) for row in (await session.scalars(visible_foods(alice_id))).all()]
 
     assert set(client.portal.call(read)) == {catalog, own}
+
+
+def test_food_search_requires_sign_in_and_returns_rounded_food(
+    client, auth_headers, food_rows
+):
+    food_id = food_rows(
+        "مقلوبة", "Maqluba", calories=100.25, protein=1.25, carbs=2.24, fat=3.35
+    )
+
+    assert client.get("/foods", params={"q": "مقلو"}).status_code == 401
+    response = client.get("/foods", params={"q": "مقلو"}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": food_id,
+            "name_ar": "مقلوبة",
+            "name_en": "Maqluba",
+            "calories": 100.3,
+            "protein": 1.3,
+            "carbs": 2.2,
+            "fat": 3.4,
+        }
+    ]
