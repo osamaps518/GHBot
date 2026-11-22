@@ -24,7 +24,7 @@ router = APIRouter(prefix="/foods")
 
 @router.get("", response_model=list[FoodResponse])
 async def get_foods(
-    q: Annotated[str, Query(min_length=1, max_length=100)],
+    q: Annotated[str, Query(min_length=1, max_length=100, pattern=r"^[^\x00]*$")],
     user: CurrentUser,
     session: SessionDependency,
 ) -> list[dict[str, object]]:
