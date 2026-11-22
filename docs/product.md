@@ -23,7 +23,7 @@ GHbot is for adults who train, mainly aged 18 to 50. Nobody under 18 can sign up
 | **Authentication provider** | Sign-up, sign-in and passwords (decision 5). |
 | **Model provider** | The coach's answers, searching the research library (decision 7), and recognizing meals in photos. |
 | **File storage** | Meal photos. |
-| **Food data sources** | USDA FoodData Central and Open Food Facts, also for barcodes. Licenses still to check. |
+| **Food data sources** | USDA FoodData Central and Open Food Facts, also for barcodes. What their licenses require is decision 28. |
 | **Research sources** | PubMed and PubMed Central, for the research library. |
 | **App store billing** | Google Play subscriptions. |
 | **Payout provider** | Paying gyms their commission. May be limited by where we are. |
