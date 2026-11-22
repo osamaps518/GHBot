@@ -1,23 +1,11 @@
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
 from ghbot.foods.application import search_foods
-
-
-class FoodResponse(BaseModel):
-    id: UUID
-    name_ar: str | None
-    name_en: str | None
-    calories: float
-    protein: float
-    carbs: float
-    fat: float
-
+from ghbot.foods.schemas import FoodResponse
 
 router = APIRouter(prefix="/foods")
 
