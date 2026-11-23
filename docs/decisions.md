@@ -296,10 +296,11 @@ package. Screens still own their local form state.
 
 ## 19. Backend module files
 
-**Status:** Accepted, 2026-11-09 (#45). Extends 10.
+**Status:** Accepted, 2026-11-09 (#45). Extends 10. Amended 2026-11-22 (#83): schemas.py.
 
 Every backend module splits its code the same way:
-- `router.py` turns HTTP requests into calls and the results back into responses. It holds no queries and no rules.
+- `router.py` holds the routes, turning HTTP requests into calls and the results back into responses. It holds no models, queries or rules.
+- `schemas.py` holds the module's request and response models, with checks that need only the request itself (ranges, formats and fields that depend on each other, such as an entry's totals against its grams). Checks that need anything else, such as today's date or stored rows, stay in `application.py`.
 - `application.py` holds the module's use cases with their queries and rules (for example, saving a profile checks the age, writes the row and commits). It never imports FastAPI. Other modules get plain values from it, never its database rows. Split it (for example, a `queries.py`) only when it grows past about one screen.
 - `exceptions.py` holds the module's errors as plain Python exceptions, with no HTTP status.
 - `dependencies.py` holds the route parameters other modules use, such as `CurrentUser` and `SavedProfile`.

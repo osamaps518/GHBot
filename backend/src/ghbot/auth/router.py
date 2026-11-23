@@ -1,27 +1,8 @@
-from typing import Annotated
-from uuid import UUID
-
 from fastapi import APIRouter
-from pydantic import BaseModel, StringConstraints
 
 from ghbot.auth.dependencies import CurrentUser
 from ghbot.auth.provider import DevAuthProvider
-
-
-class TokenRequest(BaseModel):
-    subject: Annotated[
-        str, StringConstraints(min_length=1, max_length=255, pattern=r"^[^\x00]*$")
-    ]
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
-class UserResponse(BaseModel):
-    id: UUID
-
+from ghbot.auth.schemas import TokenRequest, TokenResponse, UserResponse
 
 router = APIRouter()
 

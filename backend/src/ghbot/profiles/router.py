@@ -3,35 +3,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response
 from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, Field
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
 from ghbot.profiles.application import save_profile
 from ghbot.profiles.dependencies import SavedProfile, utc_today
 from ghbot.profiles.exceptions import AgeOutOfRange
-from ghbot.profiles.models import ActivityLevel, Goal, Sex
-
-
-class ProfileBody(BaseModel):
-    birth_year: int
-    birth_month: int = Field(ge=1, le=12)
-    sex: Sex
-    height_cm: float = Field(ge=130, le=220)
-    weight_kg: float = Field(ge=35, le=250)
-    activity_level: ActivityLevel
-    goal: Goal
-
-
-class ProfileResponse(BaseModel):
-    birth_year: int
-    birth_month: int
-    sex: str
-    height_cm: float
-    weight_kg: float
-    activity_level: str
-    goal: str
-
+from ghbot.profiles.schemas import ProfileBody, ProfileResponse
 
 router = APIRouter(prefix="/me/profile")
 
