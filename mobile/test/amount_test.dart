@@ -144,6 +144,30 @@ void main() {
     },
   );
 
+  test('a failed save keeps neither the entry nor the food change', () async {
+    final database = _memoryDatabase();
+    await database.storeFood(_rice);
+    await database.customStatement(
+      'CREATE TRIGGER refuse_entries BEFORE INSERT ON food_log_entries '
+      "BEGIN SELECT RAISE(ABORT, 'refused'); END",
+    );
+    final changedRice = Food.fromJson({...riceJson, 'calories': 140.0});
+
+    await expectLater(
+      database.logEntry(
+        food: changedRice,
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1500,
+        loggedAt: DateTime.utc(2026, 11, 23, 12),
+      ),
+      throwsA(anything),
+    );
+
+    expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
+    final stored = (await database.searchStoredFoods('rice')).single;
+    expect(stored.per100g.calories, 1300);
+  });
+
   testWidgets('shows the totals for the grams, and + and − change them by 10', (
     tester,
   ) async {
