@@ -8,7 +8,8 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// The amount step: grams, the totals they give, and the meal. Adding saves
-/// the entry on the phone and closes with `true`.
+/// the entry on the phone and closes with `true`, unless Back closed the step
+/// while it saved: then another screen is on top and stays open.
 class AmountScreen extends StatefulWidget {
   const AmountScreen({
     super.key,
@@ -72,7 +73,9 @@ class _AmountScreenState extends State<AmountScreen> {
       grams: grams,
       loggedAt: DateTime.now(),
     );
-    if (mounted) Navigator.pop(context, true);
+    if (mounted && ModalRoute.of(context)!.isCurrent) {
+      Navigator.pop(context, true);
+    }
   }
 
   /// The Add button sits below the scrolling part, not in

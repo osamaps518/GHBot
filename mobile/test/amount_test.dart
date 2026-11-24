@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,35 @@ AppDatabase _memoryDatabase() {
   );
   addTearDown(database.close);
   return database;
+}
+
+/// A database whose saves wait for [save] to complete.
+class _SlowDatabase extends AppDatabase {
+  _SlowDatabase()
+    : super(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+
+  final save = Completer<void>();
+
+  @override
+  Future<void> logEntry({
+    required Food food,
+    required DiaryMeal meal,
+    required int grams,
+    required DateTime loggedAt,
+  }) async {
+    await save.future;
+    await super.logEntry(
+      food: food,
+      meal: meal,
+      grams: grams,
+      loggedAt: loggedAt,
+    );
+  }
 }
 
 /// Opens the amount step for rice at 150 g in lunch, from a home screen, and
@@ -162,5 +193,59 @@ void main() {
       (entry.meal, entry.mealName, entry.grams),
       (Meal.extra, 'Pre-workout', 1500),
     );
+  });
+
+  testWidgets('a save that finishes after Back leaves the screen behind open', (
+    tester,
+  ) async {
+    final database = _SlowDatabase();
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: const [Locale('en'), Locale('ar')],
+        theme: lightTheme,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => Scaffold(
+                  body: TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<bool>(
+                        builder: (_) => AmountScreen(
+                          database: database,
+                          food: _rice,
+                          grams: 1500,
+                          meal: const DiaryMeal(Meal.lunch),
+                          meals: const [DiaryMeal(Meal.lunch)],
+                        ),
+                      ),
+                    ),
+                    child: const Text('search'),
+                  ),
+                ),
+              ),
+            ),
+            child: const Text('diary'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('diary'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('search'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(english.logButton(english.mealName('lunch'))));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pump(const Duration(milliseconds: 10));
+    database.save.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('search'), findsOneWidget);
   });
 }
