@@ -66,37 +66,6 @@ Future<void> _search(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
-/// Logs [food] the way the diary does, at [loggedAt].
-Future<void> _logged(
-  AppDatabase database,
-  Map<String, Object?> food, {
-  required int grams,
-  required DateTime loggedAt,
-}) async {
-  final stored = Food.fromJson(food);
-  await database.storeFood(stored);
-  await database
-      .into(database.foodLogEntryTable)
-      .insert(
-        FoodLogEntryTableCompanion.insert(
-          id: 'entry-${food['id']}-${loggedAt.millisecondsSinceEpoch}',
-          foodId: stored.id,
-          meal: Meal.lunch,
-          diaryDay: '2026-11-23',
-          grams: grams,
-          caloriesPer100g: stored.per100g.calories,
-          proteinPer100g: stored.per100g.protein,
-          carbsPer100g: stored.per100g.carbs,
-          fatPer100g: stored.per100g.fat,
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-          loggedAt: loggedAt,
-        ),
-      );
-}
-
 void main() {
   testWidgets('online, shows the server results; a food starts at 100 g', (
     tester,
@@ -149,19 +118,18 @@ void main() {
       'each with the grams it was last logged with', (tester) async {
     final (database, chosen) = await _pumpSearch(tester, FakeBackend());
     final noon = DateTime.utc(2026, 11, 23, 12);
-    await _logged(database, riceJson, grams: 1500, loggedAt: noon);
-    await _logged(
-      database,
-      oilJson,
-      grams: 123,
-      loggedAt: noon.add(const Duration(minutes: 1)),
-    );
-    await _logged(
-      database,
-      riceJson,
-      grams: 1800,
-      loggedAt: noon.add(const Duration(minutes: 2)),
-    );
+    for (final (food, grams, minutes) in [
+      (riceJson, 1500, 0),
+      (oilJson, 123, 1),
+      (riceJson, 1800, 2),
+    ]) {
+      await database.logEntry(
+        food: Food.fromJson(food),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: grams,
+        loggedAt: noon.add(Duration(minutes: minutes)),
+      );
+    }
     await tester.pumpAndSettle();
 
     final rice = tester.getTopLeft(find.text('Cooked white rice'));
