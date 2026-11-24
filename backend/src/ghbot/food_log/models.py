@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ghbot.database import Base
@@ -27,6 +27,7 @@ VALUE_COLUMNS = (
 class FoodLogEntry(Base):
     __tablename__ = "food_log_entries"
     __table_args__ = (
+        Index("ix_food_log_entries_user_updated", "user_id", "updated_at"),
         CheckConstraint("revision >= 0", name="food_log_revision_nonnegative"),
         CheckConstraint(
             "meal IS NULL OR meal IN ('breakfast', 'lunch', 'dinner', 'extra')",
