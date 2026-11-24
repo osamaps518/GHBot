@@ -91,6 +91,7 @@ void main() {
         _food('rice', 'أرز أبيض مطبوخ', 'Cooked white rice'),
         _food('labneh', 'لبنة', null),
         _food('oil', null, 'Olive oil 100%'),
+        _food('caramel', 'كريم كراميل', 'Créme Caramel'),
       ]) {
         await database.storeFood(food);
       }
@@ -109,6 +110,7 @@ void main() {
 
     test('ignores case', () async {
       expect(await ids('RICE'), ['rice']);
+      expect(await ids('CRÉME'), ['caramel']);
     });
 
     test('takes % and _ as plain text', () async {

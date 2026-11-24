@@ -109,21 +109,22 @@ class AppDatabase extends _$AppDatabase {
 
   /// The phone's foods whose Arabic or English name contains [query],
   /// ignoring case. This is the search without a connection
-  /// (docs/decisions.md, 20); `%` and `_` in [query] are plain text.
-  Future<List<Food>> searchStoredFoods(String query) {
-    final escaped = query.replaceAllMapped(
-      RegExp(r'[\\%_]'),
-      (match) => '\\${match[0]}',
-    );
-    final pattern = '%$escaped%';
-    return (select(foodTable)
-          ..where(
-            (food) =>
-                food.nameAr.like(pattern, escapeChar: r'\') |
-                food.nameEn.like(pattern, escapeChar: r'\'),
-          )
-          ..orderBy([(food) => OrderingTerm.asc(food.id)]))
-        .get();
+  /// (docs/decisions.md, 20).
+  ///
+  /// The names are compared in Dart: SQLite's `LIKE` ignores case only for
+  /// A to Z, so "CRÉME" wouldn't find "Créme". The phone keeps only the foods
+  /// the trainee has logged, so reading them all is cheap.
+  Future<List<Food>> searchStoredFoods(String query) async {
+    final typed = query.toLowerCase();
+    bool matches(String? name) =>
+        name != null && name.toLowerCase().contains(typed);
+    final foods = await (select(
+      foodTable,
+    )..orderBy([(food) => OrderingTerm.asc(food.id)])).get();
+    return [
+      for (final food in foods)
+        if (matches(food.nameAr) || matches(food.nameEn)) food,
+    ];
   }
 
   /// Logs [grams] (in tenths) of [food] into [meal], with totals calculated
