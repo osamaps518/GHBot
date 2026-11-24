@@ -36,7 +36,7 @@ final ThemeData darkTheme = _theme(
     seedColor: _tangerine,
     brightness: Brightness.dark,
   ).copyWith(
-    primary: _tangerine,
+    primary: _darkOrange,
     onPrimary: _charcoal,
     surface: const Color(0xFF111113),
     onSurface: _offWhite,
@@ -44,7 +44,7 @@ final ThemeData darkTheme = _theme(
     surfaceContainer: _darkCard,
     surfaceContainerHighest: const Color(0xFF2A2A2F),
     outline: const Color(0xFF5E5E66),
-    error: const Color(0xFFFF6B7A),
+    error: const Color(0xFFFFB4AB),
     onError: _charcoal,
     inverseSurface: _offWhite,
     onInverseSurface: _charcoal,
@@ -53,15 +53,18 @@ final ThemeData darkTheme = _theme(
   const TargetsColors(
     heroBackground: _darkCard,
     onHero: _offWhite,
-    heroNumber: _tangerine,
+    heroNumber: _darkOrange,
     protein: _offWhite,
-    carbs: _tangerine,
+    carbs: _darkOrange,
     fat: Color(0xFF6E6E76),
   ),
 );
 
 const _charcoal = Color(0xFF1C1C1E);
 const _tangerine = Color(0xFFFF7A1A);
+
+/// Dark mode's orange, deeper than tangerine (#51).
+const _darkOrange = Color(0xFFD9661A);
 const _offWhite = Color(0xFFF2F2F0);
 const _darkCard = Color(0xFF1D1D20);
 
