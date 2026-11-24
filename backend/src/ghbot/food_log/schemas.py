@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from ghbot.food_log.models import FoodLogEntry
+from ghbot.foods.schemas import FoodResponse
 
 Grams = Annotated[
     Decimal,
@@ -93,6 +94,12 @@ class EntryResponse(BaseModel):
     logged_at: AwareDatetime | None
     per_100g: Nutrients | None
     totals: Totals | None
+
+
+class PullResponse(BaseModel):
+    entries: list[EntryResponse]
+    foods: list[FoodResponse]
+    next_marker: AwareDatetime
 
 
 def response_for(row: FoodLogEntry) -> EntryResponse:

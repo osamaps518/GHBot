@@ -22,6 +22,9 @@ the ownership check and write are one database statement, so another trainee
 cannot replace or delete an entry (`test_other_trainee_cannot_replace_or_delete_entry`).
 An entry cannot refer to another trainee's own food
 (`test_other_trainees_own_food_cannot_be_logged`).
+The diary pull returns only the caller's entries and their visible used foods,
+including tombstones (`test_pull_never_returns_other_trainees_own_foods`,
+`test_pull_returns_deleted_entry_and_excludes_other_trainee`).
 
 ## Health data stays out of logs
 

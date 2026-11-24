@@ -264,6 +264,63 @@ def test_seed_is_idempotent_and_updates_only_changed_catalog_row(tmp_path):
         engine.dispose()
 
 
+def test_seed_commits_each_file_before_next_file_fails(tmp_path):
+    first_id, second_id, existing_id = (str(uuid7()) for _ in range(3))
+    row = {
+        "source_id": first_id,
+        "name_ar": "تفاح",
+        "name_en": "Apple",
+        "other_names": "",
+        "calories": "50",
+        "protein": "0",
+        "carbs": "12",
+        "fat": "0",
+        "units": "",
+        "density": "",
+        "barcode": "",
+    }
+    write_csv(tmp_path, "regional", [row])
+    write_csv(
+        tmp_path,
+        "usda",
+        [{**row, "source_id": second_id, "barcode": "9876543210123"}],
+    )
+    engine = create_engine(Settings().database_url.get_secret_value())
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("""INSERT INTO foods (id, name_ar, source, source_id, barcode,
+                     calories, protein, carbs, fat) VALUES
+                     (:id, 'موجود', 'regional', :source_id, '9876543210123',
+                     1, 1, 1, 1)"""),
+                {"id": existing_id, "source_id": existing_id},
+            )
+        with pytest.raises(IntegrityError):
+            seed(tmp_path)
+        with engine.connect() as connection:
+            assert (
+                connection.execute(
+                    text("SELECT count(*) FROM foods WHERE source_id = :id"),
+                    {"id": first_id},
+                ).scalar_one()
+                == 1
+            )
+            assert (
+                connection.execute(
+                    text("SELECT count(*) FROM foods WHERE source_id = :id"),
+                    {"id": second_id},
+                ).scalar_one()
+                == 0
+            )
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM foods WHERE source_id IN (:first, :existing)"),
+                {"first": first_id, "existing": existing_id},
+            )
+        engine.dispose()
+
+
 @pytest.mark.parametrize(
     ("bad_change", "expected"),
     [

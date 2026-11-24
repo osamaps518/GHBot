@@ -2,21 +2,46 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
+from pydantic import AwareDatetime
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
-from ghbot.food_log.application import delete_entry, put_entry
+from ghbot.food_log.application import (
+    delete_entry,
+    pull_changes,
+    put_entry,
+)
 from ghbot.food_log.exceptions import (
     EntryOfAnotherUser,
     EntryWriteFailed,
     FoodNotVisible,
 )
-from ghbot.food_log.schemas import NUTRIENTS, EntryBody, EntryResponse, response_for
+from ghbot.food_log.schemas import (
+    NUTRIENTS,
+    EntryBody,
+    EntryResponse,
+    PullResponse,
+    response_for,
+)
 
-router = APIRouter(prefix="/me/food-log/entries")
+router = APIRouter(prefix="/me/food-log")
 
 
-@router.put("/{id}")
+@router.get("/changes")
+async def get_food_log_changes(
+    user: CurrentUser,
+    session: SessionDependency,
+    since: AwareDatetime | None = None,
+) -> PullResponse:
+    marker, entries, foods = await pull_changes(session, user.id, since)
+    return PullResponse(
+        entries=[response_for(row) for row in entries],
+        foods=foods,
+        next_marker=marker,
+    )
+
+
+@router.put("/entries/{id}")
 async def put_food_log_entry(
     id: UUID,
     body: EntryBody,
@@ -59,7 +84,7 @@ async def put_food_log_entry(
     return response_for(row)
 
 
-@router.delete("/{id}")
+@router.delete("/entries/{id}")
 async def delete_food_log_entry(
     id: UUID, user: CurrentUser, session: SessionDependency
 ) -> EntryResponse:

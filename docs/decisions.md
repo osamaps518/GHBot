@@ -697,7 +697,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60).
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -706,8 +706,32 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
-`food_log` uses `foods` only to check that the food is visible to the trainee;
-it does not use `targets`. The phone's sending and pulling come in #61 and #62.
+`food_log` uses `foods` to check that a logged food is visible to the trainee
+and to get changed foods for a pull, passing its used-food IDs query to `foods`.
+It does not use `targets`. The phone's sending comes in #61.
+
+**Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
+rows, including deleted rows, and the changed foods used by those rows. Without
+`since`, it returns all of them. With a time-zone-aware ISO timestamp, it returns
+entries and foods whose `updated_at` is at or after that timestamp. Entries are
+ordered by update time and ID; foods are unique and ordered by ID. The foods
+query uses `visible_foods`, so another trainee's own foods cannot appear.
+
+The server takes `next_marker` from the database's `clock_timestamp()` minus
+30 seconds before reading the changes. The phone sends this marker back exactly
+as text. The overlap lets a later pull catch writes that commit after the read
+but began inside the margin; repeated rows replace by ID. The entry query has
+an index on `(user_id, updated_at)` so each pull need not scan other trainees'
+diaries. There is no pagination yet: 15 entries per day for three years is about
+16,000 rows, a few MB on the occasional full reinstall pull.
+
+The seed loader validates all files first and commits each CSV file in its own
+transaction. Changed rows use `clock_timestamp()`, the time of the write, and
+each file's transaction is far shorter than the 30-second margin, so a row
+commits within the margin of its timestamp and no marker can pass it unseen.
+A real load of the 239-row `open_food_facts.csv` into a local database took
+**0.140 seconds** on 2026-11-24, measured inside the loader call
+with `time.perf_counter()`; this is one local run, not a throughput guarantee.
 
 ---
 

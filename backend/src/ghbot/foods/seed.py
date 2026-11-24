@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import csv
 import math
+from itertools import groupby
 from pathlib import Path
 
 from sqlalchemy import func, or_
@@ -130,7 +131,7 @@ async def load(folder: Path = DEFAULT_FOLDER) -> None:
         index_where=table.c.owner_id.is_(None),
         set_={
             **{name: getattr(excluded, name) for name in UPDATED_COLUMNS},
-            "updated_at": func.now(),
+            "updated_at": func.clock_timestamp(),
         },
         where=or_(
             *(
@@ -140,8 +141,9 @@ async def load(folder: Path = DEFAULT_FOLDER) -> None:
         ),
     )
     try:
-        async with engine.begin() as connection:
-            await connection.execute(statement, rows)
+        for _, grouped in groupby(rows, key=lambda row: row["source"]):
+            async with engine.begin() as connection:
+                await connection.execute(statement, list(grouped))
     finally:
         await engine.dispose()
 

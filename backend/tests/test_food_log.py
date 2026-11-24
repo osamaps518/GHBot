@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime, timedelta
 from uuid import uuid7
 
 import pytest
@@ -56,6 +57,182 @@ def entry(food):
             "fat": 0.5,
         },
     }
+
+
+def test_full_pull_returns_owned_entries_and_used_food(client, auth_headers, food):
+    headers = auth_headers()
+    item_id = str(uuid7())
+    saved = client.put(
+        f"/me/food-log/entries/{item_id}", headers=headers, json=entry(food)
+    ).json()
+
+    response = client.get("/me/food-log/changes", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["entries"] == [saved]
+    assert response.json()["foods"] == [
+        {
+            "id": food,
+            "name_ar": "أرز",
+            "name_en": None,
+            "calories": 130.0,
+            "protein": 2.7,
+            "carbs": 28.2,
+            "fat": 0.3,
+        }
+    ]
+    assert response.json()["next_marker"].endswith("Z")
+
+
+def test_pull_returns_deleted_entry_and_excludes_other_trainee(
+    client, auth_headers, food
+):
+    mine, other = auth_headers(), auth_headers()
+    mine_id, other_id = str(uuid7()), str(uuid7())
+    mine_url = f"/me/food-log/entries/{mine_id}"
+    other_url = f"/me/food-log/entries/{other_id}"
+    assert client.put(mine_url, headers=mine, json=entry(food)).status_code == 201
+    assert client.put(other_url, headers=other, json=entry(food)).status_code == 201
+    deleted = client.delete(mine_url, headers=mine).json()
+
+    response = client.get("/me/food-log/changes", headers=mine)
+
+    assert response.status_code == 200
+    assert response.json()["entries"] == [deleted]
+    assert response.json()["foods"][0]["id"] == food
+
+
+def test_pull_filters_changed_foods_by_time_and_usage(
+    client, auth_headers, engine, food
+):
+    mine, other, unused = auth_headers(), auth_headers(), auth_headers()
+    mine_id, other_id = str(uuid7()), str(uuid7())
+    client.put(f"/me/food-log/entries/{mine_id}", headers=mine, json=entry(food))
+    client.put(f"/me/food-log/entries/{other_id}", headers=other, json=entry(food))
+    marker = datetime.now(UTC) - timedelta(minutes=5)
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE foods SET updated_at = :old WHERE id = :id"),
+            {"old": marker - timedelta(seconds=1), "id": food},
+        )
+    assert (
+        client.get(
+            "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
+        ).json()["foods"]
+        == []
+    )
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE foods SET updated_at = :new WHERE id = :id"),
+            {"new": marker + timedelta(seconds=1), "id": food},
+        )
+    assert [
+        row["id"]
+        for row in client.get(
+            "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
+        ).json()["foods"]
+    ] == [food]
+    assert (
+        client.get(
+            "/me/food-log/changes", headers=unused, params={"since": marker.isoformat()}
+        ).json()["foods"]
+        == []
+    )
+
+
+def test_pull_returns_rows_inside_margin_and_skips_older_rows(
+    client, auth_headers, engine, food
+):
+    headers = auth_headers()
+    old_id = str(uuid7())
+    assert (
+        client.put(
+            f"/me/food-log/entries/{old_id}", headers=headers, json=entry(food)
+        ).status_code
+        == 201
+    )
+    with engine.begin() as connection:
+        connection.execute(
+            text("""UPDATE food_log_entries
+                 SET updated_at = now() - interval '5 minutes' WHERE id = :id"""),
+            {"id": old_id},
+        )
+        before = connection.scalar(text("SELECT clock_timestamp()"))
+    first = client.get("/me/food-log/changes", headers=headers).json()["next_marker"]
+    second_id = str(uuid7())
+    assert (
+        client.put(
+            f"/me/food-log/entries/{second_id}", headers=headers, json=entry(food)
+        ).status_code
+        == 201
+    )
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE food_log_entries SET updated_at = :time WHERE id = :id"),
+            {"time": before, "id": second_id},
+        )
+    second = client.get(
+        "/me/food-log/changes", headers=headers, params={"since": first}
+    )
+    assert [row["id"] for row in second.json()["entries"]] == [second_id]
+
+
+def test_pull_rejects_marker_without_timezone(client, auth_headers):
+    response = client.get(
+        "/me/food-log/changes",
+        headers=auth_headers(),
+        params={"since": "2026-11-22T12:00:00"},
+    )
+    assert response.status_code == 422
+
+
+def test_pull_never_returns_other_trainees_own_foods(client, auth_headers, engine):
+    mine, other = auth_headers(), auth_headers()
+    mine_user = client.get("/me", headers=mine).json()["id"]
+    other_user = client.get("/me", headers=other).json()["id"]
+    mine_food, other_food = uuid7(), uuid7()
+    with engine.begin() as connection:
+        connection.execute(
+            text("""INSERT INTO foods (id, name_ar, source, owner_id, calories,
+                 protein, carbs, fat) VALUES (:id, 'خاص', 'trainee', :owner,
+                 100, 1, 2, 3)"""),
+            [
+                {"id": mine_food, "owner": mine_user},
+                {"id": other_food, "owner": other_user},
+            ],
+        )
+    mine_entry, other_entry = uuid7(), uuid7()
+    try:
+        assert (
+            client.put(
+                f"/me/food-log/entries/{mine_entry}",
+                headers=mine,
+                json=entry(str(mine_food)),
+            ).status_code
+            == 201
+        )
+        assert (
+            client.put(
+                f"/me/food-log/entries/{other_entry}",
+                headers=other,
+                json=entry(str(other_food)),
+            ).status_code
+            == 201
+        )
+        response = client.get("/me/food-log/changes", headers=mine)
+        assert [row["id"] for row in response.json()["entries"]] == [str(mine_entry)]
+        assert [row["id"] for row in response.json()["foods"]] == [str(mine_food)]
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM food_log_entries WHERE id IN (:mine, :other)"),
+                {"mine": mine_entry, "other": other_entry},
+            )
+            connection.execute(
+                text("DELETE FROM foods WHERE id IN (:mine, :other)"),
+                {"mine": mine_food, "other": other_food},
+            )
 
 
 def test_put_creates_entry_and_repeat_returns_same_row(client, auth_headers, food):
