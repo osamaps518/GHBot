@@ -10,8 +10,8 @@ For wiring the app (main.py):
             name matches q, own foods first.
 """
 
-from ghbot.foods.application import visible_foods
+from ghbot.foods.application import changed_foods, visible_foods
 from ghbot.foods.models import Food
 from ghbot.foods.router import router
 
-__all__ = ["Food", "router", "visible_foods"]
+__all__ = ["Food", "changed_foods", "router", "visible_foods"]

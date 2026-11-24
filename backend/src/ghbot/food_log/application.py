@@ -1,8 +1,9 @@
 import logging
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, and_, func, literal_column
+from sqlalchemy import Boolean, and_, func, literal_column, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Result, Row
 from sqlalchemy.exc import DBAPIError
@@ -18,6 +19,25 @@ from ghbot.food_log.models import FoodLogEntry
 from ghbot.foods import Food, visible_foods
 
 logger = logging.getLogger(__name__)
+
+
+async def pull_marker(session: AsyncSession) -> datetime:
+    """Reserve an overlapping database-time marker before reading changes."""
+    marker = await session.scalar(select(func.clock_timestamp() - text("interval '30 seconds'")))
+    if marker is None:
+        raise RuntimeError("Database did not return a pull marker")
+    return marker
+
+
+async def pull_entries(
+    session: AsyncSession, user_id: UUID, since: datetime | None
+) -> list[FoodLogEntry]:
+    """Return this trainee's changed rows, including tombstones."""
+    statement = select(FoodLogEntry).where(FoodLogEntry.user_id == user_id)
+    if since is not None:
+        statement = statement.where(FoodLogEntry.updated_at >= since)
+    statement = statement.order_by(FoodLogEntry.updated_at, FoodLogEntry.id)
+    return list((await session.scalars(statement)).all())
 
 
 async def _write(session: AsyncSession, statement: Executable) -> Result[Any]:

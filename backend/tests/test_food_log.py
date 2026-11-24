@@ -58,6 +58,31 @@ def entry(food):
     }
 
 
+def test_full_pull_returns_owned_entries_and_used_food(client, auth_headers, food):
+    headers = auth_headers()
+    item_id = str(uuid7())
+    saved = client.put(
+        f"/me/food-log/entries/{item_id}", headers=headers, json=entry(food)
+    ).json()
+
+    response = client.get("/me/food-log/changes", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["entries"] == [saved]
+    assert response.json()["foods"] == [
+        {
+            "id": food,
+            "name_ar": "أرز",
+            "name_en": None,
+            "calories": 130.0,
+            "protein": 2.7,
+            "carbs": 28.2,
+            "fat": 0.3,
+        }
+    ]
+    assert response.json()["next_marker"].endswith("Z")
+
+
 def test_put_creates_entry_and_repeat_returns_same_row(client, auth_headers, food):
     headers = auth_headers()
     item_id = str(uuid7())
