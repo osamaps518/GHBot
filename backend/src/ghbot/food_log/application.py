@@ -16,12 +16,23 @@ from ghbot.food_log.exceptions import (
     FoodNotVisible,
 )
 from ghbot.food_log.models import FoodLogEntry
-from ghbot.foods import Food, visible_foods
+from ghbot.foods import Food, changed_foods, visible_foods
 
 logger = logging.getLogger(__name__)
 
 
-async def pull_marker(session: AsyncSession) -> datetime:
+async def pull_changes(
+    session: AsyncSession, user_id: UUID, since: datetime | None
+) -> tuple[datetime, list[FoodLogEntry], list[dict[str, object]]]:
+    """Take the overlapping marker before reading entries and their used foods."""
+    marker = await _pull_marker(session)
+    entries = await _pull_entries(session, user_id, since)
+    used = select(FoodLogEntry.food_id).where(FoodLogEntry.user_id == user_id)
+    foods = await changed_foods(session, user_id, since, used)
+    return marker, entries, foods
+
+
+async def _pull_marker(session: AsyncSession) -> datetime:
     """Reserve an overlapping database-time marker before reading changes."""
     marker = await session.scalar(
         select(func.clock_timestamp() - text("interval '30 seconds'"))
@@ -31,7 +42,7 @@ async def pull_marker(session: AsyncSession) -> datetime:
     return cast(datetime, marker)
 
 
-async def pull_entries(
+async def _pull_entries(
     session: AsyncSession, user_id: UUID, since: datetime | None
 ) -> list[FoodLogEntry]:
     """Return this trainee's changed rows, including tombstones."""

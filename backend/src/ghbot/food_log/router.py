@@ -9,8 +9,7 @@ from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
 from ghbot.food_log.application import (
     delete_entry,
-    pull_entries,
-    pull_marker,
+    pull_changes,
     put_entry,
 )
 from ghbot.food_log.exceptions import (
@@ -25,7 +24,6 @@ from ghbot.food_log.schemas import (
     PullResponse,
     response_for,
 )
-from ghbot.foods import changed_foods
 
 router = APIRouter(prefix="/me/food-log")
 
@@ -36,9 +34,7 @@ async def get_food_log_changes(
     session: SessionDependency,
     since: Annotated[AwareDatetime | None, Query()] = None,
 ) -> PullResponse:
-    marker = await pull_marker(session)
-    entries = await pull_entries(session, user.id, since)
-    foods = await changed_foods(session, user.id, since)
+    marker, entries, foods = await pull_changes(session, user.id, since)
     return PullResponse(
         entries=[response_for(row) for row in entries],
         foods=foods,

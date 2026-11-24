@@ -11,12 +11,12 @@ from ghbot.foods.models import Food
 
 
 async def changed_foods(
-    session: AsyncSession, user_id: UUID, since: datetime | None
+    session: AsyncSession,
+    user_id: UUID,
+    since: datetime | None,
+    used: Select[tuple[UUID | None]],
 ) -> list[dict[str, object]]:
     """Return distinct visible changed foods used by this trainee's diary."""
-    from ghbot.food_log.models import FoodLogEntry
-
-    used = select(FoodLogEntry.food_id).where(FoodLogEntry.user_id == user_id)
     statement = _sent_foods(user_id).where(Food.id.in_(used)).order_by(Food.id)
     if since is not None:
         statement = statement.where(Food.updated_at >= since)
