@@ -36,6 +36,23 @@ class Food {
     required this.per100g,
   });
 
+  /// Reads a food from `GET /foods`. The API sends values with 1 decimal;
+  /// `round` keeps 28.2, which is 281.99… as a double, at 282 tenths.
+  factory Food.fromJson(Map<String, Object?> json) {
+    int tenths(String key) => ((json[key] as num) * 10).round();
+    return Food(
+      id: json['id'] as String,
+      nameAr: json['name_ar'] as String?,
+      nameEn: json['name_en'] as String?,
+      per100g: Nutrients(
+        calories: tenths('calories'),
+        protein: tenths('protein'),
+        carbs: tenths('carbs'),
+        fat: tenths('fat'),
+      ),
+    );
+  }
+
   /// Builds a food from a `foods` row.
   Food.fromColumns({
     required this.id,
@@ -58,4 +75,9 @@ class Food {
   final String? nameAr;
   final String? nameEn;
   final Nutrients per100g;
+
+  /// The name in the app's language ([languageCode]), or the other one when
+  /// the food has no name in it.
+  String name(String languageCode) =>
+      (languageCode == 'ar' ? nameAr ?? nameEn : nameEn ?? nameAr)!;
 }

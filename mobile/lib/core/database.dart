@@ -92,4 +92,36 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       });
+
+  /// Adds [food] to the phone's foods, or updates the copy stored before.
+  Future<void> storeFood(Food food) => into(foodTable).insertOnConflictUpdate(
+    FoodTableCompanion.insert(
+      id: food.id,
+      nameAr: Value(food.nameAr),
+      nameEn: Value(food.nameEn),
+      caloriesPer100g: food.per100g.calories,
+      proteinPer100g: food.per100g.protein,
+      carbsPer100g: food.per100g.carbs,
+      fatPer100g: food.per100g.fat,
+    ),
+  );
+
+  /// The phone's foods whose Arabic or English name contains [query],
+  /// ignoring case. This is the search without a connection
+  /// (docs/decisions.md, 20); `%` and `_` in [query] are plain text.
+  Future<List<Food>> searchStoredFoods(String query) {
+    final escaped = query.replaceAllMapped(
+      RegExp(r'[\\%_]'),
+      (match) => '\\${match[0]}',
+    );
+    final pattern = '%$escaped%';
+    return (select(foodTable)
+          ..where(
+            (food) =>
+                food.nameAr.like(pattern, escapeChar: r'\') |
+                food.nameEn.like(pattern, escapeChar: r'\'),
+          )
+          ..orderBy([(food) => OrderingTerm.asc(food.id)]))
+        .get();
+  }
 }
