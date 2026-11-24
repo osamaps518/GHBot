@@ -17,20 +17,7 @@ async def changed_foods(
     from ghbot.food_log.models import FoodLogEntry
 
     used = select(FoodLogEntry.food_id).where(FoodLogEntry.user_id == user_id)
-    statement = (
-        visible_foods(user_id)
-        .with_only_columns(
-            Food.id,
-            Food.name_ar,
-            Food.name_en,
-            rounded(Food.calories).label("calories"),
-            rounded(Food.protein).label("protein"),
-            rounded(Food.carbs).label("carbs"),
-            rounded(Food.fat).label("fat"),
-        )
-        .where(Food.id.in_(used))
-        .order_by(Food.id)
-    )
+    statement = _sent_foods(user_id).where(Food.id.in_(used)).order_by(Food.id)
     if since is not None:
         statement = statement.where(Food.updated_at >= since)
     return [dict(row) for row in (await session.execute(statement)).mappings().all()]
@@ -44,6 +31,21 @@ def rounded(column: InstrumentedAttribute[float]) -> ColumnElement[Decimal]:
 def visible_foods(user_id: UUID) -> Select[tuple[Food]]:
     """Select catalog foods and foods owned by this trainee."""
     return select(Food).where(or_(Food.owner_id.is_(None), Food.owner_id == user_id))
+
+
+def _sent_foods(
+    user_id: UUID,
+) -> Select[tuple[UUID, str, str | None, Decimal, Decimal, Decimal, Decimal]]:
+    """Visible foods with the fields and rounding the API sends (decision 30)."""
+    return visible_foods(user_id).with_only_columns(
+        Food.id,
+        Food.name_ar,
+        Food.name_en,
+        rounded(Food.calories).label("calories"),
+        rounded(Food.protein).label("protein"),
+        rounded(Food.carbs).label("carbs"),
+        rounded(Food.fat).label("fat"),
+    )
 
 
 async def search_foods(
@@ -63,16 +65,7 @@ async def search_foods(
     )
     score = func.word_similarity(cleaned, Food.search)
     statement = (
-        visible_foods(user_id)
-        .with_only_columns(
-            Food.id,
-            Food.name_ar,
-            Food.name_en,
-            rounded(Food.calories).label("calories"),
-            rounded(Food.protein).label("protein"),
-            rounded(Food.carbs).label("carbs"),
-            rounded(Food.fat).label("fat"),
-        )
+        _sent_foods(user_id)
         .where(or_(contains, literal(cleaned).op("<%")(Food.search)))
         .order_by(desc(Food.owner_id.is_not(None)), desc(starts), desc(score), Food.id)
         .limit(20)
