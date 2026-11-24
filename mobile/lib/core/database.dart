@@ -2,10 +2,16 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../food_log/entry.dart';
+import '../food_log/entry_table.dart';
+import '../food_log/meal.dart';
+import '../foods/food.dart';
+import '../foods/food_table.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_table.dart';
 import '../targets/targets.dart';
 import '../targets/targets_table.dart';
+import 'database.steps.dart';
 
 part 'database.g.dart';
 
@@ -21,12 +27,27 @@ AppDatabase openUserDatabase(String userId) => AppDatabase(
 );
 
 /// One user's data on the phone, in its own file (docs/decisions.md, 25).
-@DriftDatabase(tables: [ProfileTable, TargetsTable])
+@DriftDatabase(
+  tables: [ProfileTable, TargetsTable, FoodTable, FoodLogEntryTable],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  /// Each step brings the file from one exported schema (`drift_schemas/`)
+  /// to the next. Version 2 adds the foods and the diary.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: stepByStep(
+      from1To2: (m, schema) async {
+        await m.createTable(schema.foods);
+        await m.createTable(schema.foodLogEntries);
+        await m.createIndex(schema.foodLogEntriesDiaryDay);
+      },
+    ),
+  );
 
   /// The stored profile and targets, or null when nothing is stored.
   Future<({Profile profile, Targets targets})?> readProfileAndTargets() async {

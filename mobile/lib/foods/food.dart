@@ -36,6 +36,22 @@ class Food {
     required this.per100g,
   });
 
+  /// Builds a food from a `foods` row.
+  Food.fromColumns({
+    required this.id,
+    required this.nameAr,
+    required this.nameEn,
+    required int caloriesPer100g,
+    required int proteinPer100g,
+    required int carbsPer100g,
+    required int fatPer100g,
+  }) : per100g = Nutrients(
+         calories: caloriesPer100g,
+         protein: proteinPer100g,
+         carbs: carbsPer100g,
+         fat: fatPer100g,
+       );
+
   final String id;
 
   /// At least one name is set.

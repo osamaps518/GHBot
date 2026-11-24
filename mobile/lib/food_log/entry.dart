@@ -46,6 +46,36 @@ class FoodLogEntry {
     required this.loggedAt,
   });
 
+  /// Builds an entry from a `food_log_entries` row.
+  FoodLogEntry.fromColumns({
+    required this.id,
+    required this.foodId,
+    required this.meal,
+    required this.mealName,
+    required this.diaryDay,
+    required this.grams,
+    required int caloriesPer100g,
+    required int proteinPer100g,
+    required int carbsPer100g,
+    required int fatPer100g,
+    required int calories,
+    required int protein,
+    required int carbs,
+    required int fat,
+    required this.loggedAt,
+  }) : per100g = Nutrients(
+         calories: caloriesPer100g,
+         protein: proteinPer100g,
+         carbs: carbsPer100g,
+         fat: fatPer100g,
+       ),
+       totals = Nutrients(
+         calories: calories,
+         protein: protein,
+         carbs: carbs,
+         fat: fat,
+       );
+
   final String id;
   final String foodId;
   final Meal meal;
