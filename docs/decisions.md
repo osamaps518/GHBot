@@ -706,8 +706,30 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
-`food_log` uses `foods` only to check that the food is visible to the trainee;
-it does not use `targets`. The phone's sending and pulling come in #61 and #62.
+`food_log` uses `foods` to check that a logged food is visible to the trainee.
+It does not use `targets`. The phone's sending comes in #61.
+
+**Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
+rows, including deleted rows, and the changed foods used by those rows. Without
+`since`, it returns all of them. With a time-zone-aware ISO timestamp, it returns
+entries and foods whose `updated_at` is at or after that timestamp. Entries are
+ordered by update time and ID; foods are unique and ordered by ID. The foods
+query uses `visible_foods`, so another trainee's own foods cannot appear.
+
+The server takes `next_marker` from the database's `clock_timestamp()` minus
+30 seconds before reading the changes. The phone sends this marker back exactly
+as text. The overlap lets a later pull catch writes that commit after the read
+but began inside the margin; repeated rows replace by ID. The entry query has
+an index on `(user_id, updated_at)` so each pull need not scan other trainees'
+diaries. There is no pagination yet: 15 entries per day for three years is about
+16,000 rows, a few MB on the occasional full reinstall pull.
+
+The seed loader validates all files first and commits each CSV file in its own
+transaction. Changed rows use `clock_timestamp()` so a long seed transaction
+does not leave committed rows with an update time older than a marker handed out
+while it was running. A real load of the 239-row `open_food_facts.csv` into
+`ghbot_62` took **0.140 seconds** on 2026-11-24, measured inside the loader call
+with `time.perf_counter()`; this is one local run, not a throughput guarantee.
 
 ---
 
