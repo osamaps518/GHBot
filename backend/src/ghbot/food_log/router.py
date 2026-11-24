@@ -1,7 +1,6 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import AwareDatetime
 
@@ -32,7 +31,7 @@ router = APIRouter(prefix="/me/food-log")
 async def get_food_log_changes(
     user: CurrentUser,
     session: SessionDependency,
-    since: Annotated[AwareDatetime | None, Query()] = None,
+    since: AwareDatetime | None = None,
 ) -> PullResponse:
     marker, entries, foods = await pull_changes(session, user.id, since)
     return PullResponse(
