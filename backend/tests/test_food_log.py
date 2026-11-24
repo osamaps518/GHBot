@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid7
 
 import pytest
@@ -84,7 +84,9 @@ def test_full_pull_returns_owned_entries_and_used_food(client, auth_headers, foo
     assert response.json()["next_marker"].endswith("Z")
 
 
-def test_pull_returns_deleted_entry_and_excludes_other_trainee(client, auth_headers, food):
+def test_pull_returns_deleted_entry_and_excludes_other_trainee(
+    client, auth_headers, food
+):
     mine, other = auth_headers(), auth_headers()
     mine_id, other_id = str(uuid7()), str(uuid7())
     mine_url = f"/me/food-log/entries/{mine_id}"
@@ -103,34 +105,46 @@ def test_pull_returns_deleted_entry_and_excludes_other_trainee(client, auth_head
 def test_pull_filters_changed_foods_by_time_and_usage(
     client, auth_headers, engine, food
 ):
-    mine, other = auth_headers(), auth_headers()
+    mine, other, unused = auth_headers(), auth_headers(), auth_headers()
     mine_id, other_id = str(uuid7()), str(uuid7())
     client.put(f"/me/food-log/entries/{mine_id}", headers=mine, json=entry(food))
     client.put(f"/me/food-log/entries/{other_id}", headers=other, json=entry(food))
-    marker = datetime.now(timezone.utc) - timedelta(minutes=5)
+    marker = datetime.now(UTC) - timedelta(minutes=5)
     with engine.begin() as connection:
         connection.execute(
             text("UPDATE foods SET updated_at = :old WHERE id = :id"),
             {"old": marker - timedelta(seconds=1), "id": food},
         )
-    assert client.get(
-        "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
-    ).json()["foods"] == []
+    assert (
+        client.get(
+            "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
+        ).json()["foods"]
+        == []
+    )
 
     with engine.begin() as connection:
         connection.execute(
             text("UPDATE foods SET updated_at = :new WHERE id = :id"),
             {"new": marker + timedelta(seconds=1), "id": food},
         )
-    assert [row["id"] for row in client.get(
-        "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
-    ).json()["foods"]] == [food]
+    assert [
+        row["id"]
+        for row in client.get(
+            "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
+        ).json()["foods"]
+    ] == [food]
+    assert (
+        client.get(
+            "/me/food-log/changes", headers=unused, params={"since": marker.isoformat()}
+        ).json()["foods"]
+        == []
+    )
 
 
 def test_pull_marker_overlaps_thirty_seconds(client, auth_headers, engine, food):
     headers = auth_headers()
     first = client.get("/me/food-log/changes", headers=headers).json()["next_marker"]
-    marker = datetime.fromisoformat(first.replace("Z", "+00:00"))
+    marker = datetime.fromisoformat(first)
     item_id = str(uuid7())
     client.put(f"/me/food-log/entries/{item_id}", headers=headers, json=entry(food))
     with engine.begin() as connection:
@@ -153,9 +167,7 @@ def test_pull_rejects_marker_without_timezone(client, auth_headers):
     assert response.status_code == 422
 
 
-def test_pull_never_returns_other_trainees_own_foods(
-    client, auth_headers, engine
-):
+def test_pull_never_returns_other_trainees_own_foods(client, auth_headers, engine):
     mine, other = auth_headers(), auth_headers()
     mine_user = client.get("/me", headers=mine).json()["id"]
     other_user = client.get("/me", headers=other).json()["id"]
@@ -170,18 +182,24 @@ def test_pull_never_returns_other_trainees_own_foods(
                 {"id": other_food, "owner": other_user},
             ],
         )
+    mine_entry, other_entry = uuid7(), uuid7()
     try:
-        mine_entry, other_entry = uuid7(), uuid7()
-        assert client.put(
-            f"/me/food-log/entries/{mine_entry}",
-            headers=mine,
-            json=entry(str(mine_food)),
-        ).status_code == 201
-        assert client.put(
-            f"/me/food-log/entries/{other_entry}",
-            headers=other,
-            json=entry(str(other_food)),
-        ).status_code == 201
+        assert (
+            client.put(
+                f"/me/food-log/entries/{mine_entry}",
+                headers=mine,
+                json=entry(str(mine_food)),
+            ).status_code
+            == 201
+        )
+        assert (
+            client.put(
+                f"/me/food-log/entries/{other_entry}",
+                headers=other,
+                json=entry(str(other_food)),
+            ).status_code
+            == 201
+        )
         response = client.get("/me/food-log/changes", headers=mine)
         assert [row["id"] for row in response.json()["entries"]] == [str(mine_entry)]
         assert [row["id"] for row in response.json()["foods"]] == [str(mine_food)]

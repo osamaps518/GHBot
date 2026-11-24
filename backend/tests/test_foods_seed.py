@@ -298,14 +298,20 @@ def test_seed_commits_each_file_before_next_file_fails(tmp_path):
         with pytest.raises(IntegrityError):
             seed(tmp_path)
         with engine.connect() as connection:
-            assert connection.execute(
-                text("SELECT count(*) FROM foods WHERE source_id = :id"),
-                {"id": first_id},
-            ).scalar_one() == 1
-            assert connection.execute(
-                text("SELECT count(*) FROM foods WHERE source_id = :id"),
-                {"id": second_id},
-            ).scalar_one() == 0
+            assert (
+                connection.execute(
+                    text("SELECT count(*) FROM foods WHERE source_id = :id"),
+                    {"id": first_id},
+                ).scalar_one()
+                == 1
+            )
+            assert (
+                connection.execute(
+                    text("SELECT count(*) FROM foods WHERE source_id = :id"),
+                    {"id": second_id},
+                ).scalar_one()
+                == 0
+            )
     finally:
         with engine.begin() as connection:
             connection.execute(

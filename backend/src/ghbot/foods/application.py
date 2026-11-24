@@ -1,5 +1,5 @@
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import Numeric, Select, cast, desc, func, literal, or_, select, text

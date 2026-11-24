@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy import Boolean, and_, func, literal_column, select, text
@@ -23,10 +23,12 @@ logger = logging.getLogger(__name__)
 
 async def pull_marker(session: AsyncSession) -> datetime:
     """Reserve an overlapping database-time marker before reading changes."""
-    marker = await session.scalar(select(func.clock_timestamp() - text("interval '30 seconds'")))
+    marker = await session.scalar(
+        select(func.clock_timestamp() - text("interval '30 seconds'"))
+    )
     if marker is None:
         raise RuntimeError("Database did not return a pull marker")
-    return marker
+    return cast(datetime, marker)
 
 
 async def pull_entries(

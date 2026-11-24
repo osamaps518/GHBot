@@ -7,7 +7,12 @@ from pydantic import AwareDatetime
 
 from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
-from ghbot.food_log.application import delete_entry, pull_entries, pull_marker, put_entry
+from ghbot.food_log.application import (
+    delete_entry,
+    pull_entries,
+    pull_marker,
+    put_entry,
+)
 from ghbot.food_log.exceptions import (
     EntryOfAnotherUser,
     EntryWriteFailed,
