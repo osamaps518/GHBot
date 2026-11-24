@@ -235,13 +235,17 @@ agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GH
 
 ## 16. App look
 
-**Status:** Accepted, 2026-10-31 (#40)
+**Status:** Accepted, 2026-10-31 (#40). Amended 2026-11-24 (#59): dark mode's orange and error colors.
 
 The app uses option D4, charcoal and tangerine, in light and dark, following the
 phone's setting. The theme lives in `mobile/lib/core/theme.dart`; screens take colors
 and text styles from it instead of hardcoding them. Colors Material has no role
 for (the daily calories card and the three macros) are in a `TargetsColors`
 theme extension.
+
+Dark mode uses a deeper orange, #D9661A, and the error color #FFB4AB with
+charcoal on it, as chosen in the #51 mockups. Light mode keeps tangerine
+(#FF7A1A) and #B3261E.
 
 The font is Rubik, which covers Arabic and English and has Western digits. It is
 included in the app, so text looks the same without a connection. Flutter's
@@ -278,7 +282,7 @@ development build only.
 
 ## 18. Mobile code layout
 
-**Status:** Superseded, 2026-11-18 by 25 for what `AppFlow` loads at start; other choices remain accepted.
+**Status:** Superseded, 2026-11-18 by 25 for what `AppFlow` loads at start, and 2026-11-24 by 35 for the screens it picks and the Edit navigation; other choices remain accepted.
 
 Folders in `mobile/lib/` mirror the backend modules: `auth`, `profiles`, and
 `targets`. `core/` holds the API client, failures, error views, and theme that
@@ -704,3 +708,78 @@ otherwise it could mark an ignored entry as sent.
 The server checks totals against the entry's own per-100 g values (decision 21).
 `food_log` uses `foods` only to check that the food is visible to the trainee;
 it does not use `targets`. The phone's sending and pulling come in #61 and #62.
+
+---
+
+## 32. The diary is local-first
+
+**Status:** Accepted, 2026-11-24 (#59).
+
+An entry is saved to the phone's database first, and the diary reads only from
+that database. Screens listen to Drift's live queries, so a saved entry shows
+at once, with or without a connection. Logging also keeps the entry's food on
+the phone, in one transaction, so it can be found and logged again offline
+(decision 20). #61 sends the entries to the server.
+
+- A trainee logs several times a day, often where the connection is poor.
+  Logging must not wait for the server or fail without it.
+- The phone makes the entry's ID (UUIDv7, like the server's IDs), so sending it
+  again later is harmless (decision 31).
+
+We considered saving to the server first, as profiles do (decision 24). A
+profile changes a few times a year and the server can refuse it; an entry is
+frequent and the server only checks its arithmetic. We accept that the phone's
+database holds entries the server hasn't seen yet, and that a refused entry
+needs its own state in #61.
+
+---
+
+## 33. The phone calculates an entry's values
+
+**Status:** Accepted, 2026-11-24 (#59).
+
+The phone calculates an entry's totals from the food's values per 100 g and the
+grams, with decision 30's integer formula, and stores both. The server checks
+them and does not calculate its own (decision 31).
+
+- The phone must show a number offline anyway.
+- A second calculation on the server could disagree, and a total would change
+  after sync. Integers in tenths make the phone's result and the server's check
+  agree exactly.
+
+---
+
+## 34. The phone decides the diary day
+
+**Status:** Accepted, 2026-11-24 (#59).
+
+An entry's diary day comes from the phone's clock and time zone when it is
+logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00
+(`dayStartHour` in `mobile/lib/food_log/entry.dart`), so a snack at 1:30 still
+belongs to the evening before. When it is logged is stored separately, in UTC.
+
+- The server doesn't know the phone's time zone.
+- An entry keeps its day: travel, or a later change to the day start, doesn't
+  move old entries.
+- A diary day is a date, not a point in time, so it isn't stored as one.
+
+There is no setting for the day start yet.
+
+---
+
+## 35. The diary is home; `AppFlow` keeps its gate job
+
+**Status:** Accepted, 2026-11-24 (#59). Supersedes 18 for the screens.
+
+After sign-in, onboarding and the age warning, the app opens on today's diary.
+The targets screen opens on top of it from "Targets", and Edit my info stays
+there. `AppFlow` only gates: sign-in, loading, onboarding, the age warning and
+the error screen. It exposes the user's database, and the diary, search and
+amount screens read and write it directly. Navigation is Flutter's built-in,
+with no bottom tabs.
+
+The targets screen follows `AppFlow`, so a save from Edit my info shows at once,
+and the age warning shows over it when the save makes it due.
+
+We considered a diary notifier next to `AppFlow`. Drift's live queries already
+tell the screens about every change, so it would only pass them along.

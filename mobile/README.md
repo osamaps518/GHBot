@@ -19,7 +19,7 @@ Start the backend first (see `backend/README.md`). On first run:
 
 1. Type any name on the sign-in screen. The same name gets you back to the same account, even after a reinstall.
 2. Fill in your details and tap **Calculate my targets**.
-3. Next time, the app opens straight on your targets. **Edit my info** changes your details.
+3. The app opens on today's diary. **Add food** under a meal searches for a food and logs it. **Targets** shows your targets, and **Edit my info** there changes your details.
 
 To start over as a new user, clear the app's data or uninstall it, then sign in with a new name.
 
@@ -55,7 +55,7 @@ The app's look (option D4, see `docs/decisions.md`) lives in `lib/core/theme.dar
 
 ## Database
 
-The app keeps each user's profile and targets on the phone in a Drift (SQLite) database. Each module declares its tables (`profiles/profile_table.dart`, `targets/targets_table.dart`); the database class is in `lib/core/database.dart`.
+The app keeps each user's profile, targets, logged foods and diary on the phone in a Drift (SQLite) database. Each module declares its tables (for example `profiles/profile_table.dart` and `food_log/entry_table.dart`); the database class is in `lib/core/database.dart`.
 
 After changing a table or the database class, regenerate the `*.g.dart` files and commit them:
 

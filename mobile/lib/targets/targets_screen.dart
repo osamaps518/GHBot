@@ -4,7 +4,7 @@ import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import 'targets.dart';
 
-/// The daily calorie and macro targets.
+/// The daily calorie and macro targets, opened from the diary.
 class TargetsScreen extends StatelessWidget {
   const TargetsScreen({super.key, required this.targets, required this.onEdit});
 
@@ -14,9 +14,10 @@ class TargetsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.targetsTitle)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             _CaloriesHero(
               calories: targets.calories,
@@ -59,7 +60,7 @@ class _CaloriesHero extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final colors = TargetsColors.of(context);
     return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(22, 24, 22, 26),
+      padding: const EdgeInsetsDirectional.fromSTEB(22, 22, 22, 24),
       decoration: BoxDecoration(
         color: colors.heroBackground,
         borderRadius: BorderRadius.circular(28),
@@ -67,11 +68,6 @@ class _CaloriesHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.targetsTitle,
-            style: text.titleMedium!.copyWith(color: colors.heroMuted),
-          ),
-          const SizedBox(height: 6),
           Row(
             children: [
               Flexible(

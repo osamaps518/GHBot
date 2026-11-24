@@ -51,7 +51,24 @@ class ApiClient {
     }
   }
 
+  /// The JSON object in a successful response.
   Map<String, Object?> decode(http.Response response) {
+    final body = _decodeBody(response);
+    if (body is! Map<String, dynamic>) {
+      throw const UnexpectedResponseFailure();
+    }
+    return body;
+  }
+
+  /// The JSON list in a successful response.
+  List<Object?> decodeList(http.Response response) {
+    final body = _decodeBody(response);
+    if (body is! List) throw const UnexpectedResponseFailure();
+    return body;
+  }
+
+  /// Decodes a response's JSON, or throws the failure its status means.
+  Object? _decodeBody(http.Response response) {
     if (response.statusCode >= 300 && response.statusCode != 422) {
       throw ServerFailure(response.statusCode);
     }
@@ -73,9 +90,6 @@ class ApiClient {
         types.add(error['type'] as String);
       }
       throw ValidationFailure(types);
-    }
-    if (body is! Map<String, dynamic>) {
-      throw const UnexpectedResponseFailure();
     }
     return body;
   }

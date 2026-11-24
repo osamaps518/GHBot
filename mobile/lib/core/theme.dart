@@ -25,7 +25,6 @@ final ThemeData lightTheme = _theme(
     heroBackground: _tangerine,
     onHero: _charcoal,
     heroNumber: _charcoal,
-    heroMuted: Color(0xFF4A2405),
     protein: _charcoal,
     carbs: _tangerine,
     fat: Color(0xFFB8B8BC),
@@ -37,7 +36,7 @@ final ThemeData darkTheme = _theme(
     seedColor: _tangerine,
     brightness: Brightness.dark,
   ).copyWith(
-    primary: _tangerine,
+    primary: _darkOrange,
     onPrimary: _charcoal,
     surface: const Color(0xFF111113),
     onSurface: _offWhite,
@@ -45,7 +44,7 @@ final ThemeData darkTheme = _theme(
     surfaceContainer: _darkCard,
     surfaceContainerHighest: const Color(0xFF2A2A2F),
     outline: const Color(0xFF5E5E66),
-    error: const Color(0xFFFF6B7A),
+    error: const Color(0xFFFFB4AB),
     onError: _charcoal,
     inverseSurface: _offWhite,
     onInverseSurface: _charcoal,
@@ -54,22 +53,31 @@ final ThemeData darkTheme = _theme(
   const TargetsColors(
     heroBackground: _darkCard,
     onHero: _offWhite,
-    heroNumber: _tangerine,
-    heroMuted: Color(0xFFA8A8AE),
+    heroNumber: _darkOrange,
     protein: _offWhite,
-    carbs: _tangerine,
+    carbs: _darkOrange,
     fat: Color(0xFF6E6E76),
   ),
 );
 
 const _charcoal = Color(0xFF1C1C1E);
 const _tangerine = Color(0xFFFF7A1A);
+
+/// Dark mode's orange, deeper than tangerine (#51).
+const _darkOrange = Color(0xFFD9661A);
 const _offWhite = Color(0xFFF2F2F0);
 const _darkCard = Color(0xFF1D1D20);
 
 /// The emphasized value in a targets explanation row.
 TextStyle targetsRowValueStyle(ThemeData theme) =>
     theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
+
+/// The round − and + buttons beside the grams field.
+ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
+  fixedSize: const Size(54, 54),
+  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+  foregroundColor: theme.colorScheme.onSurface,
+);
 
 /// Builds a theme from [colors] and the [targets] colors.
 ///
@@ -79,12 +87,23 @@ TextStyle targetsRowValueStyle(ThemeData theme) =>
 /// - A button's `textStyle` replaces the default one instead of merging with
 ///   it, so button text starts from the text theme to keep the Rubik font.
 /// - `displayLarge` is the daily calories number on the targets screen.
+/// - Text buttons (Add food, Targets, Cancel) take the text color, not the
+///   orange, in dark mode too.
+/// - List tiles (foods and diary entries) line up with their cards' 18 px
+///   padding.
 /// - Segmented buttons are the gender and goal pickers: a pill-shaped track,
 ///   the chosen option filled.
 /// - Progress indicators are the macro bars on the targets screen. Each bar's
 ///   color is its macro's.
 /// - "How we calculated this" sits in a card, so expansion tiles have no
 ///   divider lines.
+/// - App bars sit on the page color and stay flat when content scrolls
+///   under them, with the title in `titleLarge` at 20 px.
+/// - Choice chips are the meal picker: outlined pills, the chosen one filled
+///   with a check mark. `ChoiceChip` takes its chosen colors from the
+///   `secondary` chip settings.
+/// - Bottom sheets (naming an extra meal) sit on the card color, with a
+///   drag handle.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -130,6 +149,9 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
         textStyle: buttonText,
       ),
     ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: colors.onSurface),
+    ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: buttonSize,
@@ -160,9 +182,45 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       linearTrackColor: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(999),
     ),
+    listTileTheme: const ListTileThemeData(
+      contentPadding: EdgeInsets.symmetric(horizontal: 18),
+    ),
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),
       collapsedShape: Border(),
+    ),
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(
+          color: states.contains(WidgetState.selected)
+              ? colors.primary
+              : colors.outline,
+          width: 1.5,
+        ),
+      ),
+      backgroundColor: colors.surface,
+      secondarySelectedColor: colors.primary,
+      checkmarkColor: colors.onPrimary,
+      labelStyle: base.textTheme.bodyLarge!.copyWith(color: colors.onSurface),
+      secondaryLabelStyle: base.textTheme.bodyLarge!.copyWith(
+        color: colors.onPrimary,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: colors.surfaceContainer,
+      showDragHandle: true,
+      dragHandleColor: colors.outline,
+    ),
+    appBarTheme: AppBarThemeData(
+      backgroundColor: colors.surface,
+      scrolledUnderElevation: 0,
+      titleTextStyle: base.textTheme.titleLarge!.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -180,7 +238,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     required this.heroBackground,
     required this.onHero,
     required this.heroNumber,
-    required this.heroMuted,
     required this.protein,
     required this.carbs,
     required this.fat,
@@ -189,7 +246,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
   final Color heroBackground;
   final Color onHero;
   final Color heroNumber;
-  final Color heroMuted;
   final Color protein;
   final Color carbs;
   final Color fat;
@@ -202,7 +258,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     Color? heroBackground,
     Color? onHero,
     Color? heroNumber,
-    Color? heroMuted,
     Color? protein,
     Color? carbs,
     Color? fat,
@@ -210,7 +265,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     heroBackground: heroBackground ?? this.heroBackground,
     onHero: onHero ?? this.onHero,
     heroNumber: heroNumber ?? this.heroNumber,
-    heroMuted: heroMuted ?? this.heroMuted,
     protein: protein ?? this.protein,
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
@@ -223,7 +277,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
       heroBackground: Color.lerp(heroBackground, other.heroBackground, t)!,
       onHero: Color.lerp(onHero, other.onHero, t)!,
       heroNumber: Color.lerp(heroNumber, other.heroNumber, t)!,
-      heroMuted: Color.lerp(heroMuted, other.heroMuted, t)!,
       protein: Color.lerp(protein, other.protein, t)!,
       carbs: Color.lerp(carbs, other.carbs, t)!,
       fat: Color.lerp(fat, other.fat, t)!,

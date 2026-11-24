@@ -385,6 +385,198 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'فهمت'**
   String get understandButton;
+
+  /// Food search title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إلى {meal}'**
+  String searchTitle(String meal);
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن طعام بالعربية أو الإنجليزية'**
+  String get searchHint;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح البحث'**
+  String get clearSearch;
+
+  /// Above the foods shown before typing, newest first.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلتها مؤخرًا'**
+  String get recentlyLogged;
+
+  /// No description provided for @per100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'لكل 100 غ'**
+  String get per100g;
+
+  /// After a calorie number, as in 130 سعرة.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة'**
+  String get caloriesUnit;
+
+  /// Search without a connection filters only the foods kept on the phone (decision 20).
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
+  String get searchOffline;
+
+  /// No description provided for @noResultsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد «{query}»'**
+  String noResultsTitle(String query);
+
+  /// No description provided for @noResultsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية.'**
+  String get noResultsBody;
+
+  /// No description provided for @mealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}'**
+  String mealName(String meal);
+
+  /// No description provided for @caloriesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'{calories} سعرة لكل 100 غ'**
+  String caloriesPer100g(String calories);
+
+  /// No description provided for @amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get amount;
+
+  /// The − button: 10 g less.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل'**
+  String get less;
+
+  /// The + button: 10 g more.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكثر'**
+  String get more;
+
+  /// No description provided for @meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوجبة'**
+  String get meal;
+
+  /// Saves the entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إلى {meal}'**
+  String logButton(String meal);
+
+  /// The server's grams rules: greater than 0, at most 5000, at most 1 decimal.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorGrams;
+
+  /// No description provided for @today.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get today;
+
+  /// No description provided for @weekdayName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}'**
+  String weekdayName(String weekday);
+
+  /// The diary day under Today, such as الاثنين، 23 تشرين الثاني.
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday}، {day} {month}'**
+  String diaryDate(String weekday, String day, String month);
+
+  /// Under the calories left today, in the ring.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة متبقية'**
+  String get caloriesLeft;
+
+  /// Under the calories eaten beyond the target, in the ring.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة فوق هدفك'**
+  String get caloriesOver;
+
+  /// No description provided for @eatenOfTarget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تناولت {eaten} من {target} سعرة'**
+  String eatenOfTarget(String eaten, String target);
+
+  /// Opens the targets screen from the diary.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get targetsButton;
+
+  /// Under a macro's grams eaten today.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {target} غ'**
+  String macroOfTarget(String target);
+
+  /// No description provided for @noEntries.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُسجّل شيئًا بعد.'**
+  String get noEntries;
+
+  /// No description provided for @addFood.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة طعام'**
+  String get addFood;
+
+  /// No description provided for @addMeal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة وجبة'**
+  String get addMeal;
+
+  /// No description provided for @extraMealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الوجبة'**
+  String get extraMealName;
+
+  /// An extra meal exists only through its entries (#59).
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر الوجبة في يومك حين تضيف إليها أول طعام.'**
+  String get extraMealHint;
+
+  /// No description provided for @errorMealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمًا من 1 إلى 40 حرفًا.'**
+  String get errorMealName;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate

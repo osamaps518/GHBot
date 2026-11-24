@@ -61,6 +61,20 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
+  /// Gets a JSON list and parses each of its objects.
+  Future<List<T>> getList<T>(
+    String path,
+    T Function(Map<String, Object?>) parse,
+  ) async {
+    final response = await _sendAuthorized('GET', path);
+    return _parse(
+      () => [
+        for (final item in _client.decodeList(response))
+          parse(item as Map<String, Object?>),
+      ],
+    );
+  }
+
   Future<T> put<T>(
     String path,
     Object body,

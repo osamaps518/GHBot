@@ -219,4 +219,137 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get understandButton => 'I understand';
+
+  @override
+  String searchTitle(String meal) {
+    return 'Add to $meal';
+  }
+
+  @override
+  String get searchHint => 'Search for a food in Arabic or English';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get recentlyLogged => 'Recently logged';
+
+  @override
+  String get per100g => 'per 100 g';
+
+  @override
+  String get caloriesUnit => 'kcal';
+
+  @override
+  String get searchOffline =>
+      'Couldn\'t connect, so only foods you\'ve logged before show here. Finding other foods needs a connection.';
+
+  @override
+  String noResultsTitle(String query) {
+    return 'No results for “$query”';
+  }
+
+  @override
+  String get noResultsBody => 'Try another name, or type it in Arabic.';
+
+  @override
+  String mealName(String meal) {
+    String _temp0 = intl.Intl.selectLogic(meal, {
+      'breakfast': 'Breakfast',
+      'lunch': 'Lunch',
+      'dinner': 'Dinner',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String caloriesPer100g(String calories) {
+    return '$calories kcal per 100 g';
+  }
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get less => 'Less';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get meal => 'Meal';
+
+  @override
+  String logButton(String meal) {
+    return 'Add to $meal';
+  }
+
+  @override
+  String get errorGrams =>
+      'Enter an amount above 0 and up to 5000 g, with at most 1 decimal.';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String weekdayName(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'Monday',
+      '2': 'Tuesday',
+      '3': 'Wednesday',
+      '4': 'Thursday',
+      '5': 'Friday',
+      '6': 'Saturday',
+      '7': 'Sunday',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String diaryDate(String weekday, String day, String month) {
+    return '$weekday, $month $day';
+  }
+
+  @override
+  String get caloriesLeft => 'kcal left';
+
+  @override
+  String get caloriesOver => 'kcal over your target';
+
+  @override
+  String eatenOfTarget(String eaten, String target) {
+    return 'You\'ve eaten $eaten of $target kcal';
+  }
+
+  @override
+  String get targetsButton => 'Targets';
+
+  @override
+  String macroOfTarget(String target) {
+    return 'of $target g';
+  }
+
+  @override
+  String get noEntries => 'Nothing logged yet.';
+
+  @override
+  String get addFood => 'Add food';
+
+  @override
+  String get addMeal => 'Add meal';
+
+  @override
+  String get extraMealName => 'Meal name';
+
+  @override
+  String get extraMealHint =>
+      'The meal stays on your day once you add its first food.';
+
+  @override
+  String get errorMealName => 'Enter a name of 1 to 40 characters.';
+
+  @override
+  String get cancel => 'Cancel';
 }

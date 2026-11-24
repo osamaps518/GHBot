@@ -182,8 +182,8 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
-  testWidgets('reopening goes straight to the targets, and editing updates '
-      'them', (tester) async {
+  testWidgets('reopening goes straight to the diary, and editing updates the '
+      'targets', (tester) async {
     final backend = FakeBackend()..profile = savedProfile();
 
     await pumpApp(tester, backend, storedName: 'alice');
@@ -191,10 +191,11 @@ void main() {
     final token = backend.requestsTo('POST', '/dev/token').single;
     expect(jsonDecode(token.body), {'subject': 'alice'});
     expect(find.text('2210'), findsOneWidget);
+    await openTargets(tester);
     expect(find.text(english.goalRow('lose')), findsOneWidget);
     expect(find.text(english.minimumNote), findsNothing);
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     expect(find.text('180'), findsOneWidget);
     backend.targets = {
       ...exampleTargets,
@@ -272,7 +273,7 @@ void main() {
     Future<FakeBackend> leaveDuringSave(WidgetTester tester) async {
       final backend = FakeBackend()..profile = savedProfile();
       await pumpApp(tester, backend, storedName: 'alice');
-      await _tapText(tester, english.editMyInfo);
+      await editMyInfo(tester);
       backend.holdSave = Completer();
       await tester.tap(find.text(english.calculateButton));
       await tester.pump();
@@ -286,7 +287,7 @@ void main() {
       tester,
     ) async {
       final backend = await leaveDuringSave(tester);
-      await _tapText(tester, english.editMyInfo);
+      await editMyInfo(tester);
 
       backend.holdSave!.complete();
       await tester.pumpAndSettle();
@@ -316,7 +317,7 @@ void main() {
     ) async {
       final backend = FakeBackend()..profile = savedProfile();
       await pumpApp(tester, backend, storedName: 'alice');
-      await _tapText(tester, english.editMyInfo);
+      await editMyInfo(tester);
       backend.offline = true;
       await _tapText(tester, english.calculateButton);
       expect(find.text(english.retry), findsOneWidget);
@@ -332,7 +333,7 @@ void main() {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('maintain'));
     backend.targets = {
       ...exampleTargets,
@@ -346,7 +347,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('gain'));
     backend.targets = {
       ...exampleTargets,
@@ -367,7 +368,7 @@ void main() {
     final backend = FakeBackend()..profile = savedProfile();
     await pumpApp(tester, backend, storedName: 'alice');
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('maintain'));
     backend.targets = {
       ...exampleTargets,
@@ -381,7 +382,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('gain'));
     backend.offline = true;
     await _tapText(tester, english.calculateButton);
@@ -401,7 +402,7 @@ void main() {
     await pumpApp(tester, backend, storedName: 'alice');
     backend.expireTokens();
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.calculateButton);
 
     final tokens = backend.requestsTo('POST', '/dev/token').toList();
@@ -422,7 +423,7 @@ void main() {
         ? http.Response('', ++puts <= 3 ? 401 : 500)
         : null;
 
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.calculateButton);
 
     expect(puts, 2);
@@ -529,6 +530,7 @@ void main() {
       };
 
     await pumpApp(tester, backend, storedName: 'alice');
+    await openTargets(tester);
 
     expect(find.text('1200'), findsNWidgets(2));
     expect(find.text(english.minimumNote), findsOneWidget);
@@ -543,12 +545,14 @@ void main() {
         ..profile = savedProfile()
         ..targets = {...exampleTargets, 'above_tested_age': true};
       await pumpApp(tester, backend, storedName: 'alice', ageWarningSeen: true);
+      await openTargets(tester);
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     });
 
     testWidgets('no warning icon for ages in the tested range', (tester) async {
       final backend = FakeBackend()..profile = savedProfile();
       await pumpApp(tester, backend, storedName: 'alice');
+      await openTargets(tester);
       expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
     });
 
@@ -560,7 +564,7 @@ void main() {
       await _tapText(tester, english.calculateButton);
     }
 
-    testWidgets('a 79-year-old sees it after onboarding, then the targets', (
+    testWidgets('a 79-year-old sees it after onboarding, then the diary', (
       tester,
     ) async {
       final backend = FakeBackend()
@@ -589,7 +593,7 @@ void main() {
       await pumpApp(tester, backend, storedName: 'alice');
       expect(find.text('2210'), findsOneWidget);
 
-      await _tapText(tester, english.editMyInfo);
+      await editMyInfo(tester);
       backend.targets = {...exampleTargets, 'above_tested_age': true};
       await _tapText(tester, english.calculateButton);
 
@@ -603,7 +607,7 @@ void main() {
       expect(find.text(english.ageWarning), findsNothing);
     });
 
-    testWidgets('shows once: the next start goes straight to the targets', (
+    testWidgets('shows once: the next start goes straight to the diary', (
       tester,
     ) async {
       final backend = FakeBackend()

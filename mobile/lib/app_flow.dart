@@ -11,9 +11,10 @@ import 'profiles/profiles_api.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
 
-enum AppStage { loading, signIn, onboarding, targets, failed }
+enum AppStage { loading, signIn, onboarding, diary, failed }
 
-/// Coordinates sign-in, profile, targets, and the one-time age warning.
+/// Gates the app: sign-in, onboarding, the one-time age warning, then the
+/// diary (docs/decisions.md, 35). Screens read the diary from [database].
 ///
 /// The profile and targets are read from the user's database on the phone and
 /// refreshed from the server (docs/decisions.md, 24 and 25).
@@ -30,6 +31,9 @@ class AppFlow extends ChangeNotifier {
   final TargetsApi _targetsApi;
   final AppDatabase Function(String userId) _openDatabase;
   AppDatabase? _database;
+
+  /// The signed-in user's database, open from the diary stage on.
+  AppDatabase get database => _database!;
 
   /// Holds the age-warning mark. It's kept on the phone, so after a reinstall
   /// the warning shows once more.
@@ -88,7 +92,7 @@ class AppFlow extends ChangeNotifier {
         await _refresh(database);
         return;
       }
-      _showTargets(stored.profile, stored.targets);
+      _showDiary(stored.profile, stored.targets);
       unawaited(
         _refresh(database)
             .catchError((_) {}, test: (error) => error is Exception),
@@ -129,13 +133,13 @@ class AppFlow extends ChangeNotifier {
     }
     await database.storeProfileAndTargets(loadedProfile, loadedTargets!);
     if (_disposed) return;
-    _showTargets(loadedProfile, loadedTargets);
+    _showDiary(loadedProfile, loadedTargets);
   }
 
-  void _showTargets(Profile shownProfile, Targets shownTargets) {
+  void _showDiary(Profile shownProfile, Targets shownTargets) {
     profile = shownProfile;
     targets = shownTargets;
-    stage = AppStage.targets;
+    stage = AppStage.diary;
     notifyListeners();
   }
 
@@ -152,7 +156,7 @@ class AppFlow extends ChangeNotifier {
     _shownVersion = version;
     await database.storeProfileAndTargets(savedProfile, updatedTargets);
     if (_disposed) return;
-    _showTargets(savedProfile, updatedTargets);
+    _showDiary(savedProfile, updatedTargets);
   }
 
   Future<void> acceptAgeWarning() async {

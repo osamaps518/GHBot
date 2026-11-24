@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/core/database.dart';
 import 'package:ghbot/main.dart';
@@ -26,7 +28,30 @@ const exampleTargets = {
   'goal_adjustment_percent': -20,
 };
 
-/// A stand-in for the backend: dev tokens, one user's profile, and targets.
+/// Cooked white rice from decision 30, as `GET /foods` sends it.
+const riceJson = {
+  'id': 'rice',
+  'name_ar': 'أرز أبيض مطبوخ',
+  'name_en': 'Cooked white rice',
+  'calories': 130.0,
+  'protein': 2.7,
+  'carbs': 28.2,
+  'fat': 0.3,
+};
+
+/// Olive oil from decision 30, as `GET /foods` sends it.
+const oilJson = {
+  'id': 'oil',
+  'name_ar': 'زيت زيتون',
+  'name_en': 'Olive oil',
+  'calories': 884.0,
+  'protein': 0.0,
+  'carbs': 0.0,
+  'fat': 100.0,
+};
+
+/// A stand-in for the backend: dev tokens, one user's profile, targets, and
+/// food search.
 class FakeBackend {
   /// The saved profile, as the backend's JSON. Null until one is saved.
   Map<String, Object?>? profile;
@@ -48,6 +73,13 @@ class FakeBackend {
   /// Holds one targets response with the values captured when requested,
   /// including a 404 when there was no profile then.
   Completer<void>? holdNextTargets;
+
+  /// The catalog for `GET /foods`. A search answers the foods whose Arabic
+  /// or English name contains the query, ignoring case.
+  List<Map<String, Object?>> foods = [riceJson, oilJson];
+
+  /// Holds the answer to a search for a query until its completer completes.
+  final holdSearches = <String, Completer<void>>{};
 
   /// The subject each valid token was issued for.
   final _validTokens = <String, String>{};
@@ -92,6 +124,17 @@ class FakeBackend {
         final created = profile == null;
         profile = (jsonDecode(request.body) as Map).cast<String, Object?>();
         return _json(profile, created ? 201 : 200);
+      case 'GET /foods':
+        final query = request.url.queryParameters['q']!.toLowerCase();
+        await holdSearches[query]?.future;
+        return _json([
+          for (final food in foods)
+            if ([
+              food['name_ar'],
+              food['name_en'],
+            ].any((name) => '$name'.toLowerCase().contains(query)))
+              food,
+        ]);
       case 'GET /me/targets':
         final snapshot = profile == null
             ? null
@@ -138,8 +181,14 @@ class PhoneStorage {
 
   final _folder = Directory.systemTemp.createTempSync('ghbot_test_');
 
-  AppDatabase open(String userId) =>
-      AppDatabase(NativeDatabase(File('${_folder.path}/$userId.sqlite')));
+  /// Streams close at once, so the diary leaves no timer behind when a test
+  /// closes the app.
+  AppDatabase open(String userId) => AppDatabase(
+    DatabaseConnection(
+      NativeDatabase(File('${_folder.path}/$userId.sqlite')),
+      closeStreamsSynchronously: true,
+    ),
+  );
 }
 
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
@@ -198,4 +247,21 @@ Future<void> storeSignedInUser(String? name) async {
     await preferences.setString('dev_subject', name);
     await preferences.setString('user_id', userIdFor(name));
   }
+}
+
+/// Opens the targets from the diary, unless they are open already.
+Future<void> openTargets(WidgetTester tester) async {
+  final english = lookupAppLocalizations(const Locale('en'));
+  if (find.text(english.editMyInfo).evaluate().isNotEmpty) return;
+  await tester.tap(find.text(english.targetsButton));
+  await tester.pumpAndSettle();
+}
+
+/// Opens Edit my info from the diary, through the targets.
+Future<void> editMyInfo(WidgetTester tester) async {
+  await openTargets(tester);
+  final edit = find.text(lookupAppLocalizations(const Locale('en')).editMyInfo);
+  await tester.ensureVisible(edit);
+  await tester.tap(edit);
+  await tester.pumpAndSettle();
 }

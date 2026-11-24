@@ -131,5 +131,155 @@
   "@ageWarning": {
     "description": "Shown once, before the targets, to users older than 78, from #33."
   },
-  "understandButton": "فهمت"
+  "understandButton": "فهمت",
+  "searchTitle": "إضافة إلى {meal}",
+  "@searchTitle": {
+    "description": "Food search title.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal's name, such as الغداء."
+      }
+    }
+  },
+  "searchHint": "ابحث عن طعام بالعربية أو الإنجليزية",
+  "clearSearch": "مسح البحث",
+  "recentlyLogged": "سجّلتها مؤخرًا",
+  "@recentlyLogged": {
+    "description": "Above the foods shown before typing, newest first."
+  },
+  "per100g": "لكل 100 غ",
+  "caloriesUnit": "سعرة",
+  "@caloriesUnit": {
+    "description": "After a calorie number, as in 130 سعرة."
+  },
+  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
+  "@searchOffline": {
+    "description": "Search without a connection filters only the foods kept on the phone (decision 20)."
+  },
+  "noResultsTitle": "لم نجد «{query}»",
+  "@noResultsTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "description": "What the trainee typed."
+      }
+    }
+  },
+  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية.",
+  "mealName": "{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}",
+  "@mealName": {
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal code: breakfast, lunch or dinner."
+      }
+    }
+  },
+  "caloriesPer100g": "{calories} سعرة لكل 100 غ",
+  "@caloriesPer100g": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "Whole calories with Western digits."
+      }
+    }
+  },
+  "amount": "الكمية",
+  "less": "أقل",
+  "@less": {
+    "description": "The − button: 10 g less."
+  },
+  "more": "أكثر",
+  "@more": {
+    "description": "The + button: 10 g more."
+  },
+  "meal": "الوجبة",
+  "logButton": "إضافة إلى {meal}",
+  "@logButton": {
+    "description": "Saves the entry.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal's name."
+      }
+    }
+  },
+  "errorGrams": "أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.",
+  "@errorGrams": {
+    "description": "The server's grams rules: greater than 0, at most 5000, at most 1 decimal."
+  },
+  "today": "اليوم",
+  "weekdayName": "{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}",
+  "@weekdayName": {
+    "placeholders": {
+      "weekday": {
+        "type": "String",
+        "description": "1 (Monday) to 7 (Sunday), as Dart's DateTime.weekday."
+      }
+    }
+  },
+  "diaryDate": "{weekday}، {day} {month}",
+  "@diaryDate": {
+    "description": "The diary day under Today, such as الاثنين، 23 تشرين الثاني.",
+    "placeholders": {
+      "weekday": {
+        "type": "String",
+        "description": "From weekdayName."
+      },
+      "day": {
+        "type": "String",
+        "description": "Day of the month, Western digits."
+      },
+      "month": {
+        "type": "String",
+        "description": "From monthName."
+      }
+    }
+  },
+  "caloriesLeft": "سعرة متبقية",
+  "@caloriesLeft": {
+    "description": "Under the calories left today, in the ring."
+  },
+  "caloriesOver": "سعرة فوق هدفك",
+  "@caloriesOver": {
+    "description": "Under the calories eaten beyond the target, in the ring."
+  },
+  "eatenOfTarget": "تناولت {eaten} من {target} سعرة",
+  "@eatenOfTarget": {
+    "placeholders": {
+      "eaten": {
+        "type": "String",
+        "description": "Whole calories eaten today, Western digits."
+      },
+      "target": {
+        "type": "String",
+        "description": "The daily calorie target."
+      }
+    }
+  },
+  "targetsButton": "الأهداف",
+  "@targetsButton": {
+    "description": "Opens the targets screen from the diary."
+  },
+  "macroOfTarget": "من {target} غ",
+  "@macroOfTarget": {
+    "description": "Under a macro's grams eaten today.",
+    "placeholders": {
+      "target": {
+        "type": "String",
+        "description": "The macro's daily target in grams."
+      }
+    }
+  },
+  "noEntries": "لم تُسجّل شيئًا بعد.",
+  "addFood": "إضافة طعام",
+  "addMeal": "إضافة وجبة",
+  "extraMealName": "اسم الوجبة",
+  "extraMealHint": "تظهر الوجبة في يومك حين تضيف إليها أول طعام.",
+  "@extraMealHint": {
+    "description": "An extra meal exists only through its entries (#59)."
+  },
+  "errorMealName": "اكتب اسمًا من 1 إلى 40 حرفًا.",
+  "cancel": "إلغاء"
 }
