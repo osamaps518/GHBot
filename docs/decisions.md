@@ -697,7 +697,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60).
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -706,7 +706,8 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
-`food_log` uses `foods` to check that a logged food is visible to the trainee.
+`food_log` uses `foods` to check that a logged food is visible to the trainee
+and to get changed foods for a pull, passing its used-food IDs query to `foods`.
 It does not use `targets`. The phone's sending comes in #61.
 
 **Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
@@ -725,10 +726,11 @@ diaries. There is no pagination yet: 15 entries per day for three years is about
 16,000 rows, a few MB on the occasional full reinstall pull.
 
 The seed loader validates all files first and commits each CSV file in its own
-transaction. Changed rows use `clock_timestamp()` so a long seed transaction
-does not leave committed rows with an update time older than a marker handed out
-while it was running. A real load of the 239-row `open_food_facts.csv` into
-`ghbot_62` took **0.140 seconds** on 2026-11-24, measured inside the loader call
+transaction. Changed rows use `clock_timestamp()`, the time of the write, and
+each file's transaction is far shorter than the 30-second margin, so a row
+commits within the margin of its timestamp and no marker can pass it unseen.
+A real load of the 239-row `open_food_facts.csv` into a local database took
+**0.140 seconds** on 2026-11-24, measured inside the loader call
 with `time.perf_counter()`; this is one local run, not a throughput guarantee.
 
 ---
