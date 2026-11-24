@@ -74,5 +74,10 @@
   "targetsButton": "Targets",
   "macroOfTarget": "of {target} g",
   "noEntries": "Nothing logged yet.",
-  "addFood": "Add food"
+  "addFood": "Add food",
+  "addMeal": "Add meal",
+  "extraMealName": "Meal name",
+  "extraMealHint": "The meal stays on your day once you add its first food.",
+  "errorMealName": "Enter a name of 1 to 40 characters.",
+  "cancel": "Cancel"
 }

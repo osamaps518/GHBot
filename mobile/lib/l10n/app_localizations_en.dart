@@ -336,4 +336,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addFood => 'Add food';
+
+  @override
+  String get addMeal => 'Add meal';
+
+  @override
+  String get extraMealName => 'Meal name';
+
+  @override
+  String get extraMealHint =>
+      'The meal stays on your day once you add its first food.';
+
+  @override
+  String get errorMealName => 'Enter a name of 1 to 40 characters.';
+
+  @override
+  String get cancel => 'Cancel';
 }

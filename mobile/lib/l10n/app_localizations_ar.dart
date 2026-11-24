@@ -336,4 +336,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addFood => 'إضافة طعام';
+
+  @override
+  String get addMeal => 'إضافة وجبة';
+
+  @override
+  String get extraMealName => 'اسم الوجبة';
+
+  @override
+  String get extraMealHint => 'تظهر الوجبة في يومك حين تضيف إليها أول طعام.';
+
+  @override
+  String get errorMealName => 'اكتب اسمًا من 1 إلى 40 حرفًا.';
+
+  @override
+  String get cancel => 'إلغاء';
 }

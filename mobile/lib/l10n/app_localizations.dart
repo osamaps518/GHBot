@@ -547,6 +547,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إضافة طعام'**
   String get addFood;
+
+  /// No description provided for @addMeal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة وجبة'**
+  String get addMeal;
+
+  /// No description provided for @extraMealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الوجبة'**
+  String get extraMealName;
+
+  /// An extra meal exists only through its entries (#59).
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر الوجبة في يومك حين تضيف إليها أول طعام.'**
+  String get extraMealHint;
+
+  /// No description provided for @errorMealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمًا من 1 إلى 40 حرفًا.'**
+  String get errorMealName;
+
+  /// No description provided for @cancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate

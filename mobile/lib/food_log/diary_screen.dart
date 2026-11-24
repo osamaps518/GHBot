@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../targets/targets.dart';
 import 'amount_screen.dart';
 import 'entry.dart';
+import 'extra_meal_sheet.dart';
 import 'meal.dart';
 
 /// The home screen: today's entries under their meals, and the day's
@@ -38,6 +39,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
   late String _day;
   late Stream<List<LoggedFood>> _entries;
 
+  /// Extra meals named on this screen today. They show until the screen
+  /// closes; one stays on the day only through its entries.
+  final _newMealNames = <String>[];
+
   /// Moves the diary to the next day when it starts, if the app is open then.
   Timer? _nextDay;
 
@@ -56,6 +61,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   void _showToday() {
     final now = DateTime.now();
     _day = diaryDayOf(now);
+    _newMealNames.clear();
     _entries = widget.database.watchDiaryDay(_day);
     _nextDay = Timer(
       nextDayStart(now).difference(now),
@@ -93,15 +99,30 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+  /// Asks for an extra meal's name, shows the meal, and opens search for it.
+  /// [entries] are the day's, to list the meals the amount step offers.
+  Future<void> _addMeal(List<LoggedFood> entries) async {
+    final name = await showExtraMealSheet(context);
+    if (name == null || !mounted) return;
+    setState(() {
+      if (!_newMealNames.contains(name)) _newMealNames.add(name);
+    });
+    final meals = groupByMeal(entries, newMealNames: _newMealNames);
+    _addFood(DiaryMeal(Meal.extra, name), [
+      for (final group in meals) group.meal,
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: StreamBuilder(
           stream: _entries,
           builder: (context, snapshot) {
             final entries = snapshot.data ?? const [];
-            final meals = groupByMeal(entries);
+            final meals = groupByMeal(entries, newMealNames: _newMealNames);
             final dayTotals = Nutrients.sum(
               entries.map((logged) => logged.entry.totals),
             );
@@ -125,6 +146,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     onAddFood: () => _addFood(group.meal, mealKeys),
                   ),
                 ],
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _addMeal(entries),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.addMeal),
+                ),
               ],
             );
           },

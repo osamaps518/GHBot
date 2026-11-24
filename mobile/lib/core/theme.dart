@@ -97,6 +97,8 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
 /// - Choice chips are the meal picker: outlined pills, the chosen one filled
 ///   with a check mark. `ChoiceChip` takes its chosen colors from the
 ///   `secondary` chip settings.
+/// - Bottom sheets (naming an extra meal) sit on the card color, with a
+///   drag handle.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -194,6 +196,11 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
         color: colors.onPrimary,
         fontWeight: FontWeight.w500,
       ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: colors.surfaceContainer,
+      showDragHandle: true,
+      dragHandleColor: colors.outline,
     ),
     appBarTheme: AppBarThemeData(
       backgroundColor: colors.surface,

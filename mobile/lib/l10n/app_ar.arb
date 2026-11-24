@@ -273,5 +273,13 @@
     }
   },
   "noEntries": "لم تُسجّل شيئًا بعد.",
-  "addFood": "إضافة طعام"
+  "addFood": "إضافة طعام",
+  "addMeal": "إضافة وجبة",
+  "extraMealName": "اسم الوجبة",
+  "extraMealHint": "تظهر الوجبة في يومك حين تضيف إليها أول طعام.",
+  "@extraMealHint": {
+    "description": "An extra meal exists only through its entries (#59)."
+  },
+  "errorMealName": "اكتب اسمًا من 1 إلى 40 حرفًا.",
+  "cancel": "إلغاء"
 }
