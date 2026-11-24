@@ -100,7 +100,7 @@ void main() {
   testWidgets('a save stores and shows the profile and targets the server '
       'returned', (tester) async {
     final (backend, storage) = await openOnce(tester);
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('maintain'));
     backend
       ..targets = {...exampleTargets, 'calories': 1990}
@@ -116,14 +116,14 @@ void main() {
     await _tapText(tester, english.calculateButton);
 
     expect(find.text('1990'), findsOneWidget);
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     expect(find.text('81.5'), findsOneWidget);
 
     backend.offline = true;
     await restartApp(tester, backend, storage);
 
     expect(find.text('1990'), findsOneWidget);
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     expect(find.text('81.5'), findsOneWidget);
   });
 
@@ -131,7 +131,7 @@ void main() {
     tester,
   ) async {
     final (backend, storage) = await openOnce(tester);
-    await _tapText(tester, english.editMyInfo);
+    await editMyInfo(tester);
     await _tapText(tester, english.goalName('maintain'));
     backend.offline = true;
     await _tapText(tester, english.calculateButton);
@@ -140,6 +140,7 @@ void main() {
     await restartApp(tester, backend, storage);
 
     expect(find.text('2210'), findsOneWidget);
+    await openTargets(tester);
     expect(find.text(english.goalRow('lose')), findsOneWidget);
   });
 
@@ -155,7 +156,7 @@ void main() {
       backend.holdNextTargets = refreshReply;
       await restartApp(tester, backend, storage);
 
-      await _tapText(tester, english.editMyInfo);
+      await editMyInfo(tester);
       await _tapText(tester, english.goalName('maintain'));
       backend.targets = {...exampleTargets, 'calories': 1990};
       await _tapText(tester, english.calculateButton);
@@ -192,5 +193,40 @@ void main() {
     backend.offline = true;
     await restartApp(tester, backend, storage);
     expect(find.text('1990'), findsOneWidget);
+  });
+
+  testWidgets('offline, a logged entry shows at once, and its food can be '
+      'found again', (tester) async {
+    final (backend, storage) = await openOnce(tester);
+
+    /// Opens search from breakfast, the first meal, and searches for rice.
+    Future<void> searchRice() async {
+      await tester.tap(find.text(english.addFood).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'rice');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+    }
+
+    /// Logs the rice found, at the 100 g it starts with.
+    Future<void> logRice() async {
+      await _tapText(tester, 'Cooked white rice');
+      await _tapText(tester, english.logButton(english.mealName('breakfast')));
+    }
+
+    await searchRice();
+    await logRice();
+    expect(find.text('2080'), findsOneWidget);
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+    expect(find.text('Cooked white rice'), findsOneWidget);
+
+    await searchRice();
+    expect(find.text(english.searchOffline), findsOneWidget);
+    await logRice();
+
+    expect(find.text('Cooked white rice'), findsNWidgets(2));
+    expect(find.text('1950'), findsOneWidget);
   });
 }

@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/core/database.dart';
 import 'package:ghbot/main.dart';
@@ -179,8 +181,14 @@ class PhoneStorage {
 
   final _folder = Directory.systemTemp.createTempSync('ghbot_test_');
 
-  AppDatabase open(String userId) =>
-      AppDatabase(NativeDatabase(File('${_folder.path}/$userId.sqlite')));
+  /// Streams close at once, so the diary leaves no timer behind when a test
+  /// closes the app.
+  AppDatabase open(String userId) => AppDatabase(
+    DatabaseConnection(
+      NativeDatabase(File('${_folder.path}/$userId.sqlite')),
+      closeStreamsSynchronously: true,
+    ),
+  );
 }
 
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
@@ -239,4 +247,21 @@ Future<void> storeSignedInUser(String? name) async {
     await preferences.setString('dev_subject', name);
     await preferences.setString('user_id', userIdFor(name));
   }
+}
+
+/// Opens the targets from the diary, unless they are open already.
+Future<void> openTargets(WidgetTester tester) async {
+  final english = lookupAppLocalizations(const Locale('en'));
+  if (find.text(english.editMyInfo).evaluate().isNotEmpty) return;
+  await tester.tap(find.text(english.targetsButton));
+  await tester.pumpAndSettle();
+}
+
+/// Opens Edit my info from the diary, through the targets.
+Future<void> editMyInfo(WidgetTester tester) async {
+  await openTargets(tester);
+  final edit = find.text(lookupAppLocalizations(const Locale('en')).editMyInfo);
+  await tester.ensureVisible(edit);
+  await tester.tap(edit);
+  await tester.pumpAndSettle();
 }

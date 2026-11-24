@@ -25,7 +25,6 @@ final ThemeData lightTheme = _theme(
     heroBackground: _tangerine,
     onHero: _charcoal,
     heroNumber: _charcoal,
-    heroMuted: Color(0xFF4A2405),
     protein: _charcoal,
     carbs: _tangerine,
     fat: Color(0xFFB8B8BC),
@@ -55,7 +54,6 @@ final ThemeData darkTheme = _theme(
     heroBackground: _darkCard,
     onHero: _offWhite,
     heroNumber: _tangerine,
-    heroMuted: Color(0xFFA8A8AE),
     protein: _offWhite,
     carbs: _tangerine,
     fat: Color(0xFF6E6E76),
@@ -227,7 +225,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     required this.heroBackground,
     required this.onHero,
     required this.heroNumber,
-    required this.heroMuted,
     required this.protein,
     required this.carbs,
     required this.fat,
@@ -236,7 +233,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
   final Color heroBackground;
   final Color onHero;
   final Color heroNumber;
-  final Color heroMuted;
   final Color protein;
   final Color carbs;
   final Color fat;
@@ -249,7 +245,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     Color? heroBackground,
     Color? onHero,
     Color? heroNumber,
-    Color? heroMuted,
     Color? protein,
     Color? carbs,
     Color? fat,
@@ -257,7 +252,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
     heroBackground: heroBackground ?? this.heroBackground,
     onHero: onHero ?? this.onHero,
     heroNumber: heroNumber ?? this.heroNumber,
-    heroMuted: heroMuted ?? this.heroMuted,
     protein: protein ?? this.protein,
     carbs: carbs ?? this.carbs,
     fat: fat ?? this.fat,
@@ -270,7 +264,6 @@ class TargetsColors extends ThemeExtension<TargetsColors> {
       heroBackground: Color.lerp(heroBackground, other.heroBackground, t)!,
       onHero: Color.lerp(onHero, other.onHero, t)!,
       heroNumber: Color.lerp(heroNumber, other.heroNumber, t)!,
-      heroMuted: Color.lerp(heroMuted, other.heroMuted, t)!,
       protein: Color.lerp(protein, other.protein, t)!,
       carbs: Color.lerp(carbs, other.carbs, t)!,
       fat: Color.lerp(fat, other.fat, t)!,
