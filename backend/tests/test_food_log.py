@@ -141,21 +141,41 @@ def test_pull_filters_changed_foods_by_time_and_usage(
     )
 
 
-def test_pull_marker_overlaps_thirty_seconds(client, auth_headers, engine, food):
+def test_pull_returns_rows_inside_margin_and_skips_older_rows(
+    client, auth_headers, engine, food
+):
     headers = auth_headers()
+    old_id = str(uuid7())
+    assert (
+        client.put(
+            f"/me/food-log/entries/{old_id}", headers=headers, json=entry(food)
+        ).status_code
+        == 201
+    )
+    with engine.begin() as connection:
+        connection.execute(
+            text("""UPDATE food_log_entries
+                 SET updated_at = now() - interval '5 minutes' WHERE id = :id"""),
+            {"id": old_id},
+        )
+        before = connection.scalar(text("SELECT clock_timestamp()"))
     first = client.get("/me/food-log/changes", headers=headers).json()["next_marker"]
-    marker = datetime.fromisoformat(first)
-    item_id = str(uuid7())
-    client.put(f"/me/food-log/entries/{item_id}", headers=headers, json=entry(food))
+    second_id = str(uuid7())
+    assert (
+        client.put(
+            f"/me/food-log/entries/{second_id}", headers=headers, json=entry(food)
+        ).status_code
+        == 201
+    )
     with engine.begin() as connection:
         connection.execute(
             text("UPDATE food_log_entries SET updated_at = :time WHERE id = :id"),
-            {"time": marker + timedelta(seconds=1), "id": item_id},
+            {"time": before, "id": second_id},
         )
     second = client.get(
         "/me/food-log/changes", headers=headers, params={"since": first}
     )
-    assert [row["id"] for row in second.json()["entries"]] == [item_id]
+    assert [row["id"] for row in second.json()["entries"]] == [second_id]
 
 
 def test_pull_rejects_marker_without_timezone(client, auth_headers):
