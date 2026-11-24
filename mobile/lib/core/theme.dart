@@ -71,6 +71,13 @@ const _darkCard = Color(0xFF1D1D20);
 TextStyle targetsRowValueStyle(ThemeData theme) =>
     theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
 
+/// The round − and + buttons beside the grams field.
+ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
+  fixedSize: const Size(54, 54),
+  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+  foregroundColor: theme.colorScheme.onSurface,
+);
+
 /// Builds a theme from [colors] and the [targets] colors.
 ///
 /// - Text fields and dropdowns share one look. `DropdownMenu` doesn't read the
@@ -87,6 +94,9 @@ TextStyle targetsRowValueStyle(ThemeData theme) =>
 ///   divider lines.
 /// - App bars sit on the page color and stay flat when content scrolls
 ///   under them, with the title in `titleLarge` at 20 px.
+/// - Choice chips are the meal picker: outlined pills, the chosen one filled
+///   with a check mark. `ChoiceChip` takes its chosen colors from the
+///   `secondary` chip settings.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -165,6 +175,25 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),
       collapsedShape: Border(),
+    ),
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(
+          color: states.contains(WidgetState.selected)
+              ? colors.primary
+              : colors.outline,
+          width: 1.5,
+        ),
+      ),
+      backgroundColor: colors.surface,
+      secondarySelectedColor: colors.primary,
+      checkmarkColor: colors.onPrimary,
+      labelStyle: base.textTheme.bodyLarge!.copyWith(color: colors.onSurface),
+      secondaryLabelStyle: base.textTheme.bodyLarge!.copyWith(
+        color: colors.onPrimary,
+        fontWeight: FontWeight.w500,
+      ),
     ),
     appBarTheme: AppBarThemeData(
       backgroundColor: colors.surface,

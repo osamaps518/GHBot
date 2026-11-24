@@ -56,5 +56,13 @@
   "caloriesUnit": "kcal",
   "searchOffline": "Couldn't connect, so only foods you've logged before show here. Finding other foods needs a connection.",
   "noResultsTitle": "No results for “{query}”",
-  "noResultsBody": "Try another name, or type it in Arabic."
+  "noResultsBody": "Try another name, or type it in Arabic.",
+  "mealName": "{meal, select, breakfast{Breakfast} lunch{Lunch} dinner{Dinner} other{}}",
+  "caloriesPer100g": "{calories} kcal per 100 g",
+  "amount": "Amount",
+  "less": "Less",
+  "more": "More",
+  "meal": "Meal",
+  "logButton": "Add to {meal}",
+  "errorGrams": "Enter an amount above 0 and up to 5000 g, with at most 1 decimal."
 }

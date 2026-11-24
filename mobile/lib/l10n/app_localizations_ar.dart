@@ -251,4 +251,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noResultsBody => 'جرّب اسمًا آخر أو اكتبه بالإنجليزية.';
+
+  @override
+  String mealName(String meal) {
+    String _temp0 = intl.Intl.selectLogic(meal, {
+      'breakfast': 'الفطور',
+      'lunch': 'الغداء',
+      'dinner': 'العشاء',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String caloriesPer100g(String calories) {
+    return '$calories سعرة لكل 100 غ';
+  }
+
+  @override
+  String get amount => 'الكمية';
+
+  @override
+  String get less => 'أقل';
+
+  @override
+  String get more => 'أكثر';
+
+  @override
+  String get meal => 'الوجبة';
+
+  @override
+  String logButton(String meal) {
+    return 'إضافة إلى $meal';
+  }
+
+  @override
+  String get errorGrams =>
+      'أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.';
 }

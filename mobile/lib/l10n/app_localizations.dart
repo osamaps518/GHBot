@@ -439,6 +439,54 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية.'**
   String get noResultsBody;
+
+  /// No description provided for @mealName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}'**
+  String mealName(String meal);
+
+  /// No description provided for @caloriesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'{calories} سعرة لكل 100 غ'**
+  String caloriesPer100g(String calories);
+
+  /// No description provided for @amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get amount;
+
+  /// The − button: 10 g less.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل'**
+  String get less;
+
+  /// The + button: 10 g more.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكثر'**
+  String get more;
+
+  /// No description provided for @meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوجبة'**
+  String get meal;
+
+  /// Saves the entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إلى {meal}'**
+  String logButton(String meal);
+
+  /// The server's grams rules: greater than 0, at most 5000, at most 1 decimal.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorGrams;
 }
 
 class _AppLocalizationsDelegate

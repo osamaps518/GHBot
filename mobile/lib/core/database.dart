@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../food_log/entry.dart';
 import '../food_log/entry_table.dart';
@@ -124,6 +125,41 @@ class AppDatabase extends _$AppDatabase {
           ..orderBy([(food) => OrderingTerm.asc(food.id)]))
         .get();
   }
+
+  /// Logs [grams] (in tenths) of [food] into [meal], with totals calculated
+  /// on the phone (docs/decisions.md, 33), and keeps the food for offline
+  /// search. Both or neither are saved.
+  ///
+  /// The entry's ID is a UUIDv7, made here; its diary day comes from the
+  /// phone's clock at [loggedAt].
+  Future<void> logEntry({
+    required Food food,
+    required DiaryMeal meal,
+    required int grams,
+    required DateTime loggedAt,
+  }) => transaction(() async {
+    await storeFood(food);
+    final totals = entryTotals(food.per100g, grams);
+    await into(foodLogEntryTable).insert(
+      FoodLogEntryTableCompanion.insert(
+        id: const Uuid().v7(),
+        foodId: food.id,
+        meal: meal.meal,
+        mealName: Value(meal.name),
+        diaryDay: diaryDayOf(loggedAt.toLocal()),
+        grams: grams,
+        caloriesPer100g: food.per100g.calories,
+        proteinPer100g: food.per100g.protein,
+        carbsPer100g: food.per100g.carbs,
+        fatPer100g: food.per100g.fat,
+        calories: totals.calories,
+        protein: totals.protein,
+        carbs: totals.carbs,
+        fat: totals.fat,
+        loggedAt: loggedAt.toUtc(),
+      ),
+    );
+  });
 
   /// The 20 foods logged most recently, newest first, each with the grams
   /// and calories (in tenths) it was last logged with.

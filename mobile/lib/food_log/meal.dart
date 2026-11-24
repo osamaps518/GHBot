@@ -1,4 +1,5 @@
 import '../foods/food.dart';
+import '../l10n/app_localizations.dart';
 import 'entry.dart';
 
 /// The server's meal codes (docs/decisions.md, 31).
@@ -13,6 +14,9 @@ class DiaryMeal {
 
   /// Set only for [Meal.extra].
   final String? name;
+
+  /// The name to show: the trainee's own for an extra meal.
+  String label(AppLocalizations l10n) => name ?? l10n.mealName(meal.name);
 
   @override
   bool operator ==(Object other) =>

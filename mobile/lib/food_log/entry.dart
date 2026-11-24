@@ -1,3 +1,4 @@
+import '../core/typed_number.dart';
 import '../foods/food.dart';
 import 'meal.dart';
 
@@ -26,6 +27,16 @@ Nutrients entryTotals(Nutrients per100g, int grams) {
     carbs: total(per100g.carbs),
     fat: total(per100g.fat),
   );
+}
+
+/// Typed grams in tenths, or null unless they are greater than 0, at most
+/// 5000 and have at most 1 decimal: the server's rules (#60).
+int? parseGrams(String typed) {
+  final match = RegExp(r'^(\d{1,6})(?:\.(\d)?0*)?$')
+      .firstMatch(westernNumberText(typed));
+  if (match == null) return null;
+  final tenths = int.parse(match[1]!) * 10 + int.parse(match[2] ?? '0');
+  return tenths > 0 && tenths <= 50000 ? tenths : null;
 }
 
 /// One food logged into a meal, with the values it was logged with

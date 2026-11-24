@@ -166,5 +166,47 @@
       }
     }
   },
-  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية."
+  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية.",
+  "mealName": "{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}",
+  "@mealName": {
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal code: breakfast, lunch or dinner."
+      }
+    }
+  },
+  "caloriesPer100g": "{calories} سعرة لكل 100 غ",
+  "@caloriesPer100g": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "Whole calories with Western digits."
+      }
+    }
+  },
+  "amount": "الكمية",
+  "less": "أقل",
+  "@less": {
+    "description": "The − button: 10 g less."
+  },
+  "more": "أكثر",
+  "@more": {
+    "description": "The + button: 10 g more."
+  },
+  "meal": "الوجبة",
+  "logButton": "إضافة إلى {meal}",
+  "@logButton": {
+    "description": "Saves the entry.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal's name."
+      }
+    }
+  },
+  "errorGrams": "أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.",
+  "@errorGrams": {
+    "description": "The server's grams rules: greater than 0, at most 5000, at most 1 decimal."
+  }
 }
