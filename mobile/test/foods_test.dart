@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/auth/auth_session.dart';
 import 'package:ghbot/core/api_client.dart';
 import 'package:ghbot/core/database.dart';
+import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
 import 'package:ghbot/foods/foods_api.dart';
 import 'package:http/http.dart' as http;
@@ -115,5 +116,53 @@ void main() {
       expect(await ids('%'), ['oil']);
       expect(await ids('_'), isEmpty);
     });
+  });
+
+  test('recent foods take the newest entry when two share a second', () async {
+    final database = AppDatabase(
+      DatabaseConnection(
+        NativeDatabase.memory(),
+        closeStreamsSynchronously: true,
+      ),
+    );
+    addTearDown(database.close);
+    final second = DateTime.utc(2026, 11, 23, 12);
+    for (final (id, foodId, grams, calories, milliseconds) in [
+      ('entry-1', 'rice', 1000, 1300, 100),
+      ('entry-2', 'oil', 100, 884, 500),
+      ('entry-3', 'rice', 2000, 2600, 900),
+    ]) {
+      await database.storeFood(_food(foodId, null, foodId));
+      await database
+          .into(database.foodLogEntryTable)
+          .insert(
+            FoodLogEntryTableCompanion.insert(
+              id: id,
+              foodId: foodId,
+              meal: Meal.lunch,
+              diaryDay: '2026-11-23',
+              grams: grams,
+              caloriesPer100g: 0,
+              proteinPer100g: 0,
+              carbsPer100g: 0,
+              fatPer100g: 0,
+              calories: calories,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+              loggedAt: second.add(Duration(milliseconds: milliseconds)),
+            ),
+          );
+    }
+
+    final recent = await database.watchRecentFoods().first;
+
+    expect(
+      [
+        for (final (:food, :grams, :calories) in recent)
+          (food.id, grams, calories),
+      ],
+      [('rice', 2000, 2600), ('oil', 100, 884)],
+    );
   });
 }

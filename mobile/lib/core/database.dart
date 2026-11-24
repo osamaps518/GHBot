@@ -190,17 +190,23 @@ class AppDatabase extends _$AppDatabase {
   /// The 20 foods logged most recently, newest first, each with the grams
   /// and calories (in tenths) it was last logged with.
   ///
-  /// With exactly one `MAX()`, SQLite takes the other columns of each group
-  /// from the row that has the maximum, so `grams` and `calories` come from
-  /// the latest entry of each food.
+  /// `logged_at` is stored in whole seconds, so two entries can share it.
+  /// Like the diary, entries are ordered by `logged_at` and then by ID, which
+  /// is a UUIDv7 and grows with time. `ROW_NUMBER()` numbers each food's
+  /// entries newest first, and row 1 is the latest one.
   Stream<List<({Food food, int grams, int calories})>> watchRecentFoods() =>
       customSelect(
-        'SELECT foods.*, entries.grams, entries.calories, '
-        'MAX(entries.logged_at) AS last_logged_at '
-        'FROM food_log_entries AS entries '
-        'JOIN foods ON foods.id = entries.food_id '
-        'GROUP BY entries.food_id '
-        'ORDER BY last_logged_at DESC '
+        'SELECT foods.*, latest.grams, latest.calories '
+        'FROM ('
+        'SELECT food_id, id, grams, calories, logged_at, '
+        'ROW_NUMBER() OVER ('
+        'PARTITION BY food_id ORDER BY logged_at DESC, id DESC'
+        ') AS newest '
+        'FROM food_log_entries'
+        ') AS latest '
+        'JOIN foods ON foods.id = latest.food_id '
+        'WHERE latest.newest = 1 '
+        'ORDER BY latest.logged_at DESC, latest.id DESC '
         'LIMIT 20',
         readsFrom: {foodTable, foodLogEntryTable},
       ).watch().map(
