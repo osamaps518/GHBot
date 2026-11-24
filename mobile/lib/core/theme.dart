@@ -87,6 +87,10 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
 /// - A button's `textStyle` replaces the default one instead of merging with
 ///   it, so button text starts from the text theme to keep the Rubik font.
 /// - `displayLarge` is the daily calories number on the targets screen.
+/// - Text buttons (Add food, Targets, Cancel) take the text color, not the
+///   orange, in dark mode too.
+/// - List tiles (foods and diary entries) line up with their cards' 18 px
+///   padding.
 /// - Segmented buttons are the gender and goal pickers: a pill-shaped track,
 ///   the chosen option filled.
 /// - Progress indicators are the macro bars on the targets screen. Each bar's
@@ -145,6 +149,9 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
         textStyle: buttonText,
       ),
     ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: colors.onSurface),
+    ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: buttonSize,
@@ -174,6 +181,9 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       linearMinHeight: 8,
       linearTrackColor: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(999),
+    ),
+    listTileTheme: const ListTileThemeData(
+      contentPadding: EdgeInsets.symmetric(horizontal: 18),
     ),
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),

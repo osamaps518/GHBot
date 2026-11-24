@@ -201,6 +201,9 @@ class _GramsField extends StatelessWidget {
                 onChanged: onChanged,
                 decoration: InputDecoration(
                   suffixText: l10n.gramsUnit,
+                  suffixStyle: theme.textTheme.bodyLarge!.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   errorText: showError ? l10n.errorGrams : null,
                 ),
               ),

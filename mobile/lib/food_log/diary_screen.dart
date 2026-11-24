@@ -215,7 +215,10 @@ class _CaloriesCard extends StatelessWidget {
           spacing: 12,
           children: [
             _CaloriesRing(eaten: eaten, target: target),
-            Divider(color: theme.colorScheme.surfaceContainerHighest),
+            Divider(
+              color: theme.colorScheme.surfaceContainerHighest,
+              endIndent: 8,
+            ),
             Row(
               children: [
                 Expanded(
