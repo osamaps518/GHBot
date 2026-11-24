@@ -1,3 +1,5 @@
+import '../core/typed_number.dart';
+
 enum Sex { male, female }
 
 /// The backend's codes, in order from least to most active.
@@ -80,19 +82,10 @@ Set<ProfileField> validateProfileDraft(ProfileDraft draft, DateTime today) {
 bool _inRange(double? value, double min, double max) =>
     value != null && value >= min && value <= max;
 
-/// Reads a number typed with Western or Arabic-Indic digits (٠–٩), and `.`,
-/// `٫` or `,` as the decimal point. Some Arabic keyboards send those, and
-/// `double.parse` rejects them.
-double? parseTypedNumber(String text) {
-  final western = text
-      .trim()
-      .replaceAllMapped(
-        RegExp('[٠-٩]'),
-        (digit) => '${digit[0]!.codeUnitAt(0) - 0x0660}',
-      )
-      .replaceAll(RegExp('[٫,]'), '.');
-  return double.tryParse(western);
-}
+/// Reads a number typed with Western or Arabic-Indic digits, and `.`, `٫`
+/// or `,` as the decimal point (see [westernNumberText]).
+double? parseTypedNumber(String text) =>
+    double.tryParse(westernNumberText(text));
 
 /// Shows a saved number with Western digits (decision 16), without a
 /// trailing ".0".
