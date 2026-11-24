@@ -219,4 +219,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get understandButton => 'فهمت';
+
+  @override
+  String searchTitle(String meal) {
+    return 'إضافة إلى $meal';
+  }
+
+  @override
+  String get searchHint => 'ابحث عن طعام بالعربية أو الإنجليزية';
+
+  @override
+  String get clearSearch => 'مسح البحث';
+
+  @override
+  String get recentlyLogged => 'سجّلتها مؤخرًا';
+
+  @override
+  String get per100g => 'لكل 100 غ';
+
+  @override
+  String get caloriesUnit => 'سعرة';
+
+  @override
+  String get searchOffline =>
+      'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.';
+
+  @override
+  String noResultsTitle(String query) {
+    return 'لم نجد «$query»';
+  }
+
+  @override
+  String get noResultsBody => 'جرّب اسمًا آخر أو اكتبه بالإنجليزية.';
 }

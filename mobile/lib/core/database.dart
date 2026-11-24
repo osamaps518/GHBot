@@ -124,4 +124,31 @@ class AppDatabase extends _$AppDatabase {
           ..orderBy([(food) => OrderingTerm.asc(food.id)]))
         .get();
   }
+
+  /// The 20 foods logged most recently, newest first, each with the grams
+  /// and calories (in tenths) it was last logged with.
+  ///
+  /// With exactly one `MAX()`, SQLite takes the other columns of each group
+  /// from the row that has the maximum, so `grams` and `calories` come from
+  /// the latest entry of each food.
+  Stream<List<({Food food, int grams, int calories})>> watchRecentFoods() =>
+      customSelect(
+        'SELECT foods.*, entries.grams, entries.calories, '
+        'MAX(entries.logged_at) AS last_logged_at '
+        'FROM food_log_entries AS entries '
+        'JOIN foods ON foods.id = entries.food_id '
+        'GROUP BY entries.food_id '
+        'ORDER BY last_logged_at DESC '
+        'LIMIT 20',
+        readsFrom: {foodTable, foodLogEntryTable},
+      ).watch().map(
+        (rows) => [
+          for (final row in rows)
+            (
+              food: foodTable.map(row.data),
+              grams: row.read<int>('grams'),
+              calories: row.read<int>('calories'),
+            ),
+        ],
+      );
 }

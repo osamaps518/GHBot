@@ -85,6 +85,8 @@ TextStyle targetsRowValueStyle(ThemeData theme) =>
 ///   color is its macro's.
 /// - "How we calculated this" sits in a card, so expansion tiles have no
 ///   divider lines.
+/// - App bars sit on the page color and stay flat when content scrolls
+///   under them, with the title in `titleLarge` at 20 px.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -163,6 +165,15 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),
       collapsedShape: Border(),
+    ),
+    appBarTheme: AppBarThemeData(
+      backgroundColor: colors.surface,
+      scrolledUnderElevation: 0,
+      titleTextStyle: base.textTheme.titleLarge!.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,

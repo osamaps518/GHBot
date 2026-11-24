@@ -27,6 +27,13 @@ class Nutrients {
   final int fat;
 }
 
+/// [tenths] rounded half up to a whole number, for display.
+int roundTenths(int tenths) => (tenths + 5) ~/ 10;
+
+/// [tenths] with its decimal only when it has one: 375 is "37.5", 600 "60".
+String formatTenths(int tenths) =>
+    tenths % 10 == 0 ? '${tenths ~/ 10}' : '${tenths ~/ 10}.${tenths % 10}';
+
 /// A food kept on the phone or found by search.
 class Food {
   const Food({

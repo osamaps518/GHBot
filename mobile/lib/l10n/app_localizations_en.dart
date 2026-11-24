@@ -219,4 +219,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get understandButton => 'I understand';
+
+  @override
+  String searchTitle(String meal) {
+    return 'Add to $meal';
+  }
+
+  @override
+  String get searchHint => 'Search for a food in Arabic or English';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get recentlyLogged => 'Recently logged';
+
+  @override
+  String get per100g => 'per 100 g';
+
+  @override
+  String get caloriesUnit => 'kcal';
+
+  @override
+  String get searchOffline =>
+      'Couldn\'t connect, so only foods you\'ve logged before show here. Finding other foods needs a connection.';
+
+  @override
+  String noResultsTitle(String query) {
+    return 'No results for “$query”';
+  }
+
+  @override
+  String get noResultsBody => 'Try another name, or type it in Arabic.';
 }

@@ -385,6 +385,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'فهمت'**
   String get understandButton;
+
+  /// Food search title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة إلى {meal}'**
+  String searchTitle(String meal);
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن طعام بالعربية أو الإنجليزية'**
+  String get searchHint;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح البحث'**
+  String get clearSearch;
+
+  /// Above the foods shown before typing, newest first.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلتها مؤخرًا'**
+  String get recentlyLogged;
+
+  /// No description provided for @per100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'لكل 100 غ'**
+  String get per100g;
+
+  /// After a calorie number, as in 130 سعرة.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة'**
+  String get caloriesUnit;
+
+  /// Search without a connection filters only the foods kept on the phone (decision 20).
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
+  String get searchOffline;
+
+  /// No description provided for @noResultsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد «{query}»'**
+  String noResultsTitle(String query);
+
+  /// No description provided for @noResultsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية.'**
+  String get noResultsBody;
 }
 
 class _AppLocalizationsDelegate

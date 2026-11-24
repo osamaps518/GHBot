@@ -131,5 +131,40 @@
   "@ageWarning": {
     "description": "Shown once, before the targets, to users older than 78, from #33."
   },
-  "understandButton": "فهمت"
+  "understandButton": "فهمت",
+  "searchTitle": "إضافة إلى {meal}",
+  "@searchTitle": {
+    "description": "Food search title.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal's name, such as الغداء."
+      }
+    }
+  },
+  "searchHint": "ابحث عن طعام بالعربية أو الإنجليزية",
+  "clearSearch": "مسح البحث",
+  "recentlyLogged": "سجّلتها مؤخرًا",
+  "@recentlyLogged": {
+    "description": "Above the foods shown before typing, newest first."
+  },
+  "per100g": "لكل 100 غ",
+  "caloriesUnit": "سعرة",
+  "@caloriesUnit": {
+    "description": "After a calorie number, as in 130 سعرة."
+  },
+  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
+  "@searchOffline": {
+    "description": "Search without a connection filters only the foods kept on the phone (decision 20)."
+  },
+  "noResultsTitle": "لم نجد «{query}»",
+  "@noResultsTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "description": "What the trainee typed."
+      }
+    }
+  },
+  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية."
 }

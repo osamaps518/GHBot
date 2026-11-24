@@ -28,9 +28,6 @@ Nutrients entryTotals(Nutrients per100g, int grams) {
   );
 }
 
-/// [tenths] rounded half up to a whole number, for display.
-int roundTenths(int tenths) => (tenths + 5) ~/ 10;
-
 /// One food logged into a meal, with the values it was logged with
 /// (docs/decisions.md, 21). [grams] and all values are in tenths.
 class FoodLogEntry {
