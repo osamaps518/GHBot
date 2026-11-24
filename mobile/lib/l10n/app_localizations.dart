@@ -487,6 +487,66 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.'**
   String get errorGrams;
+
+  /// No description provided for @today.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get today;
+
+  /// No description provided for @weekdayName.
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}'**
+  String weekdayName(String weekday);
+
+  /// The diary day under Today, such as الاثنين، 23 تشرين الثاني.
+  ///
+  /// In ar, this message translates to:
+  /// **'{weekday}، {day} {month}'**
+  String diaryDate(String weekday, String day, String month);
+
+  /// Under the calories left today, in the ring.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة متبقية'**
+  String get caloriesLeft;
+
+  /// Under the calories eaten beyond the target, in the ring.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعرة فوق هدفك'**
+  String get caloriesOver;
+
+  /// No description provided for @eatenOfTarget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تناولت {eaten} من {target} سعرة'**
+  String eatenOfTarget(String eaten, String target);
+
+  /// Opens the targets screen from the diary.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get targetsButton;
+
+  /// Under a macro's grams eaten today.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {target} غ'**
+  String macroOfTarget(String target);
+
+  /// No description provided for @noEntries.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُسجّل شيئًا بعد.'**
+  String get noEntries;
+
+  /// No description provided for @addFood.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة طعام'**
+  String get addFood;
 }
 
 class _AppLocalizationsDelegate

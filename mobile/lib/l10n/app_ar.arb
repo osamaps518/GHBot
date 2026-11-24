@@ -208,5 +208,70 @@
   "errorGrams": "أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.",
   "@errorGrams": {
     "description": "The server's grams rules: greater than 0, at most 5000, at most 1 decimal."
-  }
+  },
+  "today": "اليوم",
+  "weekdayName": "{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}",
+  "@weekdayName": {
+    "placeholders": {
+      "weekday": {
+        "type": "String",
+        "description": "1 (Monday) to 7 (Sunday), as Dart's DateTime.weekday."
+      }
+    }
+  },
+  "diaryDate": "{weekday}، {day} {month}",
+  "@diaryDate": {
+    "description": "The diary day under Today, such as الاثنين، 23 تشرين الثاني.",
+    "placeholders": {
+      "weekday": {
+        "type": "String",
+        "description": "From weekdayName."
+      },
+      "day": {
+        "type": "String",
+        "description": "Day of the month, Western digits."
+      },
+      "month": {
+        "type": "String",
+        "description": "From monthName."
+      }
+    }
+  },
+  "caloriesLeft": "سعرة متبقية",
+  "@caloriesLeft": {
+    "description": "Under the calories left today, in the ring."
+  },
+  "caloriesOver": "سعرة فوق هدفك",
+  "@caloriesOver": {
+    "description": "Under the calories eaten beyond the target, in the ring."
+  },
+  "eatenOfTarget": "تناولت {eaten} من {target} سعرة",
+  "@eatenOfTarget": {
+    "placeholders": {
+      "eaten": {
+        "type": "String",
+        "description": "Whole calories eaten today, Western digits."
+      },
+      "target": {
+        "type": "String",
+        "description": "The daily calorie target."
+      }
+    }
+  },
+  "targetsButton": "الأهداف",
+  "@targetsButton": {
+    "description": "Opens the targets screen from the diary."
+  },
+  "macroOfTarget": "من {target} غ",
+  "@macroOfTarget": {
+    "description": "Under a macro's grams eaten today.",
+    "placeholders": {
+      "target": {
+        "type": "String",
+        "description": "The macro's daily target in grams."
+      }
+    }
+  },
+  "noEntries": "لم تُسجّل شيئًا بعد.",
+  "addFood": "إضافة طعام"
 }

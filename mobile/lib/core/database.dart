@@ -161,6 +161,32 @@ class AppDatabase extends _$AppDatabase {
     );
   });
 
+  /// The entries of [diaryDay] (`YYYY-MM-DD`) with their foods, in the
+  /// order they were logged. The stream sends again after every change.
+  Stream<List<LoggedFood>> watchDiaryDay(String diaryDay) {
+    final query =
+        select(foodLogEntryTable).join([
+            innerJoin(
+              foodTable,
+              foodTable.id.equalsExp(foodLogEntryTable.foodId),
+            ),
+          ])
+          ..where(foodLogEntryTable.diaryDay.equals(diaryDay))
+          ..orderBy([
+            OrderingTerm.asc(foodLogEntryTable.loggedAt),
+            OrderingTerm.asc(foodLogEntryTable.id),
+          ]);
+    return query.watch().map(
+      (rows) => [
+        for (final row in rows)
+          LoggedFood(
+            entry: row.readTable(foodLogEntryTable),
+            food: row.readTable(foodTable),
+          ),
+      ],
+    );
+  }
+
   /// The 20 foods logged most recently, newest first, each with the grams
   /// and calories (in tenths) it was last logged with.
   ///

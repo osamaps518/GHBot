@@ -288,4 +288,52 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get errorGrams =>
       'أدخل كمية أكبر من 0 حتى 5000 غ، بمنزلة عشرية واحدة على الأكثر.';
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String weekdayName(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'الاثنين',
+      '2': 'الثلاثاء',
+      '3': 'الأربعاء',
+      '4': 'الخميس',
+      '5': 'الجمعة',
+      '6': 'السبت',
+      '7': 'الأحد',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String diaryDate(String weekday, String day, String month) {
+    return '$weekday، $day $month';
+  }
+
+  @override
+  String get caloriesLeft => 'سعرة متبقية';
+
+  @override
+  String get caloriesOver => 'سعرة فوق هدفك';
+
+  @override
+  String eatenOfTarget(String eaten, String target) {
+    return 'تناولت $eaten من $target سعرة';
+  }
+
+  @override
+  String get targetsButton => 'الأهداف';
+
+  @override
+  String macroOfTarget(String target) {
+    return 'من $target غ';
+  }
+
+  @override
+  String get noEntries => 'لم تُسجّل شيئًا بعد.';
+
+  @override
+  String get addFood => 'إضافة طعام';
 }

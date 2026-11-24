@@ -17,6 +17,24 @@ String diaryDayOf(DateTime localTime) {
   return day.toIso8601String().substring(0, 10);
 }
 
+/// When the diary day after the one at [localTime] starts.
+DateTime nextDayStart(DateTime localTime) {
+  final todayStart = DateTime(
+    localTime.year,
+    localTime.month,
+    localTime.day,
+    dayStartHour,
+  );
+  return localTime.isBefore(todayStart)
+      ? todayStart
+      : DateTime(
+          localTime.year,
+          localTime.month,
+          localTime.day + 1,
+          dayStartHour,
+        );
+}
+
 /// An entry's totals: each value per 100 g × grams ÷ 100, rounded half up
 /// to tenths, all in integers (docs/decisions.md, 30). [grams] is in tenths.
 Nutrients entryTotals(Nutrients per100g, int grams) {

@@ -288,4 +288,52 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorGrams =>
       'Enter an amount above 0 and up to 5000 g, with at most 1 decimal.';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String weekdayName(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'Monday',
+      '2': 'Tuesday',
+      '3': 'Wednesday',
+      '4': 'Thursday',
+      '5': 'Friday',
+      '6': 'Saturday',
+      '7': 'Sunday',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String diaryDate(String weekday, String day, String month) {
+    return '$weekday, $month $day';
+  }
+
+  @override
+  String get caloriesLeft => 'kcal left';
+
+  @override
+  String get caloriesOver => 'kcal over your target';
+
+  @override
+  String eatenOfTarget(String eaten, String target) {
+    return 'You\'ve eaten $eaten of $target kcal';
+  }
+
+  @override
+  String get targetsButton => 'Targets';
+
+  @override
+  String macroOfTarget(String target) {
+    return 'of $target g';
+  }
+
+  @override
+  String get noEntries => 'Nothing logged yet.';
+
+  @override
+  String get addFood => 'Add food';
 }

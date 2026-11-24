@@ -79,6 +79,14 @@ void main() {
     test('4:00 starts a new day', () {
       expect(diaryDayOf(DateTime(2026, 3, 1, 4)), '2026-03-01');
     });
+
+    test('the next day starts at the next 4:00', () {
+      expect(
+        nextDayStart(DateTime(2026, 2, 28, 3, 59)),
+        DateTime(2026, 2, 28, 4),
+      );
+      expect(nextDayStart(DateTime(2026, 2, 28, 4)), DateTime(2026, 3, 1, 4));
+    });
   });
 
   group('meals', () {

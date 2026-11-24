@@ -64,5 +64,15 @@
   "more": "More",
   "meal": "Meal",
   "logButton": "Add to {meal}",
-  "errorGrams": "Enter an amount above 0 and up to 5000 g, with at most 1 decimal."
+  "errorGrams": "Enter an amount above 0 and up to 5000 g, with at most 1 decimal.",
+  "today": "Today",
+  "weekdayName": "{weekday, select, 1{Monday} 2{Tuesday} 3{Wednesday} 4{Thursday} 5{Friday} 6{Saturday} 7{Sunday} other{}}",
+  "diaryDate": "{weekday}, {month} {day}",
+  "caloriesLeft": "kcal left",
+  "caloriesOver": "kcal over your target",
+  "eatenOfTarget": "You've eaten {eaten} of {target} kcal",
+  "targetsButton": "Targets",
+  "macroOfTarget": "of {target} g",
+  "noEntries": "Nothing logged yet.",
+  "addFood": "Add food"
 }
