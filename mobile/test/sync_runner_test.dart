@@ -136,14 +136,39 @@ void main() {
   }
 
   for (final status in [422, 409]) {
+    const refusal = {
+      'detail': [
+        {'type': 'value_error'},
+      ],
+    };
+
+    test('a $status for a revision changed since it was sent leaves the new '
+        'revision unrefused, and it is sent next', () async {
+      final id = await logRice();
+      answerEntries(status, refusal);
+      backend.holdSave = Completer();
+      final sending = runner.run();
+      await pumpEventQueue();
+
+      await database.changeGrams(id, 2000);
+      backend.holdSave!.complete();
+      await sending;
+
+      final entry = (await database.unsentEntries()).single;
+      expect(entry.revision, 2);
+      expect(entry.refused, isFalse);
+
+      backend.intercept = null;
+      await runner.run();
+
+      expect(backend.entries[id], containsPair('revision', 2));
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
     test('a $status refuses the entry: it is marked and not sent again '
         'until it changes', () async {
       final id = await logRice();
-      answerEntries(status, {
-        'detail': [
-          {'type': 'value_error'},
-        ],
-      });
+      answerEntries(status, refusal);
 
       await runner.run();
       await runner.run();
