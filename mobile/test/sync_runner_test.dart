@@ -38,7 +38,10 @@ void main() {
   late AppDatabase database;
   late SyncRunner runner;
 
-  setUp(() async {
+  /// Alice signed in, her empty database, and a runner for her. A
+  /// `testWidgets` test calls this again in its body: calls to the fake
+  /// backend made outside fake time never finish inside it.
+  Future<void> startAsAlice() async {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
     backend = FakeBackend();
@@ -58,7 +61,9 @@ void main() {
       database: database,
     );
     addTearDown(database.close);
-  });
+  }
+
+  setUp(startAsAlice);
 
   /// Logs rice into lunch on 2026-11-23 and returns the entry's ID.
   Future<String> logRice({int grams = 1500}) async {
@@ -234,6 +239,42 @@ void main() {
     await Future.wait([first, second, third]);
     expect(backend.entryRequests, hasLength(2));
     expect(backend.entries[id], containsPair('revision', 2));
+  });
+
+  testWidgets('after a failed run it tries again in 30 s, doubling up to '
+      '5 min, and starts over after a run that succeeds', (tester) async {
+    Future<void> expectTriesAfter(int seconds, int tries) async {
+      await tester.pump(Duration(seconds: seconds));
+      expect(backend.entryRequests, hasLength(tries));
+    }
+
+    await startAsAlice();
+    await logRice();
+    backend.offline = true;
+    await runner.run();
+    expect(backend.entryRequests, hasLength(1));
+
+    await expectTriesAfter(29, 1);
+    await expectTriesAfter(1, 2);
+    await expectTriesAfter(59, 2);
+    await expectTriesAfter(1, 3);
+    await expectTriesAfter(120, 4);
+    await expectTriesAfter(240, 5);
+    await expectTriesAfter(299, 5);
+    await expectTriesAfter(1, 6);
+    await expectTriesAfter(300, 7);
+
+    backend.offline = false;
+    await expectTriesAfter(300, 8);
+    expect(await database.unsentEntries(), isEmpty);
+    await expectTriesAfter(600, 8);
+
+    await logRice();
+    backend.offline = true;
+    await runner.run();
+    await expectTriesAfter(30, 10);
+
+    await runner.close();
   });
 
   group('when the server kept another copy', () {

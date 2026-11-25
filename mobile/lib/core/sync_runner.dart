@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../auth/auth_session.dart';
 import '../food_log/food_log_api.dart';
 import 'api_failure.dart';
@@ -27,10 +29,22 @@ class SyncRunner {
   /// Set when a run is asked for during one: one more run follows it.
   var _again = false;
 
+  /// After a failed run, the next one starts on this timer. The wait starts
+  /// at 30 s and doubles up to 5 min, and starts over after a run that
+  /// succeeds.
+  Timer? _retry;
+  var _retryAfter = _firstRetry;
+  static const _firstRetry = Duration(seconds: 30);
+  static const _lastRetry = Duration(minutes: 5);
+
+  /// Set by [close]: no call or run starts after it.
+  var _closed = false;
+
   /// Sends the unsent entries, one run at a time. Asked for during a run,
   /// it makes one more run after that one, however often it was asked.
   /// The future completes when no run is left.
   Future<void> run() {
+    if (_closed) return Future.value();
     if (_running case final running?) {
       _again = true;
       return running;
@@ -38,28 +52,45 @@ class SyncRunner {
     return _running = _runUntilDone();
   }
 
+  /// Stops the runner, then waits for the call in progress, if any, so the
+  /// database can close after it.
+  Future<void> close() async {
+    _closed = true;
+    _retry?.cancel();
+    await _running;
+  }
+
   Future<void> _runUntilDone() async {
     try {
       do {
         _again = false;
         await _runOnce();
-      } while (_again);
+      } while (_again && !_closed);
     } finally {
       _running = null;
     }
   }
 
-  /// Sends each unsent entry in turn. A failed call stops the run, so the
-  /// rest wait for the next one. So does another user's sign-in: this
-  /// user's entries are never sent with it.
+  /// Sends each unsent entry in turn. A failed call stops the run, and the
+  /// retry timer starts. Another user's sign-in stops it too: this user's
+  /// entries are never sent with it.
   Future<void> _runOnce() async {
+    _retry?.cancel();
     for (final entry in await _database.unsentEntries()) {
-      if (_session.userId != userId) return;
+      if (_closed || _session.userId != userId) return;
       try {
         await _foodLogApi.send(_database, entry);
       } on ApiFailure {
+        if (!_closed) _retryLater();
         return;
       }
     }
+    _retryAfter = _firstRetry;
+  }
+
+  void _retryLater() {
+    _retry = Timer(_retryAfter, run);
+    final doubled = _retryAfter * 2;
+    _retryAfter = doubled < _lastRetry ? doubled : _lastRetry;
   }
 }
