@@ -135,13 +135,14 @@ void main() {
         : null;
   }
 
-  for (final status in [422, 409]) {
-    const refusal = {
-      'detail': [
-        {'type': 'value_error'},
-      ],
-    };
+  /// A body for a 422 or 409 answer.
+  const refusal = {
+    'detail': [
+      {'type': 'value_error'},
+    ],
+  };
 
+  for (final status in [422, 409]) {
     test('a $status for a revision changed since it was sent leaves the new '
         'revision unrefused, and it is sent next', () async {
       final id = await logRice();
@@ -216,6 +217,37 @@ void main() {
     expect(backend.entries[id], containsPair('deleted', true));
     expect(await database.unsentEntries(), isEmpty);
   });
+
+  for (final status in [409, 422]) {
+    test('a delete refused with $status leaves the phone and is not sent '
+        "again; another user's row stays as it was", () async {
+      final id = await logRice();
+      if (status == 409) {
+        final bob = AuthSession(
+          ApiClient(client: backend.client, baseUrl: 'http://backend.test'),
+        );
+        await bob.signIn('bob');
+        await bob.put(
+          '/me/food-log/entries/$id',
+          _rice150Json(id),
+          (json) => json,
+        );
+      } else {
+        answerEntries(status, refusal);
+      }
+      await database.deleteEntry(id);
+
+      await runner.run();
+      await runner.run();
+
+      expect(
+        backend.entryRequests.where((request) => request.method == 'DELETE'),
+        hasLength(1),
+      );
+      expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
+      if (status == 409) expect(backend.entries[id], _rice150Json(id));
+    });
+  }
 
   test('a sent entry that is deleted is deleted on the server', () async {
     final id = await logRice();

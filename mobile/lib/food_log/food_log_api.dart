@@ -27,7 +27,9 @@ class FoodLogApi {
   /// sent: a newer change waits for the next send.
   ///
   /// A 422 or 409 is the server refusing the row itself: the entry is
-  /// marked refused and isn't sent again until the trainee changes it.
+  /// marked refused and isn't sent again until the trainee changes it. A
+  /// refused `DELETE` leaves the phone as a confirmed one does: its 409
+  /// means another user owns the ID, and the trainee can't fix either.
   Future<void> send(AppDatabase database, FoodLogEntry entry) async {
     final table = database.foodLogEntryTable;
     Expression<bool> unchanged($FoodLogEntryTableTable row) =>
@@ -40,9 +42,13 @@ class FoodLogApi {
           : await _session.put(path, _json(entry), _KeptEntry.fromJson);
     } on ApiFailure catch (failure) {
       if (failure case ValidationFailure() || ServerFailure(statusCode: 409)) {
-        await (database.update(table)..where(unchanged)).write(
-          const FoodLogEntryTableCompanion(refused: Value(true)),
-        );
+        if (entry.deleted) {
+          await (database.delete(table)..where(unchanged)).go();
+        } else {
+          await (database.update(table)..where(unchanged)).write(
+            const FoodLogEntryTableCompanion(refused: Value(true)),
+          );
+        }
         return;
       }
       rethrow;

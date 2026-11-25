@@ -764,8 +764,11 @@ server's checks before every save, so refusals are rare.
   leaves the phone. If the entry changed since it was sent, the answer is
   dropped and the newer revision goes next.
 - **Refused** is a 422 or 409: the entry is marked and not sent again until the
-  trainee changes or deletes it. Connection failures, 5xx, a 401 after the
-  session's own retry, and unexpected answers are retried.
+  trainee changes or deletes it. A refused `DELETE` leaves the phone as a
+  confirmed one does: its 409 means another user owns the ID, its 422 an ID
+  the phone never sends, and the trainee can't fix either. Connection
+  failures, 5xx, a 401 after the session's own retry, and unexpected answers
+  are retried.
 
 Rejected: a queue of every change on the phone, which needs a second table and
 more code for one device per user; PowerSync self-hosted, which adds a service,
