@@ -211,6 +211,21 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
 
+  /// The entries with a change the server hasn't confirmed, deleted ones
+  /// too, in the order they were logged.
+  Future<List<FoodLogEntry>> unsentEntries() =>
+      (select(foodLogEntryTable)
+            ..where(
+              (row) =>
+                  row.revision.isBiggerThan(row.sentRevision) &
+                  row.refused.not(),
+            )
+            ..orderBy([
+              (row) => OrderingTerm.asc(row.loggedAt),
+              (row) => OrderingTerm.asc(row.id),
+            ]))
+          .get();
+
   /// Throws an [ArgumentError] when the server would refuse an entry with
   /// these values.
   void _checkForServer(

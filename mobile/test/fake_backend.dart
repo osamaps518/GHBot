@@ -50,8 +50,8 @@ const oilJson = {
   'fat': 100.0,
 };
 
-/// A stand-in for the backend: dev tokens, one user's profile, targets, and
-/// food search.
+/// A stand-in for the backend: dev tokens, one user's profile, targets, food
+/// search, and diary entries.
 class FakeBackend {
   /// The saved profile, as the backend's JSON. Null until one is saved.
   Map<String, Object?>? profile;
@@ -63,11 +63,15 @@ class FakeBackend {
   /// While true, every request fails as if the server can't be reached.
   bool offline = false;
 
+  /// While true, the server handles every request, but its answer is lost
+  /// on the way back.
+  bool loseAnswers = false;
+
   /// Answers a request before the normal routes when it returns a response.
   http.Response? Function(http.Request request)? intercept;
 
-  /// While set, `PUT /me/profile` waits for it before answering, so a test
-  /// can act while a save is pending.
+  /// While set, every PUT (a profile or a diary entry) waits for it before
+  /// answering, so a test can act while a save is pending.
   Completer<void>? holdSave;
 
   /// Holds one targets response with the values captured when requested,
@@ -81,11 +85,20 @@ class FakeBackend {
   /// Holds the answer to a search for a query until its completer completes.
   final holdSearches = <String, Completer<void>>{};
 
+  /// The diary entries the server stores, by ID, as it answers them, with
+  /// the subject each belongs to in [_entryOwners].
+  final entries = <String, Map<String, Object?>>{};
+  final _entryOwners = <String, String>{};
+
   /// The subject each valid token was issued for.
   final _validTokens = <String, String>{};
   var _tokensIssued = 0;
 
-  late final http.Client client = MockClient(_handle);
+  late final http.Client client = MockClient((request) async {
+    final response = await _handle(request);
+    if (loseAnswers) throw http.ClientException('Connection reset');
+    return response;
+  });
 
   /// Makes every token issued so far invalid, as when they expire. Tokens last
   /// 15 minutes; the app may stay open longer.
@@ -93,6 +106,11 @@ class FakeBackend {
 
   Iterable<http.Request> requestsTo(String method, String path) => requests
       .where((request) => request.method == method && request.url.path == path);
+
+  /// The PUT and DELETE calls for diary entries.
+  Iterable<http.Request> get entryRequests => requests.where(
+    (request) => request.url.path.startsWith('/me/food-log/entries/'),
+  );
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
@@ -114,6 +132,9 @@ class FakeBackend {
     if (subject == null) {
       return _json({'detail': 'Not authenticated'}, 401);
     }
+    final entryId = RegExp(r'^/me/food-log/entries/([^/]+)$')
+        .firstMatch(request.url.path)?[1];
+    if (entryId != null) return _entry(request, entryId, subject);
     switch (route) {
       case 'GET /me':
         return _json({'id': userIdFor(subject)});
@@ -147,6 +168,48 @@ class FakeBackend {
         return snapshot == null ? _notFound() : _json(snapshot);
     }
     return _notFound();
+  }
+
+  /// Answers `PUT` and `DELETE /me/food-log/entries/{id}` as the server does
+  /// (docs/decisions.md, 31): a higher revision replaces an active entry, a
+  /// delete is final and recorded even for an unknown ID, and every answer
+  /// is the stored entry. Another subject's ID answers 409.
+  http.Response _entry(http.Request request, String id, String subject) {
+    final stored = entries[id];
+    if (stored != null && _entryOwners[id] != subject) {
+      return _json({'detail': 'Entry belongs to another user'}, 409);
+    }
+    _entryOwners[id] = subject;
+    if (request.method == 'DELETE') {
+      return _json(
+        entries[id] = stored == null
+            ? {
+                'id': id,
+                'revision': 0,
+                'deleted': true,
+                for (final field in [
+                  'food_id',
+                  'meal',
+                  'meal_name',
+                  'diary_day',
+                  'grams',
+                  'logged_at',
+                  'per_100g',
+                  'totals',
+                ])
+                  field: null,
+              }
+            : {...stored, 'deleted': true},
+      );
+    }
+    final sent = (jsonDecode(request.body) as Map).cast<String, Object?>();
+    if (stored != null &&
+        (stored['deleted'] == true ||
+            (stored['revision'] as int) >= (sent['revision'] as int))) {
+      return _json(stored);
+    }
+    entries[id] = {'id': id, 'deleted': false, ...sent};
+    return _json(entries[id], stored == null ? 201 : 200);
   }
 }
 
