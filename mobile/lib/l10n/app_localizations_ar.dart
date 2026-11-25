@@ -367,4 +367,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String deleteEntryBody(String meal, String date, String calories) {
     return 'ستُحذف من $meal يوم $date، وتُطرح $calories سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.';
   }
+
+  @override
+  String waitingToSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إدخال بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      many: '$count إدخالًا بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      few: '$count إدخالات بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      two: 'إدخالان بانتظار المزامنة. سيُرسلان حين يتوفّر الاتصال.',
+      one: 'إدخال واحد بانتظار المزامنة. سيُرسل حين يتوفّر الاتصال.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get waitingToSyncEntry => 'بانتظار المزامنة';
 }

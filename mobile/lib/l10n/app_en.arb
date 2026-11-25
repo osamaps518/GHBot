@@ -83,5 +83,7 @@
   "save": "Save",
   "delete": "Delete",
   "deleteEntryTitle": "Delete {food}?",
-  "deleteEntryBody": "It will be removed from {meal} on {date}, and {calories} kcal will come off the day's total. This can't be undone."
+  "deleteEntryBody": "It will be removed from {meal} on {date}, and {calories} kcal will come off the day's total. This can't be undone.",
+  "waitingToSync": "{count, plural, =1{1 entry is waiting to sync. It will be sent when you're connected.} other{{count} entries are waiting to sync. They'll be sent when you're connected.}}",
+  "waitingToSyncEntry": "Waiting to sync"
 }

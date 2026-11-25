@@ -368,4 +368,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteEntryBody(String meal, String date, String calories) {
     return 'It will be removed from $meal on $date, and $calories kcal will come off the day\'s total. This can\'t be undone.';
   }
+
+  @override
+  String waitingToSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count entries are waiting to sync. They\'ll be sent when you\'re connected.',
+      one:
+          '1 entry is waiting to sync. It will be sent when you\'re connected.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get waitingToSyncEntry => 'Waiting to sync';
 }

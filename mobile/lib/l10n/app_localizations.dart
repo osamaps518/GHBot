@@ -601,6 +601,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ستُحذف من {meal} يوم {date}، وتُطرح {calories} سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.'**
   String deleteEntryBody(String meal, String date, String calories);
+
+  /// On the diary while entries on the phone haven't reached the server.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{إدخال واحد بانتظار المزامنة. سيُرسل حين يتوفّر الاتصال.} =2{إدخالان بانتظار المزامنة. سيُرسلان حين يتوفّر الاتصال.} few{{count} إدخالات بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} many{{count} إدخالًا بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} other{{count} إدخال بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.}}'**
+  String waitingToSync(int count);
+
+  /// Read out for the clock next to an entry the server hasn't confirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار المزامنة'**
+  String get waitingToSyncEntry;
 }
 
 class _AppLocalizationsDelegate

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/auth/auth_session.dart';
 import 'package:ghbot/core/api_client.dart';
 import 'package:ghbot/core/database.dart';
+import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/core/theme.dart';
 import 'package:ghbot/food_log/diary_screen.dart';
 import 'package:ghbot/food_log/entry_edit_screen.dart';
@@ -71,12 +72,15 @@ Finder _inMeal(String meal, Finder finder) => find.descendant(
 );
 
 /// Scrolls the diary, which builds only what is on screen, to [finder].
+/// `ensureVisible` covers a widget built just past the screen's edge.
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(
     finder,
     200,
     scrollable: find.byType(Scrollable).first,
   );
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -184,6 +188,41 @@ void main() {
 
     expect(find.text(english.errorMealName), findsOneWidget);
     expect(find.byType(FoodSearchScreen), findsNothing);
+  });
+
+  testWidgets('the diary says how many entries wait to sync, and marks '
+      'each, until they are sent', (tester) async {
+    final database = await _pumpDiary(tester);
+    for (final json in [riceJson, oilJson]) {
+      await database.logEntry(
+        food: Food.fromJson(json),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1000,
+        loggedAt: DateTime.now(),
+      );
+    }
+    await tester.pumpAndSettle();
+    final waitingMarks = find.descendant(
+      of: find.byType(ListTile),
+      matching: find.byIcon(Icons.schedule),
+    );
+
+    expect(find.text(english.waitingToSync(2)), findsOneWidget);
+    expect(waitingMarks, findsNWidgets(2));
+
+    final session = AuthSession(
+      ApiClient(client: FakeBackend().client, baseUrl: 'http://backend.test'),
+    );
+    await session.signIn('alice');
+    await SyncRunner(
+      session: session,
+      userId: userIdFor('alice'),
+      database: database,
+    ).run();
+    await tester.pumpAndSettle();
+
+    expect(find.text(english.waitingToSync(2)), findsNothing);
+    expect(waitingMarks, findsNothing);
   });
 
   group('changing an entry', () {

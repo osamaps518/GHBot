@@ -215,16 +215,28 @@ class AppDatabase extends _$AppDatabase {
   /// too, in the order they were logged.
   Future<List<FoodLogEntry>> unsentEntries() =>
       (select(foodLogEntryTable)
-            ..where(
-              (row) =>
-                  row.revision.isBiggerThan(row.sentRevision) &
-                  row.refused.not(),
-            )
+            ..where((row) => _unsent)
             ..orderBy([
               (row) => OrderingTerm.asc(row.loggedAt),
               (row) => OrderingTerm.asc(row.id),
             ]))
           .get();
+
+  /// How many entries [unsentEntries] has. The stream sends again after
+  /// every change.
+  Stream<int> watchUnsentCount() {
+    final count = foodLogEntryTable.id.count();
+    return (selectOnly(foodLogEntryTable)
+          ..addColumns([count])
+          ..where(_unsent))
+        .map((row) => row.read(count)!)
+        .watchSingle();
+  }
+
+  /// An entry with a change the server hasn't confirmed and will be sent.
+  Expression<bool> get _unsent =>
+      foodLogEntryTable.revision.isBiggerThan(foodLogEntryTable.sentRevision) &
+      foodLogEntryTable.refused.not();
 
   /// Throws an [ArgumentError] when the server would refuse an entry with
   /// these values.

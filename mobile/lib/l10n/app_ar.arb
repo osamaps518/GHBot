@@ -315,5 +315,19 @@
         "description": "The entry's whole calories, Western digits."
       }
     }
+  },
+  "waitingToSync": "{count, plural, =1{إدخال واحد بانتظار المزامنة. سيُرسل حين يتوفّر الاتصال.} =2{إدخالان بانتظار المزامنة. سيُرسلان حين يتوفّر الاتصال.} few{{count} إدخالات بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} many{{count} إدخالًا بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} other{{count} إدخال بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.}}",
+  "@waitingToSync": {
+    "description": "On the diary while entries on the phone haven't reached the server.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "description": "How many entries wait, deleted ones too."
+      }
+    }
+  },
+  "waitingToSyncEntry": "بانتظار المزامنة",
+  "@waitingToSyncEntry": {
+    "description": "Read out for the clock next to an entry the server hasn't confirmed."
   }
 }

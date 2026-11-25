@@ -40,6 +40,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
   late String _day;
   late Stream<List<LoggedFood>> _entries;
 
+  /// How many entries, on any day, wait to be sent.
+  late final _unsentCount = widget.database.watchUnsentCount();
+
   /// Extra meals named on this screen today. They show until the screen
   /// closes; one stays on the day only through its entries.
   final _newMealNames = <String>[];
@@ -142,6 +145,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
               children: [
                 _DayHeader(day: _day),
+                _WaitingNote(count: _unsentCount),
                 const SizedBox(height: 12),
                 _CaloriesCard(
                   eaten: roundTenths(dayTotals.calories),
@@ -194,6 +198,51 @@ class _DayHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "3 entries are waiting to sync", while [count] is above 0.
+class _WaitingNote extends StatelessWidget {
+  const _WaitingNote({required this.count});
+
+  final Stream<int> count;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return StreamBuilder(
+      stream: count,
+      builder: (context, snapshot) {
+        final waiting = snapshot.data ?? 0;
+        if (waiting == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                spacing: 10,
+                children: [
+                  Icon(Icons.schedule, size: 20, color: muted),
+                  Expanded(
+                    child: Text(
+                      l10n.waitingToSync(waiting),
+                      style: theme.textTheme.bodyMedium!.copyWith(color: muted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -470,9 +519,22 @@ class _MealCard extends StatelessWidget {
                 subtitle: Text(
                   '${formatTenths(logged.entry.grams)} ${l10n.gramsUnit}',
                 ),
-                trailing: Text(
-                  '${roundTenths(logged.entry.totals.calories)}',
-                  style: theme.textTheme.titleSmall,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 6,
+                  children: [
+                    if (logged.entry.unsent)
+                      Icon(
+                        Icons.schedule,
+                        size: 16,
+                        color: muted,
+                        semanticLabel: l10n.waitingToSyncEntry,
+                      ),
+                    Text(
+                      '${roundTenths(logged.entry.totals.calories)}',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ],
                 ),
               ),
             if (group.entries.isEmpty)
