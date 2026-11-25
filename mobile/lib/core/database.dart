@@ -35,10 +35,12 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
-  /// to the next. Version 2 adds the foods and the diary.
+  /// to the next. Version 2 adds the foods and the diary. Version 3 adds
+  /// what sending entries needs (docs/decisions.md, 31); entries logged
+  /// before it are unsent.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -46,6 +48,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(schema.foods);
         await m.createTable(schema.foodLogEntries);
         await m.createIndex(schema.foodLogEntriesDiaryDay);
+      },
+      from2To3: (m, schema) async {
+        final entries = schema.foodLogEntries;
+        await m.addColumn(entries, entries.revision);
+        await m.addColumn(entries, entries.sentRevision);
+        await m.addColumn(entries, entries.deleted);
+        await m.addColumn(entries, entries.refused);
       },
     ),
   );

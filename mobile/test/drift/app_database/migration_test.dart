@@ -6,6 +6,7 @@ import 'package:ghbot/core/database.dart';
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 const _profileV1 = v1.ProfileData(
   birthYear: 1996,
@@ -29,8 +30,36 @@ const _targetsV1 = v1.TargetsData(
   goalAdjustmentPercent: -20,
 );
 
+const _riceV2 = v2.FoodsData(
+  id: 'rice',
+  nameAr: 'أرز أبيض مطبوخ',
+  nameEn: 'Cooked white rice',
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+);
+
+const _entryV2 = v2.FoodLogEntriesData(
+  id: 'entry-1',
+  foodId: 'rice',
+  meal: 'lunch',
+  diaryDay: '2026-11-23',
+  grams: 1500,
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+  calories: 1950,
+  protein: 41,
+  carbs: 423,
+  fat: 5,
+  loggedAt: 1795435200,
+);
+
 /// Upgrades each exported schema to every later one, and checks that the
-/// cached profile and targets survive (docs/decisions.md, 24).
+/// cached profile and targets survive (docs/decisions.md, 24), and the
+/// diary too.
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   late SchemaVerifier verifier;
@@ -73,6 +102,31 @@ void main() {
           (await newDb.select(newDb.targets).getSingle()).toJson(),
           _targetsV1.toJson(),
         );
+      },
+    );
+  });
+
+  test('upgrading from 2 to 3 keeps the entries, each waiting to be sent '
+      'for the first time', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.foods, _riceV2);
+        batch.insert(oldDb.foodLogEntries, _entryV2);
+      },
+      validateItems: (newDb) async {
+        final entry = await newDb.select(newDb.foodLogEntries).getSingle();
+        expect(entry.toJson(), {
+          ..._entryV2.toJson(),
+          'revision': 1,
+          'sentRevision': 0,
+          'deleted': 0,
+          'refused': 0,
+        });
       },
     );
   });

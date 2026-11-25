@@ -1228,6 +1228,60 @@ class $FoodLogEntryTableTable extends FoodLogEntryTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _sentRevisionMeta = const VerificationMeta(
+    'sentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> sentRevision = GeneratedColumn<int>(
+    'sent_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _refusedMeta = const VerificationMeta(
+    'refused',
+  );
+  @override
+  late final GeneratedColumn<bool> refused = GeneratedColumn<bool>(
+    'refused',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("refused" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1245,6 +1299,10 @@ class $FoodLogEntryTableTable extends FoodLogEntryTable
     carbs,
     fat,
     loggedAt,
+    revision,
+    sentRevision,
+    deleted,
+    refused,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1377,6 +1435,33 @@ class $FoodLogEntryTableTable extends FoodLogEntryTable
     } else if (isInserting) {
       context.missing(_loggedAtMeta);
     }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('sent_revision')) {
+      context.handle(
+        _sentRevisionMeta,
+        sentRevision.isAcceptableOrUnknown(
+          data['sent_revision']!,
+          _sentRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('refused')) {
+      context.handle(
+        _refusedMeta,
+        refused.isAcceptableOrUnknown(data['refused']!, _refusedMeta),
+      );
+    }
     return context;
   }
 
@@ -1448,6 +1533,22 @@ class $FoodLogEntryTableTable extends FoodLogEntryTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}logged_at'],
       )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      sentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sent_revision'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      refused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}refused'],
+      )!,
     );
   }
 
@@ -1476,6 +1577,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
   final Value<int> carbs;
   final Value<int> fat;
   final Value<DateTime> loggedAt;
+  final Value<int> revision;
+  final Value<int> sentRevision;
+  final Value<bool> deleted;
+  final Value<bool> refused;
   final Value<int> rowid;
   const FoodLogEntryTableCompanion({
     this.id = const Value.absent(),
@@ -1493,6 +1598,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
     this.loggedAt = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.sentRevision = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.refused = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodLogEntryTableCompanion.insert({
@@ -1511,6 +1620,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
     required int carbs,
     required int fat,
     required DateTime loggedAt,
+    this.revision = const Value.absent(),
+    this.sentRevision = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.refused = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        foodId = Value(foodId),
@@ -1542,6 +1655,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
     Expression<int>? carbs,
     Expression<int>? fat,
     Expression<DateTime>? loggedAt,
+    Expression<int>? revision,
+    Expression<int>? sentRevision,
+    Expression<bool>? deleted,
+    Expression<bool>? refused,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1560,6 +1677,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
       if (loggedAt != null) 'logged_at': loggedAt,
+      if (revision != null) 'revision': revision,
+      if (sentRevision != null) 'sent_revision': sentRevision,
+      if (deleted != null) 'deleted': deleted,
+      if (refused != null) 'refused': refused,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1580,6 +1701,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
     Value<int>? carbs,
     Value<int>? fat,
     Value<DateTime>? loggedAt,
+    Value<int>? revision,
+    Value<int>? sentRevision,
+    Value<bool>? deleted,
+    Value<bool>? refused,
     Value<int>? rowid,
   }) {
     return FoodLogEntryTableCompanion(
@@ -1598,6 +1723,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
       loggedAt: loggedAt ?? this.loggedAt,
+      revision: revision ?? this.revision,
+      sentRevision: sentRevision ?? this.sentRevision,
+      deleted: deleted ?? this.deleted,
+      refused: refused ?? this.refused,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1652,6 +1781,18 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
     if (loggedAt.present) {
       map['logged_at'] = Variable<DateTime>(loggedAt.value);
     }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (sentRevision.present) {
+      map['sent_revision'] = Variable<int>(sentRevision.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (refused.present) {
+      map['refused'] = Variable<bool>(refused.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1676,6 +1817,10 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
           ..write('loggedAt: $loggedAt, ')
+          ..write('revision: $revision, ')
+          ..write('sentRevision: $sentRevision, ')
+          ..write('deleted: $deleted, ')
+          ..write('refused: $refused, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2506,6 +2651,10 @@ typedef $$FoodLogEntryTableTableCreateCompanionBuilder =
       required int carbs,
       required int fat,
       required DateTime loggedAt,
+      Value<int> revision,
+      Value<int> sentRevision,
+      Value<bool> deleted,
+      Value<bool> refused,
       Value<int> rowid,
     });
 typedef $$FoodLogEntryTableTableUpdateCompanionBuilder =
@@ -2525,6 +2674,10 @@ typedef $$FoodLogEntryTableTableUpdateCompanionBuilder =
       Value<int> carbs,
       Value<int> fat,
       Value<DateTime> loggedAt,
+      Value<int> revision,
+      Value<int> sentRevision,
+      Value<bool> deleted,
+      Value<bool> refused,
       Value<int> rowid,
     });
 
@@ -2612,6 +2765,26 @@ class $$FoodLogEntryTableTableFilterComposer
     column: $table.loggedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get refused => $composableBuilder(
+    column: $table.refused,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$FoodLogEntryTableTableOrderingComposer
@@ -2697,6 +2870,26 @@ class $$FoodLogEntryTableTableOrderingComposer
     column: $table.loggedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get refused => $composableBuilder(
+    column: $table.refused,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodLogEntryTableTableAnnotationComposer
@@ -2760,6 +2953,20 @@ class $$FoodLogEntryTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get loggedAt =>
       $composableBuilder(column: $table.loggedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get refused =>
+      $composableBuilder(column: $table.refused, builder: (column) => column);
 }
 
 class $$FoodLogEntryTableTableTableManager
@@ -2817,6 +3024,10 @@ class $$FoodLogEntryTableTableTableManager
                 Value<int> carbs = const Value.absent(),
                 Value<int> fat = const Value.absent(),
                 Value<DateTime> loggedAt = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> sentRevision = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> refused = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntryTableCompanion(
                 id: id,
@@ -2834,6 +3045,10 @@ class $$FoodLogEntryTableTableTableManager
                 carbs: carbs,
                 fat: fat,
                 loggedAt: loggedAt,
+                revision: revision,
+                sentRevision: sentRevision,
+                deleted: deleted,
+                refused: refused,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2853,6 +3068,10 @@ class $$FoodLogEntryTableTableTableManager
                 required int carbs,
                 required int fat,
                 required DateTime loggedAt,
+                Value<int> revision = const Value.absent(),
+                Value<int> sentRevision = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> refused = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodLogEntryTableCompanion.insert(
                 id: id,
@@ -2870,6 +3089,10 @@ class $$FoodLogEntryTableTableTableManager
                 carbs: carbs,
                 fat: fat,
                 loggedAt: loggedAt,
+                revision: revision,
+                sentRevision: sentRevision,
+                deleted: deleted,
+                refused: refused,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

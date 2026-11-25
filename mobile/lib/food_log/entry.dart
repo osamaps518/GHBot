@@ -70,6 +70,10 @@ class FoodLogEntry {
     required this.per100g,
     required this.totals,
     required this.loggedAt,
+    this.revision = 1,
+    this.sentRevision = 0,
+    this.deleted = false,
+    this.refused = false,
   });
 
   /// Builds an entry from a `food_log_entries` row.
@@ -89,6 +93,10 @@ class FoodLogEntry {
     required int carbs,
     required int fat,
     required this.loggedAt,
+    required this.revision,
+    required this.sentRevision,
+    required this.deleted,
+    required this.refused,
   }) : per100g = Nutrients(
          calories: caloriesPer100g,
          protein: proteinPer100g,
@@ -115,6 +123,20 @@ class FoodLogEntry {
   final Nutrients per100g;
   final Nutrients totals;
   final DateTime loggedAt;
+
+  /// 1 when logged, plus 1 on every change and on delete.
+  final int revision;
+
+  /// The last revision the server confirmed, 0 if never.
+  final int sentRevision;
+  final bool deleted;
+
+  /// The server refused this row; it waits for the trainee to change or
+  /// delete it.
+  final bool refused;
+
+  /// The phone has a change the server hasn't confirmed yet and will send.
+  bool get unsent => revision > sentRevision && !refused;
 }
 
 /// An entry and its food, as the diary shows them.
