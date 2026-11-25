@@ -222,6 +222,30 @@ void main() {
     },
   );
 
+  for (final deleted in [false, true]) {
+    test('a ${deleted ? 'DELETE' : 'PUT'} whose token expires while another '
+        "user signs in is not sent again with that user's token", () async {
+      final id = await logRice();
+      if (deleted) await database.deleteEntry(id);
+      backend.holdSave = Completer();
+      final sending = runner.run();
+      await pumpEventQueue();
+
+      backend.expireTokens();
+      await session.signIn('bob');
+      backend.holdSave!.complete();
+      await sending;
+
+      expect(backend.entryRequests, hasLength(1));
+      expect(
+        backend.entryRequests.single.headers['authorization'],
+        startsWith('Bearer token-alice-'),
+      );
+      expect(backend.entries, isEmpty);
+      expect(await database.unsentEntries(), hasLength(1));
+    });
+  }
+
   test('one run at a time: runs asked for during a run make one more run '
       'after it', () async {
     final id = await logRice();

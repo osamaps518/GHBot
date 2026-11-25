@@ -742,7 +742,9 @@ server's checks before every save, so refusals are rare.
 - **One runner** in `mobile/lib/core/sync_runner.dart`, made for one user ID and
   their database. Before each call it checks that the session's user is still
   that one, and stops if not, so one user's rows never go out with another's
-  sign-in. The calls and the handling of answers are in
+  sign-in. The session doesn't retry a 401 once another user has signed in,
+  and a new sign-in changes the session's name, ID and token only together,
+  after `GET /me`. The calls and the handling of answers are in
   `food_log/food_log_api.dart`. One run at a time; asking during a run queues
   one more. `AppFlow` starts the runner when it opens the user's database and
   stops it before closing the database.

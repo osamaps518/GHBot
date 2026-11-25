@@ -70,8 +70,8 @@ class FakeBackend {
   /// Answers a request before the normal routes when it returns a response.
   http.Response? Function(http.Request request)? intercept;
 
-  /// While set, every PUT (a profile or a diary entry) waits for it before
-  /// answering, so a test can act while a save is pending.
+  /// While set, every PUT (a profile or a diary entry) and DELETE waits for
+  /// it before answering, so a test can act while a save is pending.
   Completer<void>? holdSave;
 
   /// Holds one targets response with the values captured when requested,
@@ -115,7 +115,7 @@ class FakeBackend {
 
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
-    if (request.method == 'PUT') await holdSave?.future;
+    if (request.method case 'PUT' || 'DELETE') await holdSave?.future;
     if (offline) throw http.ClientException('Connection refused');
     final intercepted = intercept?.call(request);
     if (intercepted != null) return intercepted;
