@@ -191,18 +191,24 @@ void main() {
     expect(_inMeal('Pre-workout', find.text('Olive oil')), findsOne);
   });
 
-  testWidgets('an extra meal needs a name of 1 to 40 characters', (
-    tester,
-  ) async {
-    await _pumpDiary(tester);
+  for (final (refused, typed) in [
+    ('only spaces', '   '),
+    ('a NUL character', 'a\u0000b'),
+  ]) {
+    testWidgets('an extra meal name with $refused is refused before search', (
+      tester,
+    ) async {
+      final database = await _pumpDiary(tester);
 
-    await _tap(tester, find.text(english.addMeal));
-    await tester.enterText(find.byType(TextField), '   ');
-    await _tap(tester, find.widgetWithText(FilledButton, english.addFood));
+      await _tap(tester, find.text(english.addMeal));
+      await tester.enterText(find.byType(TextField), typed);
+      await _tap(tester, find.widgetWithText(FilledButton, english.addFood));
 
-    expect(find.text(english.errorMealName), findsOneWidget);
-    expect(find.byType(FoodSearchScreen), findsNothing);
-  });
+      expect(find.text(english.errorMealName), findsOneWidget);
+      expect(find.byType(FoodSearchScreen), findsNothing);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+  }
 
   testWidgets('the diary says how many entries wait to sync, and marks '
       'each, until they are sent', (tester) async {
