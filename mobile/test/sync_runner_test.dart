@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,5 +101,75 @@ void main() {
 
     expect(backend.entries, {id: _rice150Json(id)});
     expect(await database.unsentEntries(), isEmpty);
+  });
+
+  test('an edit made while the entry is being sent is sent next', () async {
+    final id = await logRice();
+    backend.holdSave = Completer();
+    final sending = runner.run();
+    await pumpEventQueue();
+
+    await database.changeGrams(id, 2000);
+    backend.holdSave!.complete();
+    await sending;
+
+    expect(await database.unsentEntries(), hasLength(1));
+    await runner.run();
+    expect(backend.entries[id], containsPair('grams', 200.0));
+    expect(backend.entries[id], containsPair('revision', 2));
+    expect(await database.unsentEntries(), isEmpty);
+  });
+
+  group('when the server kept another copy', () {
+    test('the phone takes it', () async {
+      final id = await logRice();
+      backend.entries[id] = {
+        ..._rice150Json(id),
+        'revision': 3,
+        'grams': 200.0,
+        'totals': {
+          'calories': 260.0,
+          'protein': 5.4,
+          'carbs': 56.4,
+          'fat': 0.6,
+        },
+      };
+
+      await runner.run();
+
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.grams, 2000);
+      expect(entry.totals.calories, 2600);
+      expect(entry.revision, 3);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
+    test('a copy the server deleted leaves the phone too', () async {
+      final id = await logRice();
+      backend.entries[id] = {..._rice150Json(id), 'deleted': true};
+
+      await runner.run();
+
+      expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
+    test('the phone keeps its own if it changed since it was sent', () async {
+      final id = await logRice();
+      backend.entries[id] = {..._rice150Json(id), 'revision': 3};
+      backend.holdSave = Completer();
+      final sending = runner.run();
+      await pumpEventQueue();
+
+      await database.changeGrams(id, 2000);
+      backend.holdSave!.complete();
+      await sending;
+
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.grams, 2000);
+      expect(entry.unsent, isTrue);
+    });
   });
 }

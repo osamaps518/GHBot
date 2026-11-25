@@ -86,7 +86,8 @@ class FakeBackend {
   final holdSearches = <String, Completer<void>>{};
 
   /// The diary entries the server stores, by ID, as it answers them, with
-  /// the subject each belongs to in [_entryOwners].
+  /// the subject each belongs to in [_entryOwners]. An entry a test puts
+  /// here belongs to whoever sends it first.
   final entries = <String, Map<String, Object?>>{};
   final _entryOwners = <String, String>{};
 
@@ -176,10 +177,10 @@ class FakeBackend {
   /// is the stored entry. Another subject's ID answers 409.
   http.Response _entry(http.Request request, String id, String subject) {
     final stored = entries[id];
-    if (stored != null && _entryOwners[id] != subject) {
+    final owner = _entryOwners.putIfAbsent(id, () => subject);
+    if (owner != subject) {
       return _json({'detail': 'Entry belongs to another user'}, 409);
     }
-    _entryOwners[id] = subject;
     if (request.method == 'DELETE') {
       return _json(
         entries[id] = stored == null
