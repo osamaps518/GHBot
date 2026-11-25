@@ -198,6 +198,25 @@ void main() {
     expect(await database.unsentEntries(), isEmpty);
   });
 
+  test(
+    "one user's entries are never sent with another user's sign-in",
+    () async {
+      final first = await logRice();
+      await logRice(grams: 2000);
+      backend.holdSave = Completer();
+      final sending = runner.run();
+      await pumpEventQueue();
+
+      await session.signIn('bob');
+      backend.holdSave!.complete();
+      await sending;
+      await runner.run();
+
+      expect(backend.entryRequests, hasLength(1));
+      expect(backend.entries.keys, [first]);
+    },
+  );
+
   group('when the server kept another copy', () {
     test('the phone takes it', () async {
       final id = await logRice();
