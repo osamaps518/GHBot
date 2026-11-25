@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'auth/auth_session.dart';
 import 'core/api_failure.dart';
 import 'core/database.dart';
+import 'core/sync_runner.dart';
 import 'profiles/profile.dart';
 import 'profiles/profiles_api.dart';
 import 'targets/targets.dart';
@@ -31,6 +32,10 @@ class AppFlow extends ChangeNotifier {
   final TargetsApi _targetsApi;
   final AppDatabase Function(String userId) _openDatabase;
   AppDatabase? _database;
+
+  /// Sends the diary from [database], for the user it belongs to, from
+  /// when it opens until the app closes (docs/decisions.md, 31).
+  SyncRunner? _syncRunner;
 
   /// The signed-in user's database, open from the diary stage on.
   AppDatabase get database => _database!;
@@ -84,6 +89,11 @@ class AppFlow extends ChangeNotifier {
       if (_session.userId == null) await _session.fetchUserId();
       if (_disposed) return;
       final database = _database ??= _openDatabase(_session.userId!);
+      _syncRunner ??= SyncRunner(
+        session: _session,
+        userId: _session.userId!,
+        database: database,
+      )..start();
       ageWarningSeen = await _preferences.getBool(_ageWarningSeenKey) ?? false;
       if (_disposed) return;
       final stored = await database.readProfileAndTargets();
@@ -168,7 +178,13 @@ class AppFlow extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _database?.close();
+    unawaited(_close());
     super.dispose();
+  }
+
+  /// Stops the sync runner, then closes the database it may be writing to.
+  Future<void> _close() async {
+    await _syncRunner?.close();
+    await _database?.close();
   }
 }

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show TableUpdateQuery;
+import 'package:flutter/widgets.dart';
+
 import '../auth/auth_session.dart';
 import '../food_log/food_log_api.dart';
 import 'api_failure.dart';
@@ -40,6 +43,24 @@ class SyncRunner {
   /// Set by [close]: no call or run starts after it.
   var _closed = false;
 
+  StreamSubscription<void>? _localChanges;
+  Timer? _afterChange;
+  AppLifecycleListener? _lifecycle;
+
+  /// Runs now, then whenever the app returns to the foreground, and 2 s
+  /// after the last local change to the diary, until [close]. There is no
+  /// background job: the app runs it only while open.
+  void start() {
+    _localChanges = _database
+        .tableUpdates(TableUpdateQuery.onTable(_database.foodLogEntryTable))
+        .listen((_) {
+          _afterChange?.cancel();
+          _afterChange = Timer(const Duration(seconds: 2), run);
+        });
+    _lifecycle = AppLifecycleListener(onResume: run);
+    run();
+  }
+
   /// Sends the unsent entries, one run at a time. Asked for during a run,
   /// it makes one more run after that one, however often it was asked.
   /// The future completes when no run is left.
@@ -52,12 +73,15 @@ class SyncRunner {
     return _running = _runUntilDone();
   }
 
-  /// Stops the runner, then waits for the call in progress, if any, so the
-  /// database can close after it.
-  Future<void> close() async {
+  /// Stops the runner. The future completes when the call in progress, if
+  /// any, has finished, so the database can close after it.
+  Future<void> close() {
     _closed = true;
     _retry?.cancel();
-    await _running;
+    _afterChange?.cancel();
+    _lifecycle?.dispose();
+    unawaited(_localChanges?.cancel());
+    return _running ?? Future.value();
   }
 
   Future<void> _runUntilDone() async {

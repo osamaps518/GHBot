@@ -248,6 +248,7 @@ void main() {
       expect(backend.entryRequests, hasLength(tries));
     }
 
+    await database.close();
     await startAsAlice();
     await logRice();
     backend.offline = true;
