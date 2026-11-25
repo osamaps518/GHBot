@@ -21,10 +21,38 @@ class SyncRunner {
   final AppDatabase _database;
   final FoodLogApi _foodLogApi;
 
+  /// The run in progress, if any.
+  Future<void>? _running;
+
+  /// Set when a run is asked for during one: one more run follows it.
+  var _again = false;
+
+  /// Sends the unsent entries, one run at a time. Asked for during a run,
+  /// it makes one more run after that one, however often it was asked.
+  /// The future completes when no run is left.
+  Future<void> run() {
+    if (_running case final running?) {
+      _again = true;
+      return running;
+    }
+    return _running = _runUntilDone();
+  }
+
+  Future<void> _runUntilDone() async {
+    try {
+      do {
+        _again = false;
+        await _runOnce();
+      } while (_again);
+    } finally {
+      _running = null;
+    }
+  }
+
   /// Sends each unsent entry in turn. A failed call stops the run, so the
   /// rest wait for the next one. So does another user's sign-in: this
   /// user's entries are never sent with it.
-  Future<void> run() async {
+  Future<void> _runOnce() async {
     for (final entry in await _database.unsentEntries()) {
       if (_session.userId != userId) return;
       try {

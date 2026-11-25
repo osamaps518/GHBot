@@ -217,6 +217,25 @@ void main() {
     },
   );
 
+  test('one run at a time: runs asked for during a run make one more run '
+      'after it', () async {
+    final id = await logRice();
+    backend.holdSave = Completer();
+    final first = runner.run();
+    await pumpEventQueue();
+
+    await database.changeGrams(id, 2000);
+    final second = runner.run();
+    final third = runner.run();
+    await pumpEventQueue();
+    expect(backend.entryRequests, hasLength(1));
+
+    backend.holdSave!.complete();
+    await Future.wait([first, second, third]);
+    expect(backend.entryRequests, hasLength(2));
+    expect(backend.entries[id], containsPair('revision', 2));
+  });
+
   group('when the server kept another copy', () {
     test('the phone takes it', () async {
       final id = await logRice();
