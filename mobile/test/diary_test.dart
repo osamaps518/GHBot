@@ -308,6 +308,27 @@ void main() {
       expect(_inMeal(lunch, find.text('260')), findsOne);
     });
 
+    testWidgets('Save closes the screen when sync removed the entry '
+        'meanwhile, and the entry stays deleted', (tester) async {
+      final database = await openRice(tester);
+      final id = (await database.unsentEntries()).single.id;
+      final backend = FakeBackend()
+        ..entries[id] = {'id': id, 'revision': 0, 'deleted': true};
+      await _sync(database, backend);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '200');
+      await tester.pump();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+      await _sync(database, backend);
+
+      expect(find.byType(EntryEditScreen), findsNothing);
+      expect(find.text('Cooked white rice'), findsNothing);
+      expect(backend.entryRequests, hasLength(1));
+      expect(backend.entries[id], containsPair('deleted', true));
+    });
+
     testWidgets('an amount the server would refuse shows the error and '
         'changes nothing', (tester) async {
       await openRice(tester);

@@ -178,10 +178,13 @@ class AppDatabase extends _$AppDatabase {
   /// (docs/decisions.md, 21 and 30). The change raises the revision and
   /// clears a refusal, so the entry is sent again. Throws an
   /// [ArgumentError] and changes nothing when the server would refuse it.
+  /// An entry sync removed meanwhile, because the server deleted it, stays
+  /// removed.
   Future<void> changeGrams(String entryId, int grams) => transaction(() async {
     final entry = await (select(
       foodLogEntryTable,
-    )..where((row) => row.id.equals(entryId))).getSingle();
+    )..where((row) => row.id.equals(entryId))).getSingleOrNull();
+    if (entry == null) return;
     final totals = entryTotals(entry.per100g, grams);
     _checkForServer(entry.meal, entry.mealName, grams, entry.per100g, totals);
     await (update(
