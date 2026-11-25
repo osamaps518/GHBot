@@ -79,5 +79,6 @@
   "extraMealName": "Meal name",
   "extraMealHint": "The meal stays on your day once you add its first food.",
   "errorMealName": "Enter a name of 1 to 40 characters.",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "save": "Save"
 }

@@ -281,5 +281,9 @@
     "description": "An extra meal exists only through its entries (#59)."
   },
   "errorMealName": "اكتب اسمًا من 1 إلى 40 حرفًا.",
-  "cancel": "إلغاء"
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "@save": {
+    "description": "Saves a changed entry."
+  }
 }

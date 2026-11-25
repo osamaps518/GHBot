@@ -184,4 +184,58 @@ void main() {
     expect(find.text(english.errorMealName), findsOneWidget);
     expect(find.byType(FoodSearchScreen), findsNothing);
   });
+
+  group('changing an entry', () {
+    /// Logs rice, 150 g, into today's lunch, and opens it from the diary.
+    Future<AppDatabase> openRice(WidgetTester tester) async {
+      final database = await _pumpDiary(tester);
+      await database.logEntry(
+        food: Food.fromJson(riceJson),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1500,
+        loggedAt: DateTime.now(),
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('Cooked white rice'));
+      return database;
+    }
+
+    FilledButton save(WidgetTester tester) => tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, english.save),
+    );
+
+    testWidgets('Save waits for a new amount, and the diary shows it', (
+      tester,
+    ) async {
+      await openRice(tester);
+      expect(find.text(english.caloriesPer100g('130')), findsOneWidget);
+      expect(save(tester).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), '200');
+      await tester.pump();
+      expect(find.text('260'), findsOneWidget);
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiaryScreen), findsOneWidget);
+      final lunch = english.mealName('lunch');
+      expect(_inMeal(lunch, find.text('200 ${english.gramsUnit}')), findsOne);
+      expect(_inMeal(lunch, find.text('260')), findsOne);
+    });
+
+    testWidgets('an amount the server would refuse shows the error and '
+        'changes nothing', (tester) async {
+      await openRice(tester);
+
+      await tester.enterText(find.byType(TextField), '0');
+      await tester.pump();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.errorGrams), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('150 ${english.gramsUnit}'), findsOneWidget);
+    });
+  });
 }

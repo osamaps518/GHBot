@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../targets/targets.dart';
 import 'amount_screen.dart';
 import 'entry.dart';
+import 'entry_edit_screen.dart';
 import 'extra_meal_sheet.dart';
 import 'meal.dart';
 
@@ -99,6 +100,16 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+  /// Opens [logged] to change or delete it.
+  void _openEntry(LoggedFood logged) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            EntryEditScreen(database: widget.database, logged: logged),
+      ),
+    );
+  }
+
   /// Asks for an extra meal's name, shows the meal, and opens search for it.
   /// [entries] are the day's, to list the meals the amount step offers.
   Future<void> _addMeal(List<LoggedFood> entries) async {
@@ -144,6 +155,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   _MealCard(
                     group: group,
                     onAddFood: () => _addFood(group.meal, mealKeys),
+                    onOpen: _openEntry,
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -410,12 +422,18 @@ class _MacroCard extends StatelessWidget {
   }
 }
 
-/// A meal's name and calories, its entries, and Add food.
+/// A meal's name and calories, its entries, and Add food. Tapping an entry
+/// opens it.
 class _MealCard extends StatelessWidget {
-  const _MealCard({required this.group, required this.onAddFood});
+  const _MealCard({
+    required this.group,
+    required this.onAddFood,
+    required this.onOpen,
+  });
 
   final MealGroup group;
   final VoidCallback onAddFood;
+  final ValueChanged<LoggedFood> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -450,14 +468,15 @@ class _MealCard extends StatelessWidget {
                 ],
               ),
             ),
-            for (final LoggedFood(:entry, :food) in group.entries)
+            for (final logged in group.entries)
               ListTile(
-                title: Text(food.name(languageCode)),
+                onTap: () => onOpen(logged),
+                title: Text(logged.food.name(languageCode)),
                 subtitle: Text(
-                  '${formatTenths(entry.grams)} ${l10n.gramsUnit}',
+                  '${formatTenths(logged.entry.grams)} ${l10n.gramsUnit}',
                 ),
                 trailing: Text(
-                  '${roundTenths(entry.totals.calories)}',
+                  '${roundTenths(logged.entry.totals.calories)}',
                   style: theme.textTheme.titleSmall,
                 ),
               ),

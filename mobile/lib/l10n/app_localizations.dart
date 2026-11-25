@@ -577,6 +577,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إلغاء'**
   String get cancel;
+
+  /// Saves a changed entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
 }
 
 class _AppLocalizationsDelegate
