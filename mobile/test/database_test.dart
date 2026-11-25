@@ -104,4 +104,40 @@ void main() {
 
     expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
   });
+
+  test("a changed amount uses the entry's stored values, even after the "
+      "food's values have changed", () async {
+    const rice = Food(
+      id: 'rice',
+      nameAr: null,
+      nameEn: 'Cooked white rice',
+      per100g: Nutrients(calories: 1300, protein: 27, carbs: 282, fat: 3),
+    );
+    await database.logEntry(
+      food: rice,
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      loggedAt: DateTime(2026, 11, 23, 12),
+    );
+    await database.storeFood(
+      const Food(
+        id: 'rice',
+        nameAr: null,
+        nameEn: 'Cooked white rice',
+        per100g: Nutrients(calories: 1500, protein: 30, carbs: 300, fat: 10),
+      ),
+    );
+    final logged = (await database.watchDiaryDay('2026-11-23').first).single;
+
+    await database.changeGrams(logged.entry.id, 2005);
+
+    final changed = (await database.watchDiaryDay('2026-11-23').first).single;
+    expect(changed.entry.grams, 2005);
+    final totals = changed.entry.totals;
+    expect(
+      [totals.calories, totals.protein, totals.carbs, totals.fat],
+      [2607, 54, 565, 6],
+    );
+    expect(changed.entry.revision, 2);
+  });
 }

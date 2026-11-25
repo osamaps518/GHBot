@@ -173,6 +173,32 @@ class AppDatabase extends _$AppDatabase {
     );
   });
 
+  /// Changes an entry's grams (in tenths). The totals are calculated from
+  /// the entry's own values per 100 g, not its food's current ones
+  /// (docs/decisions.md, 21 and 30). The change raises the revision and
+  /// clears a refusal, so the entry is sent again. Throws an
+  /// [ArgumentError] and changes nothing when the server would refuse it.
+  Future<void> changeGrams(String entryId, int grams) => transaction(() async {
+    final entry = await (select(
+      foodLogEntryTable,
+    )..where((row) => row.id.equals(entryId))).getSingle();
+    final totals = entryTotals(entry.per100g, grams);
+    _checkForServer(entry.meal, entry.mealName, grams, entry.per100g, totals);
+    await (update(
+      foodLogEntryTable,
+    )..where((row) => row.id.equals(entryId))).write(
+      FoodLogEntryTableCompanion(
+        grams: Value(grams),
+        calories: Value(totals.calories),
+        protein: Value(totals.protein),
+        carbs: Value(totals.carbs),
+        fat: Value(totals.fat),
+        revision: Value(entry.revision + 1),
+        refused: const Value(false),
+      ),
+    );
+  });
+
   /// Throws an [ArgumentError] when the server would refuse an entry with
   /// these values.
   void _checkForServer(
