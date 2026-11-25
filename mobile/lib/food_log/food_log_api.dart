@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../auth/auth_session.dart';
+import '../core/api_failure.dart';
 import '../core/database.dart';
 import '../foods/food.dart';
 import 'entry.dart';
@@ -20,15 +21,29 @@ class FoodLogApi {
   /// the entry is marked sent. When it is another one, or deleted, the
   /// phone takes it. Either way, only if the entry is still the revision
   /// sent: a newer change waits for the next send.
+  ///
+  /// A 422 or 409 is the server refusing the row itself: the entry is
+  /// marked refused and isn't sent again until the trainee changes it.
   Future<void> send(AppDatabase database, FoodLogEntry entry) async {
-    final kept = await _session.put(
-      '/me/food-log/entries/${entry.id}',
-      _json(entry),
-      _KeptEntry.fromJson,
-    );
     final table = database.foodLogEntryTable;
     Expression<bool> unchanged($FoodLogEntryTableTable row) =>
         row.id.equals(entry.id) & row.revision.equals(entry.revision);
+    final _KeptEntry kept;
+    try {
+      kept = await _session.put(
+        '/me/food-log/entries/${entry.id}',
+        _json(entry),
+        _KeptEntry.fromJson,
+      );
+    } on ApiFailure catch (failure) {
+      if (failure case ValidationFailure() || ServerFailure(statusCode: 409)) {
+        await (database.update(table)..where(unchanged)).write(
+          const FoodLogEntryTableCompanion(refused: Value(true)),
+        );
+        return;
+      }
+      rethrow;
+    }
     if (kept.deleted) {
       await (database.delete(table)..where(unchanged)).go();
     } else {

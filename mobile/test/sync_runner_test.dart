@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
@@ -9,6 +10,7 @@ import 'package:ghbot/core/database.dart';
 import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -119,6 +121,59 @@ void main() {
     expect(backend.entries[id], containsPair('revision', 2));
     expect(await database.unsentEntries(), isEmpty);
   });
+
+  /// Answers every entry call with [status] and [body].
+  void answerEntries(int status, [Object? body = const {'detail': 'No'}]) {
+    backend.intercept = (request) =>
+        request.url.path.startsWith('/me/food-log/entries/')
+        ? http.Response(jsonEncode(body), status)
+        : null;
+  }
+
+  for (final status in [422, 409]) {
+    test('a $status refuses the entry: it is marked and not sent again '
+        'until it changes', () async {
+      final id = await logRice();
+      answerEntries(status, {
+        'detail': [
+          {'type': 'value_error'},
+        ],
+      });
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.entryRequests, hasLength(1));
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.refused, isTrue);
+      expect(await database.unsentEntries(), isEmpty);
+
+      backend.intercept = null;
+      await database.changeGrams(id, 2000);
+      await runner.run();
+
+      expect(backend.entries[id], containsPair('grams', 200.0));
+      expect(await database.unsentEntries(), isEmpty);
+    });
+  }
+
+  for (final (failure, status, body) in [
+    ('a server error', 500, {'detail': 'Internal Server Error'}),
+    ('a sign-in failure', 401, {'detail': 'Not authenticated'}),
+    ('an unexpected answer', 200, ['not', 'an', 'entry']),
+  ]) {
+    test('$failure is tried again', () async {
+      await logRice();
+      answerEntries(status, body);
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.entryRequests, hasLength(status == 401 ? 4 : 2));
+      expect(await database.unsentEntries(), hasLength(1));
+    });
+  }
 
   group('when the server kept another copy', () {
     test('the phone takes it', () async {
