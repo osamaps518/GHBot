@@ -384,4 +384,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get waitingToSyncEntry => 'بانتظار المزامنة';
+
+  @override
+  String refusedNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لم يُحفظ $count إدخال على الخادم. اضغط على كل منها لإصلاحه.',
+      many: 'لم يُحفظ $count إدخالًا على الخادم. اضغط على كل منها لإصلاحه.',
+      few: 'لم تُحفظ $count إدخالات على الخادم. اضغط على كل منها لإصلاحه.',
+      two: 'لم يُحفظ إدخالان على الخادم. اضغط على كل منهما لإصلاحه.',
+      one: 'لم يُحفظ إدخال واحد على الخادم. اضغط عليه لإصلاحه.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get entryRefused => 'لم يُقبل. اضغط لإصلاحه.';
+
+  @override
+  String get entryRefusedAlert =>
+      'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.';
 }

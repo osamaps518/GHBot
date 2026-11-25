@@ -117,6 +117,10 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 children: [
+                  if (_entry.refused) ...[
+                    const _RefusedAlert(),
+                    const SizedBox(height: 18),
+                  ],
                   GramsField(
                     controller: _grams,
                     showError: _showError && grams == null,
@@ -136,6 +140,42 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
                 child: FilledButton(
                   onPressed: changed && !_saving ? _save : null,
                   child: Text(l10n.save),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Why a refused entry is open: the server didn't accept it, so it is only
+/// on the phone until the trainee changes or deletes it.
+class _RefusedAlert extends StatelessWidget {
+  const _RefusedAlert();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 10,
+          children: [
+            Icon(Icons.error_outline, size: 20, color: colors.error),
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context)!.entryRefusedAlert,
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  color: colors.onErrorContainer,
                 ),
               ),
             ),

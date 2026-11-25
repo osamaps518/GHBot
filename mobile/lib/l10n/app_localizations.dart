@@ -613,6 +613,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'بانتظار المزامنة'**
   String get waitingToSyncEntry;
+
+  /// On the diary while the day has entries the server refused (#61).
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{لم يُحفظ إدخال واحد على الخادم. اضغط عليه لإصلاحه.} =2{لم يُحفظ إدخالان على الخادم. اضغط على كل منهما لإصلاحه.} few{لم تُحفظ {count} إدخالات على الخادم. اضغط على كل منها لإصلاحه.} many{لم يُحفظ {count} إدخالًا على الخادم. اضغط على كل منها لإصلاحه.} other{لم يُحفظ {count} إدخال على الخادم. اضغط على كل منها لإصلاحه.}}'**
+  String refusedNote(int count);
+
+  /// Under a refused entry on the diary, in place of its grams.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُقبل. اضغط لإصلاحه.'**
+  String get entryRefused;
+
+  /// At the top of the entry screen for a refused entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.'**
+  String get entryRefusedAlert;
 }
 
 class _AppLocalizationsDelegate

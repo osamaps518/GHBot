@@ -15,6 +15,7 @@ import 'package:ghbot/foods/food_search_screen.dart';
 import 'package:ghbot/foods/foods_api.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/targets/targets.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -70,6 +71,19 @@ Finder _inMeal(String meal, Finder finder) => find.descendant(
   of: find.ancestor(of: find.text(meal), matching: find.byType(Card)),
   matching: finder,
 );
+
+/// Sends [database]'s unsent entries to [backend], signed in as alice.
+Future<void> _sync(AppDatabase database, FakeBackend backend) async {
+  final session = AuthSession(
+    ApiClient(client: backend.client, baseUrl: 'http://backend.test'),
+  );
+  await session.signIn('alice');
+  await SyncRunner(
+    session: session,
+    userId: userIdFor('alice'),
+    database: database,
+  ).run();
+}
 
 /// Scrolls the diary, which builds only what is on screen, to [finder].
 /// `ensureVisible` covers a widget built just past the screen's edge.
@@ -210,19 +224,44 @@ void main() {
     expect(find.text(english.waitingToSync(2)), findsOneWidget);
     expect(waitingMarks, findsNWidgets(2));
 
-    final session = AuthSession(
-      ApiClient(client: FakeBackend().client, baseUrl: 'http://backend.test'),
-    );
-    await session.signIn('alice');
-    await SyncRunner(
-      session: session,
-      userId: userIdFor('alice'),
-      database: database,
-    ).run();
+    await _sync(database, FakeBackend());
     await tester.pumpAndSettle();
 
     expect(find.text(english.waitingToSync(2)), findsNothing);
     expect(waitingMarks, findsNothing);
+  });
+
+  testWidgets('a refused entry is tinted and says so; tapping it explains '
+      'and offers change or delete', (tester) async {
+    final database = await _pumpDiary(tester);
+    await database.logEntry(
+      food: Food.fromJson(riceJson),
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      loggedAt: DateTime.now(),
+    );
+    final backend = FakeBackend()
+      ..intercept = (request) =>
+          request.url.path.startsWith('/me/food-log/entries/')
+          ? http.Response('{"detail": [{"type": "value_error"}]}', 422)
+          : null;
+
+    await _sync(database, backend);
+    await tester.pumpAndSettle();
+
+    expect(find.text(english.refusedNote(1)), findsOneWidget);
+    expect(find.text(english.waitingToSync(1)), findsNothing);
+    final tile = find.widgetWithText(ListTile, 'Cooked white rice');
+    expect(
+      find.descendant(of: tile, matching: find.text(english.entryRefused)),
+      findsOne,
+    );
+    final colors = lightTheme.colorScheme;
+    expect(tester.widget<ListTile>(tile).tileColor, colors.errorContainer);
+
+    await _tap(tester, find.text('Cooked white rice'));
+    expect(find.text(english.entryRefusedAlert), findsOneWidget);
+    expect(find.text(english.delete), findsOneWidget);
   });
 
   group('changing an entry', () {

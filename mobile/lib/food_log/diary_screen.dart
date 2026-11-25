@@ -141,11 +141,22 @@ class _DiaryScreenState extends State<DiaryScreen> {
               entries.map((logged) => logged.entry.totals),
             );
             final mealKeys = [for (final group in meals) group.meal];
+            final refused = entries
+                .where((logged) => logged.entry.refused)
+                .length;
+            final colors = Theme.of(context).colorScheme;
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
               children: [
                 _DayHeader(day: _day),
                 _WaitingNote(count: _unsentCount),
+                if (refused > 0)
+                  _Note(
+                    icon: Icons.error_outline,
+                    text: l10n.refusedNote(refused),
+                    background: colors.errorContainer,
+                    foreground: colors.error,
+                  ),
                 const SizedBox(height: 12),
                 _CaloriesCard(
                   eaten: roundTenths(dayTotals.calories),
@@ -210,39 +221,64 @@ class _WaitingNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
+    final colors = Theme.of(context).colorScheme;
     return StreamBuilder(
       stream: count,
       builder: (context, snapshot) {
         final waiting = snapshot.data ?? 0;
         if (waiting == 0) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Row(
-                spacing: 10,
-                children: [
-                  Icon(Icons.schedule, size: 20, color: muted),
-                  Expanded(
-                    child: Text(
-                      l10n.waitingToSync(waiting),
-                      style: theme.textTheme.bodyMedium!.copyWith(color: muted),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _Note(
+          icon: Icons.schedule,
+          text: AppLocalizations.of(context)!.waitingToSync(waiting),
+          background: colors.surfaceContainer,
+          foreground: colors.onSurfaceVariant,
         );
       },
+    );
+  }
+}
+
+/// A sentence about the diary's state, with its icon, in a rounded box
+/// under the day.
+class _Note extends StatelessWidget {
+  const _Note({
+    required this.icon,
+    required this.text,
+    required this.background,
+    required this.foreground,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            spacing: 10,
+            children: [
+              Icon(icon, size: 20, color: foreground),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodyMedium!
+                      .copyWith(color: foreground),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -484,7 +520,6 @@ class _MealCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    final languageCode = Localizations.localeOf(context).languageCode;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -513,30 +548,7 @@ class _MealCard extends StatelessWidget {
               ),
             ),
             for (final logged in group.entries)
-              ListTile(
-                onTap: () => onOpen(logged),
-                title: Text(logged.food.name(languageCode)),
-                subtitle: Text(
-                  '${formatTenths(logged.entry.grams)} ${l10n.gramsUnit}',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 6,
-                  children: [
-                    if (logged.entry.unsent)
-                      Icon(
-                        Icons.schedule,
-                        size: 16,
-                        color: muted,
-                        semanticLabel: l10n.waitingToSyncEntry,
-                      ),
-                    Text(
-                      '${roundTenths(logged.entry.totals.calories)}',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ],
-                ),
-              ),
+              _EntryTile(logged: logged, onTap: () => onOpen(logged)),
             if (group.entries.isEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
@@ -557,5 +569,66 @@ class _MealCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// An entry's food, grams and calories. One waiting to sync has a clock by
+/// its calories. One the server refused is tinted and says so in place of
+/// its grams, with an error mark.
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({required this.logged, required this.onTap});
+
+  final LoggedFood logged;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final entry = logged.entry;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final tile = ListTile(
+      onTap: onTap,
+      tileColor: entry.refused ? colors.errorContainer : null,
+      shape: entry.refused
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+          : null,
+      contentPadding: entry.refused
+          ? const EdgeInsets.symmetric(horizontal: 10)
+          : null,
+      title: Text(logged.food.name(languageCode)),
+      subtitle: entry.refused
+          ? Text(
+              l10n.entryRefused,
+              style: theme.textTheme.bodyMedium!.copyWith(color: colors.error),
+            )
+          : Text('${formatTenths(entry.grams)} ${l10n.gramsUnit}'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 6,
+        children: [
+          if (entry.refused)
+            Icon(Icons.error_outline, size: 18, color: colors.error)
+          else if (entry.unsent)
+            Icon(
+              Icons.schedule,
+              size: 16,
+              color: colors.onSurfaceVariant,
+              semanticLabel: l10n.waitingToSyncEntry,
+            ),
+          Text(
+            '${roundTenths(entry.totals.calories)}',
+            style: theme.textTheme.titleSmall,
+          ),
+        ],
+      ),
+    );
+    return entry.refused
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: tile,
+          )
+        : tile;
   }
 }

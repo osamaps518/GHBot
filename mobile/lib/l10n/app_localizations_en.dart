@@ -384,4 +384,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get waitingToSyncEntry => 'Waiting to sync';
+
+  @override
+  String refusedNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count entries weren\'t saved on the server. Tap each one to fix it.',
+      one: '1 entry wasn\'t saved on the server. Tap it to fix it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get entryRefused => 'Not accepted. Tap to fix it.';
+
+  @override
+  String get entryRefusedAlert =>
+      'The server didn\'t accept this entry, so it\'s saved only on your phone. Change it or delete it.';
 }
