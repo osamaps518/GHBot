@@ -175,6 +175,29 @@ void main() {
     });
   }
 
+  test('an entry deleted before it was ever sent is still deleted on the '
+      'server, since its first send may have arrived', () async {
+    final id = await logRice();
+    await database.deleteEntry(id);
+
+    await runner.run();
+
+    expect(backend.entryRequests.single.method, 'DELETE');
+    expect(backend.entries[id], containsPair('deleted', true));
+    expect(await database.unsentEntries(), isEmpty);
+  });
+
+  test('a sent entry that is deleted is deleted on the server', () async {
+    final id = await logRice();
+    await runner.run();
+    await database.deleteEntry(id);
+
+    await runner.run();
+
+    expect(backend.entries[id], containsPair('deleted', true));
+    expect(await database.unsentEntries(), isEmpty);
+  });
+
   group('when the server kept another copy', () {
     test('the phone takes it', () async {
       final id = await logRice();

@@ -17,6 +17,10 @@ class FoodLogApi {
   /// Sends [entry] as it is now, and stores the server's answer in
   /// [database]. Throws an `ApiFailure` when the call should be tried again.
   ///
+  /// A deleted entry is sent as a `DELETE`, even one never sent: its `PUT`
+  /// may have arrived with the answer lost. Once the server confirms, the
+  /// row leaves the phone.
+  ///
   /// The answer is the copy the server kept. When it is the revision sent,
   /// the entry is marked sent. When it is another one, or deleted, the
   /// phone takes it. Either way, only if the entry is still the revision
@@ -28,13 +32,12 @@ class FoodLogApi {
     final table = database.foodLogEntryTable;
     Expression<bool> unchanged($FoodLogEntryTableTable row) =>
         row.id.equals(entry.id) & row.revision.equals(entry.revision);
+    final path = '/me/food-log/entries/${entry.id}';
     final _KeptEntry kept;
     try {
-      kept = await _session.put(
-        '/me/food-log/entries/${entry.id}',
-        _json(entry),
-        _KeptEntry.fromJson,
-      );
+      kept = entry.deleted
+          ? await _session.delete(path, _KeptEntry.fromJson)
+          : await _session.put(path, _json(entry), _KeptEntry.fromJson);
     } on ApiFailure catch (failure) {
       if (failure case ValidationFailure() || ServerFailure(statusCode: 409)) {
         await (database.update(table)..where(unchanged)).write(

@@ -84,6 +84,14 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
+  Future<T> delete<T>(
+    String path,
+    T Function(Map<String, Object?>) parse,
+  ) async {
+    final response = await _sendAuthorized('DELETE', path);
+    return _parse(() => parse(_client.decode(response)));
+  }
+
   /// Sends with the current token, and once more with a new one after a 401.
   /// Calls made in parallel share one new token.
   Future<http.Response> _sendAuthorized(
