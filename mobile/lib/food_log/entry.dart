@@ -57,6 +57,39 @@ int? parseGrams(String typed) {
   return tenths > 0 && tenths <= 50000 ? tenths : null;
 }
 
+/// Whether the server would accept an entry with these values (#60): grams
+/// greater than 0 and at most 5000, at most 900 kcal and 100 g of each macro
+/// per 100 g, a name of 1 to 40 characters only for an extra meal, and
+/// totals that match the grams. The phone checks before every save, so the
+/// server rarely refuses an entry. All numbers are in tenths.
+bool passesServerChecks({
+  required Meal meal,
+  required String? mealName,
+  required int grams,
+  required Nutrients per100g,
+  required Nutrients totals,
+}) {
+  bool inRange(int value, int max) => value >= 0 && value <= max;
+  final nameFits = meal == Meal.extra
+      ? mealName != null &&
+            mealName.runes.length <= 40 &&
+            mealName.trim().isNotEmpty &&
+            !mealName.contains('\u0000')
+      : mealName == null;
+  final expected = entryTotals(per100g, grams);
+  return grams > 0 &&
+      grams <= 50000 &&
+      inRange(per100g.calories, 9000) &&
+      inRange(per100g.protein, 1000) &&
+      inRange(per100g.carbs, 1000) &&
+      inRange(per100g.fat, 1000) &&
+      nameFits &&
+      totals.calories == expected.calories &&
+      totals.protein == expected.protein &&
+      totals.carbs == expected.carbs &&
+      totals.fat == expected.fat;
+}
+
 /// One food logged into a meal, with the values it was logged with
 /// (docs/decisions.md, 21). [grams] and all values are in tenths.
 class FoodLogEntry {

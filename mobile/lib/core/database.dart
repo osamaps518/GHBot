@@ -141,15 +141,17 @@ class AppDatabase extends _$AppDatabase {
   /// search. Both or neither are saved.
   ///
   /// The entry's ID is a UUIDv7, made here; its diary day comes from the
-  /// phone's clock at [loggedAt].
+  /// phone's clock at [loggedAt]. Throws an [ArgumentError] and saves
+  /// nothing when the server would refuse the entry.
   Future<void> logEntry({
     required Food food,
     required DiaryMeal meal,
     required int grams,
     required DateTime loggedAt,
   }) => transaction(() async {
-    await storeFood(food);
     final totals = entryTotals(food.per100g, grams);
+    _checkForServer(meal.meal, meal.name, grams, food.per100g, totals);
+    await storeFood(food);
     await into(foodLogEntryTable).insert(
       FoodLogEntryTableCompanion.insert(
         id: const Uuid().v7(),
@@ -170,6 +172,26 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   });
+
+  /// Throws an [ArgumentError] when the server would refuse an entry with
+  /// these values.
+  void _checkForServer(
+    Meal meal,
+    String? mealName,
+    int grams,
+    Nutrients per100g,
+    Nutrients totals,
+  ) {
+    if (!passesServerChecks(
+      meal: meal,
+      mealName: mealName,
+      grams: grams,
+      per100g: per100g,
+      totals: totals,
+    )) {
+      throw ArgumentError('The server would refuse this entry.');
+    }
+  }
 
   /// The entries of [diaryDay] (`YYYY-MM-DD`) with their foods, in the
   /// order they were logged. The stream sends again after every change.

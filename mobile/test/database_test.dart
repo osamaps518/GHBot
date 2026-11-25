@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/core/database.dart';
+import 'package:ghbot/food_log/meal.dart';
+import 'package:ghbot/foods/food.dart';
 import 'package:ghbot/profiles/profile.dart';
 import 'package:ghbot/targets/targets.dart';
 
@@ -80,5 +82,26 @@ void main() {
 
     final stored = (await database.readProfileAndTargets())!;
     expect(stored.profile.toJson(), changed.toJson());
+  });
+
+  test('an entry the server would refuse is not saved', () async {
+    const tooRich = Food(
+      id: 'too-rich',
+      nameAr: null,
+      nameEn: 'Too rich',
+      per100g: Nutrients(calories: 9010, protein: 0, carbs: 0, fat: 1000),
+    );
+
+    await expectLater(
+      database.logEntry(
+        food: tooRich,
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1000,
+        loggedAt: DateTime.utc(2026, 11, 23, 12),
+      ),
+      throwsArgumentError,
+    );
+
+    expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
   });
 }
