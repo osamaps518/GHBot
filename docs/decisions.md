@@ -762,7 +762,8 @@ server's checks before every save, so refusals are rare.
   revision sent. The same revision marks it sent. Another revision, or a
   deleted row, is the server's copy, and the phone takes it; a deleted row
   leaves the phone. If the entry changed since it was sent, the answer is
-  dropped and the newer revision goes next.
+  dropped and the newer revision goes next. A server copy whose food isn't
+  on the phone stays hidden until pulling (#62) brings the food.
 - **Refused** is a 422 or 409: the entry is marked and not sent again until the
   trainee changes or deletes it. A refused `DELETE` leaves the phone as a
   confirmed one does: its 409 means another user owns the ID, its 422 an ID
