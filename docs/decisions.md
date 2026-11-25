@@ -697,7 +697,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side.
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -708,7 +708,7 @@ otherwise it could mark an ignored entry as sent.
 The server checks totals against the entry's own per-100 g values (decision 21).
 `food_log` uses `foods` to check that a logged food is visible to the trainee
 and to get changed foods for a pull, passing its used-food IDs query to `foods`.
-It does not use `targets`. The phone's sending comes in #61.
+It does not use `targets`.
 
 **Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
 rows, including deleted rows, and the changed foods used by those rows. Without
@@ -732,6 +732,43 @@ commits within the margin of its timestamp and no marker can pass it unseen.
 A real load of the 239-row `open_food_facts.csv` into a local database took
 **0.140 seconds** on 2026-11-24, measured inside the loader call
 with `time.perf_counter()`; this is one local run, not a throughput guarantee.
+
+**Sending (#61, phone).** Each entry on the phone has a revision (1 when
+logged, plus 1 on every change and on delete), the last revision the server
+confirmed, and two marks: deleted and refused. An entry is unsent when its
+revision is above the confirmed one and it isn't refused. The phone runs the
+server's checks before every save, so refusals are rare.
+
+- **One runner** in `mobile/lib/core/sync_runner.dart`, made for one user ID and
+  their database. Before each call it checks that the session's user is still
+  that one, and stops if not, so one user's rows never go out with another's
+  sign-in. The calls and the handling of answers are in
+  `food_log/food_log_api.dart`. One run at a time; asking during a run queues
+  one more. `AppFlow` starts the runner when it opens the user's database and
+  stops it before closing the database.
+- **When it runs:** at start, when the app returns to the foreground, 2 s after
+  the last write to the entries table, and after a failed run on a timer: 30 s,
+  doubling up to 5 min, back to 30 s after a run that succeeds. There is no
+  Android background job and no connectivity package: trying the call is the
+  test for being online. The runner's own writes also start the 2 s timer,
+  which costs one more local query after a run that wrote.
+- **Each entry is its own call**, in the order logged. A deleted entry is sent
+  as `DELETE` even if it was never sent: its `PUT` may have arrived with the
+  answer lost. A failed call stops the run.
+- **Answers** are stored in one update that checks the entry is still the
+  revision sent. The same revision marks it sent. Another revision, or a
+  deleted row, is the server's copy, and the phone takes it; a deleted row
+  leaves the phone. If the entry changed since it was sent, the answer is
+  dropped and the newer revision goes next.
+- **Refused** is a 422 or 409: the entry is marked and not sent again until the
+  trainee changes or deletes it. Connection failures, 5xx, a 401 after the
+  session's own retry, and unexpected answers are retried.
+
+Rejected: a queue of every change on the phone, which needs a second table and
+more code for one device per user; PowerSync self-hosted, which adds a service,
+a second copy of the access rules, and a hosting choice we haven't made. We
+accept that entries logged offline stay only on the phone until the app is next
+opened with a connection.
 
 ---
 
@@ -807,3 +844,27 @@ and the age warning shows over it when the save makes it due.
 
 We considered a diary notifier next to `AppFlow`. Drift's live queries already
 tell the screens about every change, so it would only pass them along.
+
+---
+
+## 36. How sync is tested
+
+**Status:** Accepted, 2026-11-25 (#61).
+
+The runner is tested in `mobile/test/sync_runner_test.dart` against the
+stand-in server in `mobile/test/fake_backend.dart` and an in-memory Drift
+database. The stand-in answers the entry calls as decision 31 says, and can go
+offline, lose an answer after handling the request, hold a `PUT`, or answer
+anything a test chooses. The tests cover a lost answer then a retry, offline
+then online, an edit during a send, a refusal, a delete before the first send,
+another user's sign-in during a run, one run at a time, the server keeping
+another copy, and the retry timer. `mobile/test/app_sync_test.dart` checks when
+the app starts a run: at start, on return to the foreground, and 2 s after a
+change.
+
+- The timer test runs in fake time (`testWidgets`). It makes its stand-in and
+  sign-in inside the test: calls to the stand-in started outside fake time never
+  finish inside it.
+- We accept that the stand-in can drift from the real API. The backend tests
+  (#60) check the same calls from the server's side.
+- No automated test drives the app on an emulator.
