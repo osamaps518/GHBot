@@ -54,39 +54,43 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
 
   /// Asks first, then deletes the entry and closes.
   Future<void> _delete() async {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final languageCode = Localizations.localeOf(context).languageCode;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          l10n.deleteEntryTitle(widget.logged.food.name(languageCode)),
-        ),
-        content: Text(
-          l10n.deleteEntryBody(
-            DiaryMeal(_entry.meal, _entry.mealName).label(l10n),
-            diaryDateText(l10n, _entry.diaryDay),
-            '${roundTenths(_entry.totals.calories)}',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            style: deleteButtonStyle(theme),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+      builder: (context) => _deleteDialog(context),
     );
     if (!(confirmed ?? false)) return;
     setState(() => _saving = true);
     await widget.database.deleteEntry(_entry.id);
     if (mounted && ModalRoute.of(context)!.isCurrent) Navigator.pop(context);
+  }
+
+  /// Names the food, its meal and day, and the calories that leave the
+  /// day. Its text follows the dialog's own context, so it changes with the
+  /// language while open.
+  Widget _deleteDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    return AlertDialog(
+      title: Text(l10n.deleteEntryTitle(widget.logged.food.name(languageCode))),
+      content: Text(
+        l10n.deleteEntryBody(
+          DiaryMeal(_entry.meal, _entry.mealName).label(l10n),
+          diaryDateText(l10n, _entry.diaryDay),
+          '${roundTenths(_entry.totals.calories)}',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          style: deleteButtonStyle(Theme.of(context)),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(l10n.delete),
+        ),
+      ],
+    );
   }
 
   /// Save stays off until the grams differ from the entry's. Like the

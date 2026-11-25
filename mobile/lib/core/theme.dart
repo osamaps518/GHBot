@@ -112,7 +112,8 @@ ButtonStyle deleteButtonStyle(ThemeData theme) =>
 ///   with a check mark. `ChoiceChip` takes its chosen colors from the
 ///   `secondary` chip settings.
 /// - Bottom sheets (naming an extra meal) sit on the card color, with a
-///   drag handle. Dialogs (deleting an entry) sit on the card color too.
+///   drag handle. Dialogs (deleting an entry) sit on the card color too,
+///   with the title at 20 px like app bars and the body muted.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -222,7 +223,18 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       showDragHandle: true,
       dragHandleColor: colors.outline,
     ),
-    dialogTheme: DialogThemeData(backgroundColor: colors.surfaceContainer),
+    dialogTheme: DialogThemeData(
+      backgroundColor: colors.surfaceContainer,
+      titleTextStyle: base.textTheme.titleLarge!.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      contentTextStyle: base.textTheme.bodyLarge!.copyWith(
+        fontSize: 15,
+        color: colors.onSurfaceVariant,
+      ),
+    ),
     appBarTheme: AppBarThemeData(
       backgroundColor: colors.surface,
       scrolledUnderElevation: 0,
