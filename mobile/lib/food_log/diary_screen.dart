@@ -184,16 +184,11 @@ class _DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final date = DateTime.parse(day);
     return Column(
       children: [
         Text(l10n.today, style: theme.appBarTheme.titleTextStyle),
         Text(
-          l10n.diaryDate(
-            l10n.weekdayName('${date.weekday}'),
-            '${date.day}',
-            l10n.monthName('${date.month}'),
-          ),
+          diaryDateText(l10n, day),
           style: theme.textTheme.bodySmall!.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

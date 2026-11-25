@@ -7,6 +7,7 @@ import 'package:ghbot/core/api_client.dart';
 import 'package:ghbot/core/database.dart';
 import 'package:ghbot/core/theme.dart';
 import 'package:ghbot/food_log/diary_screen.dart';
+import 'package:ghbot/food_log/entry_edit_screen.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
 import 'package:ghbot/foods/food_search_screen.dart';
@@ -236,6 +237,47 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.text('150 ${english.gramsUnit}'), findsOneWidget);
+    });
+
+    testWidgets('Delete asks first; Cancel keeps the entry, Delete removes '
+        'it from the diary', (tester) async {
+      await openRice(tester);
+      final inDialog = find.byType(AlertDialog);
+
+      await tester.tap(find.text(english.delete));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(english.deleteEntryTitle('Cooked white rice')),
+        findsOne,
+      );
+      final now = DateTime.now();
+      final today = english.diaryDate(
+        english.weekdayName('${now.weekday}'),
+        '${now.day}',
+        english.monthName('${now.month}'),
+      );
+      expect(
+        find.text(
+          english.deleteEntryBody(english.mealName('lunch'), today, '195'),
+        ),
+        findsOne,
+      );
+      await tester.tap(
+        find.descendant(of: inDialog, matching: find.text(english.cancel)),
+      );
+      await tester.pumpAndSettle();
+      expect(inDialog, findsNothing);
+      expect(find.byType(EntryEditScreen), findsOneWidget);
+
+      await tester.tap(find.text(english.delete));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(of: inDialog, matching: find.text(english.delete)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiaryScreen), findsOneWidget);
+      expect(find.text('Cooked white rice'), findsNothing);
     });
   });
 }

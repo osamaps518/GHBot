@@ -5,6 +5,17 @@ import 'entry.dart';
 /// The server's meal codes (docs/decisions.md, 31).
 enum Meal { breakfast, lunch, dinner, extra }
 
+/// A diary day (`YYYY-MM-DD`) as the diary shows it, such as "Monday,
+/// November 23".
+String diaryDateText(AppLocalizations l10n, String day) {
+  final date = DateTime.parse(day);
+  return l10n.diaryDate(
+    l10n.weekdayName('${date.weekday}'),
+    '${date.day}',
+    l10n.monthName('${date.month}'),
+  );
+}
+
 /// A meal on a day: breakfast, lunch, dinner, or an extra meal with its
 /// name. Two extra meals with the same name on the same day are one meal.
 class DiaryMeal {

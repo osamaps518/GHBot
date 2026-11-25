@@ -355,4 +355,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String deleteEntryTitle(String food) {
+    return 'Delete $food?';
+  }
+
+  @override
+  String deleteEntryBody(String meal, String date, String calories) {
+    return 'It will be removed from $meal on $date, and $calories kcal will come off the day\'s total. This can\'t be undone.';
+  }
 }

@@ -79,6 +79,11 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
   foregroundColor: theme.colorScheme.onSurface,
 );
 
+/// A text button that deletes: Delete on the entry screen and in its
+/// confirmation, in the error color.
+ButtonStyle deleteButtonStyle(ThemeData theme) =>
+    TextButton.styleFrom(foregroundColor: theme.colorScheme.error);
+
 /// Builds a theme from [colors] and the [targets] colors.
 ///
 /// - Text fields and dropdowns share one look. `DropdownMenu` doesn't read the
@@ -103,7 +108,7 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
 ///   with a check mark. `ChoiceChip` takes its chosen colors from the
 ///   `secondary` chip settings.
 /// - Bottom sheets (naming an extra meal) sit on the card color, with a
-///   drag handle.
+///   drag handle. Dialogs (deleting an entry) sit on the card color too.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -213,6 +218,7 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       showDragHandle: true,
       dragHandleColor: colors.outline,
     ),
+    dialogTheme: DialogThemeData(backgroundColor: colors.surfaceContainer),
     appBarTheme: AppBarThemeData(
       backgroundColor: colors.surface,
       scrolledUnderElevation: 0,

@@ -285,5 +285,35 @@
   "save": "حفظ",
   "@save": {
     "description": "Saves a changed entry."
+  },
+  "delete": "حذف",
+  "@delete": {
+    "description": "Deletes an entry, after the confirmation dialog."
+  },
+  "deleteEntryTitle": "حذف {food}؟",
+  "@deleteEntryTitle": {
+    "placeholders": {
+      "food": {
+        "type": "String",
+        "description": "The food's name."
+      }
+    }
+  },
+  "deleteEntryBody": "ستُحذف من {meal} يوم {date}، وتُطرح {calories} سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.",
+  "@deleteEntryBody": {
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The meal's name."
+      },
+      "date": {
+        "type": "String",
+        "description": "The entry's diary day, from diaryDate."
+      },
+      "calories": {
+        "type": "String",
+        "description": "The entry's whole calories, Western digits."
+      }
+    }
   }
 }

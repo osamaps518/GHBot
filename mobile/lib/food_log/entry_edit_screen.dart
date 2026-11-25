@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../core/database.dart';
+import '../core/theme.dart';
 import '../foods/food.dart';
 import '../l10n/app_localizations.dart';
 import 'amount_screen.dart';
 import 'entry.dart';
+import 'meal.dart';
 
-/// Changes a logged entry's grams. The totals come from the entry's own
-/// values per 100 g (docs/decisions.md, 21). Saving writes to the phone's
-/// database, then closes, unless Back closed the screen while it saved.
+/// Changes a logged entry's grams, or deletes it after asking. The totals
+/// come from the entry's own values per 100 g (docs/decisions.md, 21).
+/// Both write to the phone's database, then close the screen, unless Back
+/// closed it meanwhile.
 class EntryEditScreen extends StatefulWidget {
   const EntryEditScreen({
     super.key,
@@ -49,6 +52,43 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
     if (mounted && ModalRoute.of(context)!.isCurrent) Navigator.pop(context);
   }
 
+  /// Asks first, then deletes the entry and closes.
+  Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          l10n.deleteEntryTitle(widget.logged.food.name(languageCode)),
+        ),
+        content: Text(
+          l10n.deleteEntryBody(
+            DiaryMeal(_entry.meal, _entry.mealName).label(l10n),
+            diaryDateText(l10n, _entry.diaryDay),
+            '${roundTenths(_entry.totals.calories)}',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            style: deleteButtonStyle(theme),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false)) return;
+    setState(() => _saving = true);
+    await widget.database.deleteEntry(_entry.id);
+    if (mounted && ModalRoute.of(context)!.isCurrent) Navigator.pop(context);
+  }
+
   /// Save stays off until the grams differ from the entry's. Like the
   /// amount step, Save sits below the scrolling part, so the keyboard
   /// doesn't cover it.
@@ -60,6 +100,15 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: FoodHeading(food: widget.logged.food, per100g: _entry.per100g),
+        actions: [
+          TextButton.icon(
+            style: deleteButtonStyle(Theme.of(context)),
+            onPressed: _saving ? null : _delete,
+            icon: const Icon(Icons.delete_outline),
+            label: Text(l10n.delete),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Column(

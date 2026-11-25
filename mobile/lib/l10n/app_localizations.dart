@@ -583,6 +583,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'حفظ'**
   String get save;
+
+  /// Deletes an entry, after the confirmation dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @deleteEntryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف {food}؟'**
+  String deleteEntryTitle(String food);
+
+  /// No description provided for @deleteEntryBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُحذف من {meal} يوم {date}، وتُطرح {calories} سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.'**
+  String deleteEntryBody(String meal, String date, String calories);
 }
 
 class _AppLocalizationsDelegate

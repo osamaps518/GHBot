@@ -80,5 +80,8 @@
   "extraMealHint": "The meal stays on your day once you add its first food.",
   "errorMealName": "Enter a name of 1 to 40 characters.",
   "cancel": "Cancel",
-  "save": "Save"
+  "save": "Save",
+  "delete": "Delete",
+  "deleteEntryTitle": "Delete {food}?",
+  "deleteEntryBody": "It will be removed from {meal} on {date}, and {calories} kcal will come off the day's total. This can't be undone."
 }

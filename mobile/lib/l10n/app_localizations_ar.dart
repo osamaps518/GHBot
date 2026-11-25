@@ -354,4 +354,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get save => 'حفظ';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String deleteEntryTitle(String food) {
+    return 'حذف $food؟';
+  }
+
+  @override
+  String deleteEntryBody(String meal, String date, String calories) {
+    return 'ستُحذف من $meal يوم $date، وتُطرح $calories سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.';
+  }
 }
