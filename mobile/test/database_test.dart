@@ -140,4 +140,24 @@ void main() {
     );
     expect(changed.entry.revision, 2);
   });
+
+  test('a deleted entry leaves the diary and the recent foods', () async {
+    await database.logEntry(
+      food: const Food(
+        id: 'rice',
+        nameAr: null,
+        nameEn: 'Cooked white rice',
+        per100g: Nutrients(calories: 1300, protein: 27, carbs: 282, fat: 3),
+      ),
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      loggedAt: DateTime(2026, 11, 23, 12),
+    );
+    final logged = (await database.watchDiaryDay('2026-11-23').first).single;
+
+    await database.deleteEntry(logged.entry.id);
+
+    expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
+    expect(await database.watchRecentFoods().first, isEmpty);
+  });
 }

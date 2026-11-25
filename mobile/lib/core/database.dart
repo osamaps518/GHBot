@@ -199,6 +199,18 @@ class AppDatabase extends _$AppDatabase {
     );
   });
 
+  /// Marks an entry deleted and raises its revision; the diary hides it.
+  /// The row stays until the server confirms the delete. Like a change, it
+  /// clears a refusal, so the delete is sent.
+  Future<void> deleteEntry(String entryId) =>
+      (update(foodLogEntryTable)..where((row) => row.id.equals(entryId))).write(
+        FoodLogEntryTableCompanion.custom(
+          revision: foodLogEntryTable.revision + const Constant(1),
+          deleted: const Constant(true),
+          refused: const Constant(false),
+        ),
+      );
+
   /// Throws an [ArgumentError] when the server would refuse an entry with
   /// these values.
   void _checkForServer(
@@ -220,7 +232,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// The entries of [diaryDay] (`YYYY-MM-DD`) with their foods, in the
-  /// order they were logged. The stream sends again after every change.
+  /// order they were logged, without deleted ones. The stream sends again
+  /// after every change.
   Stream<List<LoggedFood>> watchDiaryDay(String diaryDay) {
     final query =
         select(foodLogEntryTable).join([
@@ -229,7 +242,10 @@ class AppDatabase extends _$AppDatabase {
               foodTable.id.equalsExp(foodLogEntryTable.foodId),
             ),
           ])
-          ..where(foodLogEntryTable.diaryDay.equals(diaryDay))
+          ..where(
+            foodLogEntryTable.diaryDay.equals(diaryDay) &
+                foodLogEntryTable.deleted.not(),
+          )
           ..orderBy([
             OrderingTerm.asc(foodLogEntryTable.loggedAt),
             OrderingTerm.asc(foodLogEntryTable.id),
@@ -246,7 +262,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// The 20 foods logged most recently, newest first, each with the grams
-  /// and calories (in tenths) it was last logged with.
+  /// and calories (in tenths) it was last logged with. Deleted entries
+  /// don't count.
   ///
   /// `logged_at` is stored in whole seconds, so two entries can share it.
   /// Like the diary, entries are ordered by `logged_at` and then by ID, which
@@ -260,7 +277,7 @@ class AppDatabase extends _$AppDatabase {
         'ROW_NUMBER() OVER ('
         'PARTITION BY food_id ORDER BY logged_at DESC, id DESC'
         ') AS newest '
-        'FROM food_log_entries'
+        'FROM food_log_entries WHERE NOT deleted'
         ') AS latest '
         'JOIN foods ON foods.id = latest.food_id '
         'WHERE latest.newest = 1 '
