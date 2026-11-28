@@ -12,7 +12,8 @@ import '../core/api_failure.dart';
 ///
 /// The user's ID and when their account was created, from `GET /me`, are
 /// stored with the name. The ID names the user's database file (decision
-/// 25); the diary goes back no further than the day the account was created.
+/// 25); the diary goes back no further than the day the account was created
+/// (decision 34).
 class AuthSession {
   AuthSession(this._client);
 

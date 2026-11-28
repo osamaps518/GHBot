@@ -261,8 +261,8 @@ class AppDatabase extends _$AppDatabase {
 
   /// Moves an entry to [diaryDay] (`YYYY-MM-DD`), in the same meal. Only
   /// its diary day changes. Like a change, it raises the revision and
-  /// clears a refusal, so the entry is sent again. Moving an entry to the
-  /// day it is on changes nothing.
+  /// clears a refusal, so the entry is sent again (decision 34). Moving an
+  /// entry to the day it is on changes nothing.
   Future<void> moveEntry(String entryId, String diaryDay) =>
       (update(foodLogEntryTable)..where(
             (row) =>

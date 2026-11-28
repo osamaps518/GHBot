@@ -36,7 +36,7 @@ class DiaryScreen extends StatefulWidget {
   final Targets targets;
 
   /// The diary day the account was created on, `YYYY-MM-DD`: the earliest
-  /// the diary goes back to.
+  /// the diary goes back to (decision 34).
   final String firstDay;
   final VoidCallback onOpenTargets;
 
