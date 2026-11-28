@@ -16,7 +16,8 @@ class SignedInUser:
 async def find_or_create_user(session: AsyncSession, subject: str) -> SignedInUser:
     """Return the user for this subject, creating it on first sign-in.
 
-    Concurrent first requests share the row through the unique constraint.
+    Concurrent first requests share the row: `auth_subject` is unique, and the
+    insert does nothing on a conflict, so each request then reads the one row.
     """
     query = select(User.id).where(User.auth_subject == subject)
     user_id = await session.scalar(query)
