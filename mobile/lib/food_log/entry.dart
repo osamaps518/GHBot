@@ -60,8 +60,8 @@ int? parseGrams(String typed) {
 /// Whether the server would accept an entry with these values (#60): grams
 /// greater than 0 and at most 5000, at most 900 kcal and 100 g of each macro
 /// per 100 g, a name of 1 to 40 characters only for an extra meal, and
-/// totals that match the grams. The phone checks before every save, so the
-/// server rarely refuses an entry. All numbers are in tenths.
+/// totals that match the grams. The phone checks before every save
+/// (decision 31). All numbers are in tenths.
 bool passesServerChecks({
   required Meal meal,
   required String? mealName,

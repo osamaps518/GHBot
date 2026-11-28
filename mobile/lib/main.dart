@@ -185,9 +185,9 @@ class _GhbotAppState extends State<GhbotApp> {
   };
 
   /// For the language, Flutter matches the phone's ordered preferences against
-  /// `supportedLocales`, then falls back to the first entry when none match.
-  /// With both `theme` and `darkTheme` set, the app follows the phone's light
-  /// or dark setting.
+  /// `supportedLocales`, then falls back to the first entry when none match
+  /// (decision 12). With both `theme` and `darkTheme` set, the app follows
+  /// the phone's light or dark setting (decision 16).
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

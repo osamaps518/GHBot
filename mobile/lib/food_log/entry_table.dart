@@ -19,7 +19,7 @@ class FoodLogEntryTable extends Table {
   TextColumn get meal => textEnum<Meal>()();
   TextColumn get mealName => text().nullable()();
 
-  /// `YYYY-MM-DD` text: a diary day is a date, not a point in time.
+  /// `YYYY-MM-DD` text (decision 34).
   TextColumn get diaryDay => text()();
   IntColumn get grams => integer()();
   IntColumn get caloriesPer100g => integer().named('calories_per_100g')();
