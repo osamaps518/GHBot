@@ -7,8 +7,8 @@ import '../foods/food.dart';
 import 'entry.dart';
 import 'meal.dart';
 
-/// Sends diary entries to the server and stores what it answers
-/// (docs/decisions.md, 31).
+/// Sends diary entries to the server, brings down what changed there, and
+/// stores what it answers (docs/decisions.md, 31).
 class FoodLogApi {
   const FoodLogApi(this._session);
 
@@ -63,15 +63,92 @@ class FoodLogApi {
       );
     }
   }
+
+  /// Brings down what changed on the server since the last pull, and stores
+  /// it in [database] with the new marker in one transaction: a pull that is
+  /// interrupted keeps the old marker, so the next one asks again. Throws an
+  /// `ApiFailure` when the call should be tried again. Stores nothing when
+  /// a user other than [userId] signed in during the call.
+  ///
+  /// Foods are stored first. A pulled entry replaces the phone's copy,
+  /// unless that has a change the server hasn't confirmed, refused or not:
+  /// the trainee's edits and deletes wait for the next send. A pulled
+  /// deleted entry leaves the phone even then, since deletes are final on
+  /// the server.
+  Future<void> pull(AppDatabase database, String userId) async {
+    final marker =
+        (await database.select(database.pullMarkerTable).getSingleOrNull())
+            ?.marker;
+    final changes = (await _session.get(
+      Uri(
+        path: '/me/food-log/changes',
+        queryParameters: marker == null ? null : {'since': marker},
+      ).toString(),
+      _Changes.fromJson,
+    ))!;
+    if (_session.userId != userId) return;
+    final table = database.foodLogEntryTable;
+    await database.transaction(() async {
+      for (final food in changes.foods) {
+        await database.storeFood(food);
+      }
+      for (final pulled in changes.entries) {
+        Expression<bool> pulledRow($FoodLogEntryTableTable row) =>
+            row.id.equals(pulled.id);
+        if (pulled.deleted) {
+          await (database.delete(table)..where(pulledRow)).go();
+          continue;
+        }
+        final local = await (database.select(
+          table,
+        )..where(pulledRow)).getSingleOrNull();
+        if (local == null) {
+          await database
+              .into(table)
+              .insert(pulled.columns!.copyWith(id: Value(pulled.id)));
+        } else if (local.revision <= local.sentRevision) {
+          await (database.update(
+            table,
+          )..where(pulledRow)).write(pulled.columns!);
+        }
+      }
+      await database.delete(database.pullMarkerTable).go();
+      await database
+          .into(database.pullMarkerTable)
+          .insert(PullMarkerTableCompanion.insert(marker: changes.marker));
+    });
+  }
 }
 
-/// The copy of an entry the server kept, from its answer.
+/// The server's answer to a pull.
+class _Changes {
+  _Changes.fromJson(Map<String, Object?> json)
+    : entries = [
+        for (final entry in json['entries']! as List)
+          _KeptEntry.fromJson(entry as Map<String, Object?>),
+      ],
+      foods = [
+        for (final food in json['foods']! as List)
+          Food.fromJson(food as Map<String, Object?>),
+      ],
+      marker = json['next_marker']! as String;
+
+  final List<_KeptEntry> entries;
+  final List<Food> foods;
+
+  /// Sent back with the next pull, as it is.
+  final String marker;
+}
+
+/// The copy of an entry the server kept, from an answer or a pull.
 class _KeptEntry {
   _KeptEntry.fromJson(Map<String, Object?> json)
-    : revision = json['revision'] as int,
+    : id = json['id'] as String,
+      revision = json['revision'] as int,
       deleted = json['deleted'] as bool,
       columns = json['deleted'] as bool ? null : _columns(json);
 
+  final String id;
   final int revision;
   final bool deleted;
 

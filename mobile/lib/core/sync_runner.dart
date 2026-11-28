@@ -9,7 +9,8 @@ import 'api_failure.dart';
 import 'database.dart';
 
 /// Sends one user's unsent diary entries from their database to the server,
-/// each with its own call (docs/decisions.md, 31).
+/// each with its own call, then brings down what changed there
+/// (docs/decisions.md, 31).
 class SyncRunner {
   /// Callers pass `session:` and `database:`; private named parameters keep
   /// the fields private.
@@ -61,9 +62,9 @@ class SyncRunner {
     run();
   }
 
-  /// Sends the unsent entries, one run at a time. Asked for during a run,
-  /// it makes one more run after that one, however often it was asked.
-  /// The future completes when no run is left.
+  /// Sends the unsent entries, then pulls, one run at a time. Asked for
+  /// during a run, it makes one more run after that one, however often it
+  /// was asked. The future completes when no run is left.
   Future<void> run() {
     if (_closed) return Future.value();
     if (_running case final running?) {
@@ -95,19 +96,22 @@ class SyncRunner {
     }
   }
 
-  /// Sends each unsent entry in turn. A failed call stops the run, and the
-  /// retry timer starts. Another user's sign-in stops it too: this user's
-  /// entries are never sent with it.
+  /// Sends each unsent entry in turn, then pulls. A failed call stops the
+  /// run, and the retry timer starts: after a failed send, the pull waits
+  /// for the next run. Another user's sign-in stops it too: this user's
+  /// entries are never sent or pulled with it.
   Future<void> _runOnce() async {
     _retry?.cancel();
-    for (final entry in await _database.unsentEntries()) {
-      if (_closed || _session.userId != userId) return;
-      try {
+    try {
+      for (final entry in await _database.unsentEntries()) {
+        if (_closed || _session.userId != userId) return;
         await _foodLogApi.send(_database, entry);
-      } on ApiFailure {
-        if (!_closed) _retryLater();
-        return;
       }
+      if (_closed || _session.userId != userId) return;
+      await _foodLogApi.pull(_database, userId);
+    } on ApiFailure {
+      if (!_closed) _retryLater();
+      return;
     }
     _retryAfter = _firstRetry;
   }

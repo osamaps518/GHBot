@@ -276,6 +276,7 @@ void main() {
 
       expect(backend.entryRequests, hasLength(1));
       expect(backend.entries.keys, [first]);
+      expect(backend.requestsTo('GET', '/me/food-log/changes'), isEmpty);
     },
   );
 
@@ -410,5 +411,157 @@ void main() {
       expect(entry.grams, 2000);
       expect(entry.unsent, isTrue);
     });
+  });
+
+  group('pulling', () {
+    /// The pulls the runner made.
+    Iterable<http.Request> pulls() =>
+        backend.requestsTo('GET', '/me/food-log/changes');
+
+    test("a run brings down the server's entries and their foods; the next "
+        'one sends back the marker it got', () async {
+      backend.storeEntry('alice', _rice150Json('from-another-phone'));
+
+      await runner.run();
+
+      final logged = (await database.watchDiaryDay('2026-11-23').first).single;
+      expect(logged.entry.id, 'from-another-phone');
+      expect(logged.entry.totals.calories, 1950);
+      expect(logged.entry.unsent, isFalse);
+      expect(logged.food.name('en'), 'Cooked white rice');
+      expect(pulls().single.url.query, isEmpty);
+
+      // The stand-in refuses a marker it didn't give, and its markers have
+      // a `+`, which a hand-built query would turn into a space.
+      backend.storeEntry('alice', _rice150Json('later'));
+      await runner.run();
+
+      expect(pulls().last.url.queryParameters['since'], contains('+'));
+      expect(await database.watchDiaryDay('2026-11-23').first, hasLength(2));
+    });
+
+    test('a run sends first, then pulls; after a failed send, the pull '
+        'waits for the next run', () async {
+      await logRice();
+      answerEntries(500, {'detail': 'Internal Server Error'});
+
+      await runner.run();
+      expect(pulls(), isEmpty);
+
+      backend.intercept = null;
+      await runner.run();
+
+      expect(backend.requests.reversed.take(2).map((r) => r.method), [
+        'GET',
+        'PUT',
+      ]);
+    });
+
+    /// Sends a logged entry, then holds the next run's pull while [change]
+    /// runs on the phone, and answers it with the server's copy as
+    /// [serverCopy] makes it. Returns the entry's ID.
+    Future<String> changeDuringPull(
+      Map<String, Object?> Function(String id) serverCopy,
+      Future<void> Function(String id) change,
+    ) async {
+      final id = await logRice();
+      await runner.run();
+      backend
+        ..storeEntry('alice', serverCopy(id))
+        ..holdPull = Completer();
+      final pulling = runner.run();
+      await pumpEventQueue();
+
+      await change(id);
+      backend.holdPull!.complete();
+      await pulling;
+      return id;
+    }
+
+    test("a pull doesn't overwrite a change the phone hasn't sent", () async {
+      await changeDuringPull(
+        (id) => {..._rice150Json(id), 'revision': 3, 'grams': 200.0},
+        (id) => database.changeGrams(id, 2500),
+      );
+
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.grams, 2500);
+      expect(entry.unsent, isTrue);
+    });
+
+    test("a pull doesn't overwrite a refused entry", () async {
+      final id = await logRice();
+      answerEntries(422, refusal);
+      await runner.run();
+      backend
+        ..intercept = null
+        ..storeEntry('alice', {
+          ..._rice150Json(id),
+          'revision': 2,
+          'grams': 200.0,
+        });
+
+      await runner.run();
+
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.grams, 1500);
+      expect(entry.refused, isTrue);
+    });
+
+    test("a pull doesn't bring back an entry deleted on the phone, and the "
+        'delete is sent next', () async {
+      final id = await changeDuringPull(_rice150Json, database.deleteEntry);
+
+      expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
+      await runner.run();
+      expect(backend.entries[id], containsPair('deleted', true));
+    });
+
+    test('an entry the server deleted leaves the phone, even with a change '
+        'not sent yet', () async {
+      await changeDuringPull(
+        (id) => {..._rice150Json(id), 'deleted': true},
+        (id) => database.changeGrams(id, 2500),
+      );
+
+      expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
+    });
+
+    test('a pull whose answer is lost keeps the old marker, and the next one '
+        'asks again from it', () async {
+      await runner.run();
+      backend
+        ..storeEntry('alice', _rice150Json('later'))
+        ..loseAnswers = true;
+
+      await runner.run();
+      backend.loseAnswers = false;
+      await runner.run();
+
+      final [_, lost, again] = pulls().toList();
+      expect(again.url.query, isNotEmpty);
+      expect(again.url.query, lost.url.query);
+      expect(await database.watchDiaryDay('2026-11-23').first, hasLength(1));
+    });
+
+    test(
+      "a pull answered after another user's sign-in stores nothing",
+      () async {
+        backend
+          ..storeEntry('alice', _rice150Json('from-another-phone'))
+          ..holdPull = Completer();
+        final pulling = runner.run();
+        await pumpEventQueue();
+
+        await session.signIn('bob');
+        backend.holdPull!.complete();
+        await pulling;
+
+        expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
+        expect(await database.select(database.pullMarkerTable).get(), isEmpty);
+      },
+    );
   });
 }
