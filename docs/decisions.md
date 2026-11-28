@@ -900,3 +900,13 @@ fills remaining calories in order: carbs to 65%, protein to 2.2 g/kg, fat to
 lower than zero. At BMI 30 or higher, the protein limits use weight at BMI 25.
 The response marks adjusted macros and keeps the recommended values alongside
 the effective values.
+
+The phone caches the effective targets with `custom`, `macros_adjusted` and the
+recommended values (schema version 4), so custom targets show offline. Like a
+profile save (decision 24), saving and resetting need internet: offline, they
+show the no-connection error and change nothing, and the form keeps the typed
+numbers. The form checks the ranges and the 100 kcal rule before sending: at
+100 kcal or more it shows an error and can't save, and under 100 it shows the
+difference and asks to fix the numbers or keep them. The phone has no copy of
+the minimum: the `below_minimum` 422 carries it in `ctx`, and the form shows it
+on the calories field.
