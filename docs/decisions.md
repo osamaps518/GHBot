@@ -841,9 +841,6 @@ the error screen. It exposes the user's database, and the diary, search and
 amount screens read and write it directly. Navigation is Flutter's built-in,
 with no bottom tabs.
 
-The targets screen follows `AppFlow`, so a save from Edit my info shows at once,
-and the age warning shows over it when the save makes it due.
-
 We considered a diary notifier next to `AppFlow`. Drift's live queries already
 tell the screens about every change, so it would only pass them along.
 
