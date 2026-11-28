@@ -429,23 +429,16 @@ targets from the server at every start, so it gets a token only when a call
 needs one. Sign-in protects the server's data; data already on the phone is
 protected by the lock screen and Android's app storage.
 
-At sign-in the app gets the user's ID from `GET /me` and stores it with the
-name. At start:
-- Name and ID stored: open that user's database, show the stored profile and
-  targets at once, then refresh them in the background. A failed refresh
-  changes nothing and shows nothing. With nothing stored, load from the server
-  as before.
-- Name but no ID (installs from before #52): get the ID first. Offline, this
-  shows the error screen with Retry.
-- No name: the sign-in screen.
+At start, the app shows the signed-in user's stored profile and targets at once
+and refreshes them in the background; it waits for the server only when nothing
+is stored. Installs from before #52 stored the name without the user's ID, so
+they get the ID first.
 
-Each user has their own database, `<userId>.sqlite` in a `user_data/` folder
-under the app support folder. Each refresh and save writes only to the database
-it started with, and a refresh that started before a save never replaces what
-the save returned. The profile and the targets are each checked on their own:
-a custom targets save or reset returns only targets (decision 37), so a profile
-save that started before it still stores its profile. The age-warning mark is kept for each user too. `user_data/`
-is left out of Android backup and device transfer; the name and ID stay in backup.
+Each user has their own database file, named by their ID, and their own
+age-warning mark. Each refresh and save writes only to the database it started
+with, and an older result never replaces a newer one. `user_data/`, the folder
+of these files, is left out of Android backup and device transfer; the name and
+ID stay in backup.
 
 Rejected:
 - Wiping the database when the user changes: it would destroy unsent diary entries.

@@ -84,8 +84,11 @@ class AppFlow extends ChangeNotifier {
   }
 
   /// Opens the user's database and shows what it holds, then refreshes it in
-  /// the background. A failed background refresh keeps the stored data and
-  /// shows nothing. With nothing stored, it waits for the server instead.
+  /// the background (decision 25). A failed background refresh keeps the
+  /// stored data and shows nothing. With nothing stored, it waits for the
+  /// server instead. A name stored before IDs were gets its ID from the
+  /// server first; without a connection, that fails and the error screen
+  /// shows.
   Future<void> load() async {
     stage = AppStage.loading;
     notifyListeners();
