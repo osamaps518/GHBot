@@ -877,9 +877,10 @@ accepts whole numbers up to 6000 calories, 500 g protein, 300 g fat and 1000 g
 carbs.
 
 If an older custom row is below today's minimum, the read raises it to the
-minimum and fills its macros within the agreed limits: protein 1.6 to 2.2 g/kg,
-fat 20% to 35% of calories, carbs up to 65%. At BMI 30 or higher, the protein
-limits use weight at BMI 25. Carbs also come down whenever the macros add up to
+minimum and adjusts its macros. The adjustment uses protein and fat floors of
+1.6 g/kg and 20% of calories; additional calories use ceilings of 65% for carbs,
+2.2 g/kg for protein, and 35% for fat. At BMI 30 or higher, the protein limits
+use weight at BMI 25. Carbs also come down whenever the macros add up to
 more than the raised calories, even when protein and fat needed no raise. That
 only happens inside the 99 kcal gap a save allows, and it keeps the macros
 matching the calories shown.
