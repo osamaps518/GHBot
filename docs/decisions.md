@@ -449,7 +449,9 @@ name. At start:
 Each user has their own database, `<userId>.sqlite` in a `user_data/` folder
 under the app support folder. Each refresh and save writes only to the database
 it started with, and a refresh that started before a save never replaces what
-the save returned. The age-warning mark is kept for each user too. `user_data/`
+the save returned. The profile and the targets are each checked on their own:
+a custom targets save or reset returns only targets (decision 37), so a profile
+save that started before it still stores its profile. The age-warning mark is kept for each user too. `user_data/`
 is left out of Android backup and device transfer; the name and ID stay in backup.
 
 Rejected:

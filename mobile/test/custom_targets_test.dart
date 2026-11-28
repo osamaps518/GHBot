@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
+import 'package:ghbot/profiles/profile.dart';
 import 'package:http/http.dart' as http;
 
 import 'fake_backend.dart';
@@ -407,5 +408,58 @@ void main() {
       expect(find.text(english.customBadge), findsNothing);
       expect(find.text('2210'), findsOneWidget);
     });
+  });
+
+  testWidgets('a custom save keeps the profile of an earlier profile save '
+      'that answers after it', (tester) async {
+    final backend = FakeBackend()..profile = savedProfile();
+    final storage = PhoneStorage();
+    await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+
+    /// The goal the Edit my info form opens on, read and closed again.
+    Future<Set<Goal>> formGoal() async {
+      await editMyInfo(tester);
+      final goal = tester
+          .widget<SegmentedButton<Goal>>(find.byType(SegmentedButton<Goal>))
+          .selected;
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      return goal;
+    }
+
+    await editMyInfo(tester);
+    await _tapText(tester, english.goalName('maintain'));
+    backend.targets = {
+      ...exampleTargets,
+      'goal': 'maintain',
+      'goal_adjustment_percent': 0,
+    };
+    final profileReply = Completer<void>();
+    backend.holdNextTargets = profileReply;
+    await tester.tap(find.text(english.calculateButton));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await _openForm(tester);
+    await _typeTargets(
+      tester,
+      calories: '2400',
+      protein: '160',
+      carbs: '296',
+      fat: '64',
+    );
+    await _tapText(tester, english.save);
+    profileReply.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('2400'), findsOneWidget);
+    expect(await formGoal(), {Goal.maintain});
+
+    backend.offline = true;
+    await restartApp(tester, backend, storage);
+    await openTargets(tester);
+    expect(find.text('2400'), findsOneWidget);
+    expect(await formGoal(), {Goal.maintain});
   });
 }
