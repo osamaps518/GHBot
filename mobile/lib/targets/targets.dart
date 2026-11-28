@@ -58,7 +58,7 @@ class Targets {
   final Goal goal;
   final int goalAdjustmentPercent;
 
-  /// The trainee set these targets by hand (docs/decisions.md, 37).
+  /// The trainee set these targets by hand (decision 37).
   final bool custom;
 
   /// Custom calories were below the minimum, so the server raised them to
@@ -82,9 +82,9 @@ enum TargetsField { calories, protein, carbs, fat }
 /// What the trainee typed into the targets form, each field read as a whole
 /// number with Western or Arabic-Indic digits (null when it isn't one).
 ///
-/// The ranges and the 100 kcal rule are the server's (docs/decisions.md,
-/// 37), checked here for quicker errors. The calorie minimum is checked only
-/// by the server, so it has one copy (docs/security.md).
+/// The ranges and the 100 kcal rule are the server's (decision 37), checked
+/// here for quicker errors. The calorie minimum is checked only by the
+/// server, so it has one copy (docs/security.md).
 class TargetsDraft {
   TargetsDraft.parse({
     required String calories,

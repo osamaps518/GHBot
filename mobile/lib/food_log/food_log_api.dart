@@ -8,7 +8,7 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// Sends diary entries to the server, brings down what changed there, and
-/// stores what it answers (docs/decisions.md, 31).
+/// stores what it answers (decision 31).
 class FoodLogApi {
   const FoodLogApi(this._session);
 
@@ -184,7 +184,7 @@ class _KeptEntry {
 }
 
 /// [entry] as the server reads it: grams and values as plain numbers with
-/// 1 decimal (docs/decisions.md, 30).
+/// 1 decimal (decision 30).
 Map<String, Object?> _json(FoodLogEntry entry) {
   Map<String, double> nutrients(Nutrients values) => {
     'calories': values.calories / 10,

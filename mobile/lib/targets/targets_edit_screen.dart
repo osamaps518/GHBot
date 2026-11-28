@@ -8,7 +8,7 @@ import 'targets.dart';
 
 /// The form for custom targets, opened on the targets in effect. It checks
 /// the numbers like the server ([TargetsDraft]), then saves through
-/// [onSave], which needs internet (docs/decisions.md, 37).
+/// [onSave], which needs internet (decision 37).
 class TargetsEditScreen extends StatefulWidget {
   const TargetsEditScreen({
     super.key,

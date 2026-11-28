@@ -3,7 +3,7 @@ import '../foods/food.dart';
 import 'meal.dart';
 
 /// The diary day starts at 4:00 on the phone's clock, so a late snack at
-/// 1:30 still belongs to the evening before (docs/decisions.md, 34).
+/// 1:30 still belongs to the evening before (decision 34).
 const dayStartHour = 4;
 
 /// The diary day of [localTime], as `YYYY-MM-DD`.
@@ -36,7 +36,7 @@ DateTime nextDayStart(DateTime localTime) {
 }
 
 /// An entry's totals: each value per 100 g × grams ÷ 100, rounded half up
-/// to tenths, all in integers (docs/decisions.md, 30). [grams] is in tenths.
+/// to tenths, all in integers (decision 30). [grams] is in tenths.
 Nutrients entryTotals(Nutrients per100g, int grams) {
   int total(int valuePer100g) => (valuePer100g * grams + 500) ~/ 1000;
   return Nutrients(
@@ -91,7 +91,7 @@ bool passesServerChecks({
 }
 
 /// One food logged into a meal, with the values it was logged with
-/// (docs/decisions.md, 21). [grams] and all values are in tenths.
+/// (decision 21). [grams] and all values are in tenths.
 class FoodLogEntry {
   const FoodLogEntry({
     required this.id,

@@ -1,7 +1,7 @@
 """Recommended targets from a profile and a trainee's optional custom targets.
 
 Recommended targets are recalculated on every request. Custom values and their
-edit history are stored; see decisions 15 and 37 in docs/decisions.md.
+edit history are stored (decisions 15 and 37).
 
 For other modules:
     calculate_targets: turns a saved profile value into daily calories, protein,

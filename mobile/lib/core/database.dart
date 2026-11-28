@@ -28,7 +28,7 @@ AppDatabase openUserDatabase(String userId) => AppDatabase(
   ),
 );
 
-/// One user's data on the phone, in its own file (docs/decisions.md, 25).
+/// One user's data on the phone, in its own file (decision 25).
 @DriftDatabase(
   tables: [
     ProfileTable,
@@ -46,13 +46,12 @@ class AppDatabase extends _$AppDatabase {
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
-  /// what sending entries needs (docs/decisions.md, 31); entries logged
-  /// before it are unsent. Version 4 adds custom targets (docs/decisions.md,
-  /// 37); targets stored before it are recommended ones, so they are their
-  /// own recommended values. SQLite can't add a column without a default,
-  /// so the step copies the table with the new columns filled in. Version 5
-  /// adds the pull marker (docs/decisions.md, 31); with none stored, the
-  /// first pull brings everything.
+  /// what sending entries needs (decision 31); entries logged before it are
+  /// unsent. Version 4 adds custom targets (decision 37); targets stored
+  /// before it are recommended ones, so they are their own recommended
+  /// values. SQLite can't add a column without a default, so the step copies
+  /// the table with the new columns filled in. Version 5 adds the pull marker
+  /// (decision 31); with none stored, the first pull brings everything.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -162,8 +161,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   /// The phone's foods whose Arabic or English name contains [query],
-  /// ignoring case. This is the search without a connection
-  /// (docs/decisions.md, 20).
+  /// ignoring case. This is the search without a connection (decision 20).
   ///
   /// The names are compared in Dart: SQLite's `LIKE` ignores case only for
   /// A to Z, so "CRÉME" wouldn't find "Créme". The phone keeps only the foods
@@ -182,7 +180,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Logs [grams] (in tenths) of [food] into [meal], with totals calculated
-  /// on the phone (docs/decisions.md, 33), and keeps the food for offline
+  /// on the phone (decision 33), and keeps the food for offline
   /// search. Both or neither are saved.
   ///
   /// The entry's ID is a UUIDv7, made here; its diary day comes from the
@@ -220,7 +218,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Changes an entry's grams (in tenths). The totals are calculated from
   /// the entry's own values per 100 g, not its food's current ones
-  /// (docs/decisions.md, 21 and 30). The change raises the revision and
+  /// (decisions 21 and 30). The change raises the revision and
   /// clears a refusal, so the entry is sent again. Throws an
   /// [ArgumentError] and changes nothing when the server would refuse it.
   /// An entry sync removed meanwhile, because the server deleted it, stays

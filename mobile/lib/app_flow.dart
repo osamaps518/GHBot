@@ -15,10 +15,10 @@ import 'targets/targets_api.dart';
 enum AppStage { loading, signIn, onboarding, diary, failed }
 
 /// Gates the app: sign-in, onboarding, the one-time age warning, then the
-/// diary (docs/decisions.md, 35). Screens read the diary from [database].
+/// diary (decision 35). Screens read the diary from [database].
 ///
 /// The profile and targets are read from the user's database on the phone and
-/// refreshed from the server (docs/decisions.md, 24 and 25).
+/// refreshed from the server (decisions 24 and 25).
 class AppFlow extends ChangeNotifier {
   AppFlow(
     this._session,
@@ -34,7 +34,7 @@ class AppFlow extends ChangeNotifier {
   AppDatabase? _database;
 
   /// Sends the diary from [database], for the user it belongs to, from
-  /// when it opens until the app closes (docs/decisions.md, 31).
+  /// when it opens until the app closes (decision 31).
   SyncRunner? _syncRunner;
 
   /// The signed-in user's database, open from the diary stage on.
@@ -190,8 +190,7 @@ class AppFlow extends ChangeNotifier {
   }
 
   /// Saves custom targets on the server, then stores and shows the targets
-  /// it sends back (docs/decisions.md, 37). Offline, it throws and stores
-  /// nothing.
+  /// it sends back (decision 37). Offline, it throws and stores nothing.
   Future<void> saveCustomTargets(TargetValues values) =>
       _storeTargets(() => _targetsApi.putCustom(values));
 

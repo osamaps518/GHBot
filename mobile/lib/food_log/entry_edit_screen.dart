@@ -9,7 +9,7 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// Changes a logged entry's grams, or deletes it after asking. The totals
-/// come from the entry's own values per 100 g (docs/decisions.md, 21).
+/// come from the entry's own values per 100 g (decision 21).
 /// Both write to the phone's database, then close the screen, unless Back
 /// closed it meanwhile.
 class EntryEditScreen extends StatefulWidget {

@@ -4,8 +4,8 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// The trainee's diary entries. They are saved here first and the diary
-/// reads only from here (docs/decisions.md, 32). Grams and all values are
-/// whole tenths.
+/// reads only from here (decision 32). Grams and all values are whole
+/// tenths.
 ///
 /// The diary reads one day at a time, so `diary_day` has an index.
 @UseRowClass(FoodLogEntry, constructor: 'fromColumns')

@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 /// The marker the server sent with the last pull the phone stored, sent back
-/// with the next pull (docs/decisions.md, 31). One row at most; with none,
+/// with the next pull (decision 31). One row at most; with none,
 /// the next pull asks for everything.
 class PullMarkerTable extends Table {
   @override

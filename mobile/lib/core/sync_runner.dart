@@ -9,8 +9,7 @@ import 'api_failure.dart';
 import 'database.dart';
 
 /// Sends one user's unsent diary entries from their database to the server,
-/// each with its own call, then brings down what changed there
-/// (docs/decisions.md, 31).
+/// each with its own call, then brings down what changed there (decision 31).
 class SyncRunner {
   /// Callers pass `session:` and `database:`; private named parameters keep
   /// the fields private.
