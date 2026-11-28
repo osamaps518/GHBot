@@ -217,5 +217,12 @@ def test_entry_cannot_use_another_trainees_new_food(client, auth_headers):
     accepted = client.put(f"/me/food-log/entries/{uuid7()}", headers=owner, json=body)
 
     assert refused.status_code == 422
-    assert refused.json()["detail"][0]["type"] == "food_not_visible"
+    assert refused.json()["detail"] == [
+        {
+            "type": "food_not_visible",
+            "loc": ["body", "food_id"],
+            "msg": "Food is not visible",
+            "input": food_id,
+        }
+    ]
     assert accepted.status_code == 201
