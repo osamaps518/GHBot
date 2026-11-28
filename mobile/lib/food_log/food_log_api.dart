@@ -74,7 +74,8 @@ class FoodLogApi {
   /// unless that has a change the server hasn't confirmed, refused or not:
   /// the trainee's edits and deletes wait for the next send. A pulled
   /// deleted entry leaves the phone even then, since deletes are final on
-  /// the server.
+  /// the server. A copy the phone has at the same revision isn't written
+  /// again, so the rows each pull repeats don't start another run.
   Future<void> pull(AppDatabase database, String userId) async {
     final marker =
         (await database.select(database.pullMarkerTable).getSingleOrNull())
@@ -106,7 +107,8 @@ class FoodLogApi {
           await database
               .into(table)
               .insert(pulled.columns!.copyWith(id: Value(pulled.id)));
-        } else if (local.revision <= local.sentRevision) {
+        } else if (local.revision <= local.sentRevision &&
+            local.revision != pulled.revision) {
           await (database.update(
             table,
           )..where(pulledRow)).write(pulled.columns!);

@@ -563,5 +563,25 @@ void main() {
         expect(await database.select(database.pullMarkerTable).get(), isEmpty);
       },
     );
+
+    testWidgets('the rows each pull brings again start no more runs', (
+      tester,
+    ) async {
+      await database.close();
+      await startAsAlice();
+      runner.start();
+      await logRice();
+      await tester.pump(const Duration(seconds: 10));
+      final settled = pulls().length;
+
+      // Like the server inside its 30-second margin, the stand-in sends the
+      // last change again with every pull. Writing it would start the 2 s
+      // timer, and so another pull, again and again.
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(pulls(), hasLength(settled));
+      expect(backend.entries, hasLength(1));
+      await runner.close();
+    });
   });
 }
