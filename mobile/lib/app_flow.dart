@@ -88,7 +88,7 @@ class AppFlow extends ChangeNotifier {
   /// stored data and shows nothing. With nothing stored, it waits for the
   /// server instead. A name stored before IDs were gets its ID from the
   /// server first; without a connection, that fails and the error screen
-  /// shows.
+  /// shows, with Retry.
   Future<void> load() async {
     stage = AppStage.loading;
     notifyListeners();
