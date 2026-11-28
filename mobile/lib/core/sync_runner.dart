@@ -101,9 +101,12 @@ class SyncRunner {
   }
 
   /// Sends each unsent own food in turn, then each unsent entry, then
-  /// pulls. A failed call stops the run, and the retry timer starts: after
-  /// a failed send, the pull waits for the next run. Another user's sign-in
-  /// stops it too: this user's rows are never sent or pulled with it.
+  /// pulls. Foods go first, so a new own food's entries go in the same run;
+  /// the entries of an own food still unsent or refused wait
+  /// ([AppDatabase.entriesToSend]). A failed call stops the run, and the
+  /// retry timer starts: after a failed send, the pull waits for the next
+  /// run. Another user's sign-in stops it too: this user's rows are never
+  /// sent or pulled with it.
   Future<void> _runOnce() async {
     _retry?.cancel();
     try {
@@ -111,7 +114,7 @@ class SyncRunner {
         if (_closed || _session.userId != userId) return;
         await _foodsApi.send(_database, food);
       }
-      for (final entry in await _database.unsentEntries()) {
+      for (final entry in await _database.entriesToSend()) {
         if (_closed || _session.userId != userId) return;
         await _foodLogApi.send(_database, entry);
       }

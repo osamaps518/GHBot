@@ -907,6 +907,65 @@ void main() {
       );
       expect(await reinstalled.unsentOwnFoods(), isEmpty);
     });
+
+    /// Logs 50 g of [food] into lunch on 2026-11-23 and returns the entry's
+    /// ID.
+    Future<String> logFood(Food food) async {
+      await database.logEntry(
+        food: food,
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 500,
+        diaryDay: '2026-11-23',
+        loggedAt: DateTime.utc(2026, 11, 23, 10),
+      );
+      return (await database.unsentEntries()).last.id;
+    }
+
+    test('a new own food and its entry, made offline, both arrive in one '
+        'run', () async {
+      backend.offline = true;
+      final food = await addMaamoul();
+      final id = await logFood(food);
+      await runner.run();
+      expect(backend.ownFoods, isEmpty);
+      expect(backend.entries, isEmpty);
+
+      backend.offline = false;
+      await runner.run();
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(backend.entries[id], containsPair('food_id', food.id));
+      expect(backend.entries[id], containsPair('grams', 50.0));
+      expect(await database.unsentOwnFoods(), isEmpty);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
+    test('an entry of a refused own food waits, and still counts as '
+        'waiting to sync', () async {
+      final food = await addMaamoul();
+      await logFood(food);
+      answerOwnFoods(422, refusal);
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.entryRequests, isEmpty);
+      expect(await database.watchUnsentCount().first, 1);
+    });
+
+    test("a deleted entry of a refused own food is deleted on the server: "
+        "the delete doesn't need the food", () async {
+      final food = await addMaamoul();
+      final id = await logFood(food);
+      answerOwnFoods(422, refusal);
+      await runner.run();
+
+      await database.deleteEntry(id);
+      await runner.run();
+
+      expect(backend.entryRequests.single.method, 'DELETE');
+      expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
+    });
   });
 }
 

@@ -358,6 +358,28 @@ class AppDatabase extends _$AppDatabase {
             ]))
           .get();
 
+  /// The [unsentEntries] that can be sent now: not those of an own food
+  /// with a change the server hasn't confirmed, refused or not, since the
+  /// server would refuse an entry of a food it doesn't have. They wait for
+  /// a later run. A deleted entry goes all the same: a delete doesn't need
+  /// its food.
+  Future<List<FoodLogEntry>> entriesToSend() {
+    final foodWaits = existsQuery(
+      select(foodTable)..where(
+        (food) =>
+            food.id.equalsExp(foodLogEntryTable.foodId) &
+            food.revision.isBiggerThan(food.sentRevision),
+      ),
+    );
+    return (select(foodLogEntryTable)
+          ..where((row) => _unsent & (row.deleted | foodWaits.not()))
+          ..orderBy([
+            (row) => OrderingTerm.asc(row.loggedAt),
+            (row) => OrderingTerm.asc(row.id),
+          ]))
+        .get();
+  }
+
   /// How many entries [unsentEntries] has. The stream sends again after
   /// every change.
   Stream<int> watchUnsentCount() {
