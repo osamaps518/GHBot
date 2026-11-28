@@ -45,6 +45,7 @@ class _SlowDatabase extends AppDatabase {
     required Food food,
     required DiaryMeal meal,
     required int grams,
+    required String diaryDay,
     required DateTime loggedAt,
   }) async {
     await save.future;
@@ -52,6 +53,7 @@ class _SlowDatabase extends AppDatabase {
       food: food,
       meal: meal,
       grams: grams,
+      diaryDay: diaryDay,
       loggedAt: loggedAt,
     );
   }
@@ -79,6 +81,7 @@ Future<List<bool?>> _pumpAmount(
                   database: database,
                   food: _rice,
                   grams: 1500,
+                  diaryDay: '2026-11-23',
                   meal: const DiaryMeal(Meal.lunch),
                   meals: const [
                     DiaryMeal(Meal.breakfast),
@@ -119,30 +122,30 @@ void main() {
     });
   }
 
-  test(
-    'logging saves the entry and its totals, and keeps the food on the phone '
-    'so search finds it offline',
-    () async {
-      final database = _memoryDatabase();
+  test('logging saves the entry on the day it is given, with its totals, and '
+      'keeps the food on the phone so search finds it offline', () async {
+    final database = _memoryDatabase();
 
-      await database.logEntry(
-        food: _rice,
-        meal: const DiaryMeal(Meal.lunch),
-        grams: 1500,
-        loggedAt: DateTime(2026, 11, 24, 1, 30),
-      );
+    await database.logEntry(
+      food: _rice,
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      diaryDay: '2026-11-20',
+      loggedAt: DateTime.utc(2026, 11, 24, 9, 30),
+    );
 
-      final entry = await database
-          .select(database.foodLogEntryTable)
-          .getSingle();
-      expect(entry.diaryDay, '2026-11-23');
-      expect(entry.totals.calories, 1950);
+    final entry = await database.select(database.foodLogEntryTable).getSingle();
+    expect(entry.diaryDay, '2026-11-20');
+    expect(
+      entry.loggedAt.isAtSameMomentAs(DateTime.utc(2026, 11, 24, 9, 30)),
+      isTrue,
+    );
+    expect(entry.totals.calories, 1950);
 
-      expect((await database.searchStoredFoods('rice')).single.id, 'rice');
-      final recent = (await database.watchRecentFoods().first).single;
-      expect((recent.grams, recent.calories), (1500, 1950));
-    },
-  );
+    expect((await database.searchStoredFoods('rice')).single.id, 'rice');
+    final recent = (await database.watchRecentFoods().first).single;
+    expect((recent.grams, recent.calories), (1500, 1950));
+  });
 
   test('a failed save keeps neither the entry nor the food change', () async {
     final database = _memoryDatabase();
@@ -158,6 +161,7 @@ void main() {
         food: changedRice,
         meal: const DiaryMeal(Meal.lunch),
         grams: 1500,
+        diaryDay: '2026-11-23',
         loggedAt: DateTime.utc(2026, 11, 23, 12),
       ),
       throwsA(anything),
@@ -202,7 +206,8 @@ void main() {
     expect(await database.watchRecentFoods().first, isEmpty);
   });
 
-  testWidgets('adds the entry to the chosen meal and closes', (tester) async {
+  testWidgets('adds the entry to the chosen meal on the diary day it was '
+      'opened for, and closes', (tester) async {
     final database = _memoryDatabase();
     final closedWith = await _pumpAmount(tester, database);
 
@@ -214,8 +219,8 @@ void main() {
     expect(closedWith, [true]);
     final entry = await database.select(database.foodLogEntryTable).getSingle();
     expect(
-      (entry.meal, entry.mealName, entry.grams),
-      (Meal.extra, 'Pre-workout', 1500),
+      (entry.meal, entry.mealName, entry.grams, entry.diaryDay),
+      (Meal.extra, 'Pre-workout', 1500, '2026-11-23'),
     );
   });
 
@@ -243,6 +248,7 @@ void main() {
                           database: database,
                           food: _rice,
                           grams: 1500,
+                          diaryDay: '2026-11-23',
                           meal: const DiaryMeal(Meal.lunch),
                           meals: const [DiaryMeal(Meal.lunch)],
                         ),

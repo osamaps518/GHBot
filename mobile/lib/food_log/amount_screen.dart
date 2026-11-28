@@ -8,14 +8,16 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// The amount step: grams, the totals they give, and the meal. Adding saves
-/// the entry on the phone and closes with `true`, unless Back closed the step
-/// while it saved: then another screen is on top and stays open.
+/// the entry on the phone, on [diaryDay], and closes with `true`, unless Back
+/// closed the step while it saved: then another screen is on top and stays
+/// open.
 class AmountScreen extends StatefulWidget {
   const AmountScreen({
     super.key,
     required this.database,
     required this.food,
     required this.grams,
+    required this.diaryDay,
     required this.meal,
     required this.meals,
   });
@@ -25,6 +27,9 @@ class AmountScreen extends StatefulWidget {
 
   /// The grams to start with, in tenths.
   final int grams;
+
+  /// The day the diary showed when logging began, `YYYY-MM-DD`.
+  final String diaryDay;
 
   /// The meal chosen at first, one of [meals].
   final DiaryMeal meal;
@@ -61,6 +66,7 @@ class _AmountScreenState extends State<AmountScreen> {
       food: widget.food,
       meal: _meal,
       grams: grams,
+      diaryDay: widget.diaryDay,
       loggedAt: DateTime.now(),
     );
     if (mounted && ModalRoute.of(context)!.isCurrent) {

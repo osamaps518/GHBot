@@ -74,10 +74,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   /// Opens search for [meal], then the amount step for the chosen food.
-  /// After the entry is saved, both close and the diary shows it.
+  /// The entry goes on the day shown now (decision 34). After it is saved,
+  /// both close and the diary shows it.
   void _addFood(DiaryMeal meal, List<DiaryMeal> meals) {
     final l10n = AppLocalizations.of(context)!;
     final navigator = Navigator.of(context);
+    final day = _day;
     navigator.push(
       MaterialPageRoute<void>(
         builder: (_) => FoodSearchScreen(
@@ -91,6 +93,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   database: widget.database,
                   food: food,
                   grams: grams,
+                  diaryDay: day,
                   meal: meal,
                   meals: meals,
                 ),

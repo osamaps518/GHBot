@@ -77,6 +77,7 @@ void main() {
       food: Food.fromJson(riceJson),
       meal: const DiaryMeal(Meal.lunch),
       grams: grams,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime.utc(2026, 11, 23, 10),
     );
     return (await database.unsentEntries()).last.id;

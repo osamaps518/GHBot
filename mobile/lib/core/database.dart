@@ -179,17 +179,19 @@ class AppDatabase extends _$AppDatabase {
     ];
   }
 
-  /// Logs [grams] (in tenths) of [food] into [meal], with totals calculated
-  /// on the phone (decision 33), and keeps the food for offline
-  /// search. Both or neither are saved.
+  /// Logs [grams] (in tenths) of [food] into [meal] on [diaryDay]
+  /// (`YYYY-MM-DD`), with totals calculated on the phone (decision 33), and
+  /// keeps the food for offline search. Both or neither are saved.
   ///
-  /// The entry's ID is a UUIDv7, made here; its diary day comes from the
-  /// phone's clock at [loggedAt]. Throws an [ArgumentError] and saves
-  /// nothing when the server would refuse the entry.
+  /// The entry's ID is a UUIDv7, made here. [diaryDay] is the day the diary
+  /// shows, which can be before [loggedAt]'s (decision 34). Throws an
+  /// [ArgumentError] and saves nothing when the server would refuse the
+  /// entry.
   Future<void> logEntry({
     required Food food,
     required DiaryMeal meal,
     required int grams,
+    required String diaryDay,
     required DateTime loggedAt,
   }) => transaction(() async {
     final totals = entryTotals(food.per100g, grams);
@@ -201,7 +203,7 @@ class AppDatabase extends _$AppDatabase {
         foodId: food.id,
         meal: meal.meal,
         mealName: Value(meal.name),
-        diaryDay: diaryDayOf(loggedAt.toLocal()),
+        diaryDay: diaryDay,
         grams: grams,
         caloriesPer100g: food.per100g.calories,
         proteinPer100g: food.per100g.protein,

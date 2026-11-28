@@ -8,6 +8,7 @@ import 'package:ghbot/core/database.dart';
 import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/core/theme.dart';
 import 'package:ghbot/food_log/diary_screen.dart';
+import 'package:ghbot/food_log/entry.dart';
 import 'package:ghbot/food_log/entry_edit_screen.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
@@ -113,6 +114,7 @@ void main() {
         food: Food.fromJson(json),
         meal: DiaryMeal(meal),
         grams: grams,
+        diaryDay: diaryDayOf(loggedAt),
         loggedAt: loggedAt,
       );
     }
@@ -218,6 +220,7 @@ void main() {
         food: Food.fromJson(json),
         meal: const DiaryMeal(Meal.lunch),
         grams: 1000,
+        diaryDay: diaryDayOf(DateTime.now()),
         loggedAt: DateTime.now(),
       );
     }
@@ -244,6 +247,7 @@ void main() {
       food: Food.fromJson(riceJson),
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: diaryDayOf(DateTime.now()),
       loggedAt: DateTime.now(),
     );
     final backend = FakeBackend()
@@ -278,6 +282,7 @@ void main() {
         food: Food.fromJson(riceJson),
         meal: const DiaryMeal(Meal.lunch),
         grams: 1500,
+        diaryDay: diaryDayOf(DateTime.now()),
         loggedAt: DateTime.now(),
       );
       await tester.pumpAndSettle();

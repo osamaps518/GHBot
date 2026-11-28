@@ -109,6 +109,7 @@ void main() {
         food: tooRich,
         meal: const DiaryMeal(Meal.lunch),
         grams: 1000,
+        diaryDay: '2026-11-23',
         loggedAt: DateTime.utc(2026, 11, 23, 12),
       ),
       throwsArgumentError,
@@ -129,6 +130,7 @@ void main() {
       food: rice,
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime(2026, 11, 23, 12),
     );
     await database.storeFood(
@@ -163,6 +165,7 @@ void main() {
       ),
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime(2026, 11, 23, 12),
     );
     final logged = (await database.watchDiaryDay('2026-11-23').first).single;
@@ -184,6 +187,7 @@ void main() {
       ),
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime(2026, 11, 23, 12),
     );
     await database.logEntry(
@@ -195,6 +199,7 @@ void main() {
       ),
       meal: const DiaryMeal(Meal.extra, 'Pre-workout'),
       grams: 123,
+      diaryDay: '2026-11-22',
       loggedAt: DateTime(2026, 11, 22, 12),
     );
     Future<List<int>> dayTotals(String day) async {

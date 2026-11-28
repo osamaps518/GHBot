@@ -127,6 +127,7 @@ void main() {
         food: Food.fromJson(food),
         meal: const DiaryMeal(Meal.lunch),
         grams: grams,
+        diaryDay: '2026-11-23',
         loggedAt: noon.add(Duration(minutes: minutes)),
       );
     }
