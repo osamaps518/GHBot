@@ -58,8 +58,9 @@ const oilJson = {
   'fat': 100.0,
 };
 
-/// A stand-in for the backend: dev tokens, one user's profile, targets, food
-/// search, and diary entries.
+/// A stand-in for the backend: dev tokens, one user's profile, targets and
+/// custom targets, food search, and diary entries. Custom targets are saved
+/// as sent: tests that need a refusal answer it with [intercept].
 class FakeBackend {
   /// The saved profile, as the backend's JSON. Null until one is saved.
   Map<String, Object?>? profile;
@@ -175,6 +176,16 @@ class FakeBackend {
           await hold.future;
         }
         return snapshot == null ? _notFound() : _json(snapshot);
+      case 'PUT /me/targets/custom':
+        final sent = (jsonDecode(request.body) as Map).cast<String, Object?>();
+        targets = {
+          ...targets,
+          ...sent,
+          'at_minimum': false,
+          'custom': true,
+          'macros_adjusted': false,
+        };
+        return _json(targets);
     }
     return _notFound();
   }

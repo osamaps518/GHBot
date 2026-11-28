@@ -169,6 +169,25 @@ class AppFlow extends ChangeNotifier {
     _showDiary(savedProfile, updatedTargets);
   }
 
+  /// Saves custom targets on the server, then stores and shows the targets
+  /// it sends back (docs/decisions.md, 37). Offline, it throws and stores
+  /// nothing.
+  Future<void> saveCustomTargets(TargetValues values) =>
+      _storeTargets(() => _targetsApi.putCustom(values));
+
+  /// Stores and shows the targets [request] answers, with the profile shown
+  /// now, unless a newer refresh or save was shown meanwhile.
+  Future<void> _storeTargets(Future<Targets> Function() request) async {
+    final database = _database!;
+    final version = ++_startedVersion;
+    final updatedTargets = await request();
+    if (_disposed || version < _shownVersion) return;
+    _shownVersion = version;
+    await database.storeProfileAndTargets(profile!, updatedTargets);
+    if (_disposed) return;
+    _showDiary(profile!, updatedTargets);
+  }
+
   Future<void> acceptAgeWarning() async {
     ageWarningSeen = true;
     notifyListeners();

@@ -226,6 +226,47 @@ class AppLocalizationsAr extends AppLocalizations {
   String get howWeCalculatedRecommended => 'كيف حسبنا الأهداف الموصى بها';
 
   @override
+  String get editTargets => 'تعديل الأهداف';
+
+  @override
+  String targetsFieldLabel(String field) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'السعرات',
+      'protein': 'البروتين',
+      'carbs': 'الكربوهيدرات',
+      'fat': 'الدهون',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String recommendedValue(String field, String value) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'الموصى بها: $value سعرة',
+      'protein': 'الموصى به: $value غ',
+      'other': 'الموصى بها: $value غ',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String macroCaloriesLine(String calories) {
+    return 'البروتين والكربوهيدرات والدهون تعطي $calories سعرة.';
+  }
+
+  @override
+  String get saveNeedsInternet => 'الحفظ يحتاج إلى الإنترنت';
+
+  @override
+  String get errorCaloriesRange => 'أدخل عددًا صحيحًا حتى 6000';
+
+  @override
+  String errorGramsRange(String max) {
+    return 'أدخل عددًا صحيحًا من 0 إلى $max';
+  }
+
+  @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override

@@ -392,6 +392,48 @@ abstract class AppLocalizations {
   /// **'كيف حسبنا الأهداف الموصى بها'**
   String get howWeCalculatedRecommended;
 
+  /// No description provided for @editTargets.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الأهداف'**
+  String get editTargets;
+
+  /// No description provided for @targetsFieldLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'{field, select, calories{السعرات} protein{البروتين} carbs{الكربوهيدرات} fat{الدهون} other{}}'**
+  String targetsFieldLabel(String field);
+
+  /// Under each field of the targets form.
+  ///
+  /// In ar, this message translates to:
+  /// **'{field, select, calories{الموصى بها: {value} سعرة} protein{الموصى به: {value} غ} other{الموصى بها: {value} غ}}'**
+  String recommendedValue(String field, String value);
+
+  /// No description provided for @macroCaloriesLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'البروتين والكربوهيدرات والدهون تعطي {calories} سعرة.'**
+  String macroCaloriesLine(String calories);
+
+  /// No description provided for @saveNeedsInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحفظ يحتاج إلى الإنترنت'**
+  String get saveNeedsInternet;
+
+  /// No description provided for @errorCaloriesRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عددًا صحيحًا حتى 6000'**
+  String get errorCaloriesRange;
+
+  /// No description provided for @errorGramsRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عددًا صحيحًا من 0 إلى {max}'**
+  String errorGramsRange(String max);
+
   /// No description provided for @editMyInfo.
   ///
   /// In ar, this message translates to:

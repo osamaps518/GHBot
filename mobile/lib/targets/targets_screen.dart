@@ -4,12 +4,19 @@ import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import 'targets.dart';
 
-/// The daily calorie and macro targets, opened from the diary.
+/// The daily calorie and macro targets, opened from the diary. [onEdit]
+/// opens Edit my info, [onEditTargets] the targets form.
 class TargetsScreen extends StatelessWidget {
-  const TargetsScreen({super.key, required this.targets, required this.onEdit});
+  const TargetsScreen({
+    super.key,
+    required this.targets,
+    required this.onEdit,
+    required this.onEditTargets,
+  });
 
   final Targets targets;
   final VoidCallback onEdit;
+  final VoidCallback onEditTargets;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +26,7 @@ class TargetsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            _CaloriesHero(targets: targets),
+            _CaloriesHero(targets: targets, onEditTargets: onEditTargets),
             const SizedBox(height: 12),
             if (targets.atMinimum) ...[
               _MinimumNote(macrosAdjusted: targets.macrosAdjusted),
@@ -49,11 +56,12 @@ class TargetsScreen extends StatelessWidget {
 }
 
 /// The day's calories, large, on the colored card at the top, marked when
-/// they are custom.
+/// they are custom, with the link to change them.
 class _CaloriesHero extends StatelessWidget {
-  const _CaloriesHero({required this.targets});
+  const _CaloriesHero({required this.targets, required this.onEditTargets});
 
   final Targets targets;
+  final VoidCallback onEditTargets;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +69,7 @@ class _CaloriesHero extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final colors = TargetsColors.of(context);
     return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(22, 22, 22, 24),
+      padding: const EdgeInsetsDirectional.fromSTEB(22, 22, 22, 8),
       decoration: BoxDecoration(
         color: colors.heroBackground,
         borderRadius: BorderRadius.circular(28),
@@ -109,6 +117,13 @@ class _CaloriesHero extends StatelessWidget {
           Text(
             l10n.caloriesPerDay,
             style: text.titleMedium!.copyWith(color: colors.onHero),
+          ),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            style: heroLinkStyle(colors),
+            onPressed: onEditTargets,
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: Text(l10n.editTargets),
           ),
         ],
       ),

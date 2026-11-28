@@ -147,6 +147,50 @@
   "@howWeCalculatedRecommended": {
     "description": "The How we calculated panel's title while custom targets are in effect."
   },
+  "editTargets": "تعديل الأهداف",
+  "targetsFieldLabel": "{field, select, calories{السعرات} protein{البروتين} carbs{الكربوهيدرات} fat{الدهون} other{}}",
+  "@targetsFieldLabel": {
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "description": "calories, protein, carbs or fat."
+      }
+    }
+  },
+  "recommendedValue": "{field, select, calories{الموصى بها: {value} سعرة} protein{الموصى به: {value} غ} other{الموصى بها: {value} غ}}",
+  "@recommendedValue": {
+    "description": "Under each field of the targets form.",
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "description": "calories, protein, carbs or fat."
+      },
+      "value": {
+        "type": "String",
+        "description": "The recommended value, in Western digits."
+      }
+    }
+  },
+  "macroCaloriesLine": "البروتين والكربوهيدرات والدهون تعطي {calories} سعرة.",
+  "@macroCaloriesLine": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "4 × protein + 4 × carbs + 9 × fat, in Western digits."
+      }
+    }
+  },
+  "saveNeedsInternet": "الحفظ يحتاج إلى الإنترنت",
+  "errorCaloriesRange": "أدخل عددًا صحيحًا حتى 6000",
+  "errorGramsRange": "أدخل عددًا صحيحًا من 0 إلى {max}",
+  "@errorGramsRange": {
+    "placeholders": {
+      "max": {
+        "type": "String",
+        "description": "The server's highest grams for this macro, in Western digits."
+      }
+    }
+  },
   "editMyInfo": "تعديل معلوماتي",
   "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
   "@ageWarning": {

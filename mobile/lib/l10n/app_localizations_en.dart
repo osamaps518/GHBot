@@ -227,6 +227,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'How we calculated your recommended targets';
 
   @override
+  String get editTargets => 'Edit targets';
+
+  @override
+  String targetsFieldLabel(String field) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'Calories',
+      'protein': 'Protein',
+      'carbs': 'Carbs',
+      'fat': 'Fat',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String recommendedValue(String field, String value) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'Recommended: $value kcal',
+      'other': 'Recommended: $value g',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String macroCaloriesLine(String calories) {
+    return 'Protein, carbs and fat give $calories kcal.';
+  }
+
+  @override
+  String get saveNeedsInternet => 'Saving needs an internet connection';
+
+  @override
+  String get errorCaloriesRange => 'Enter a whole number up to 6000';
+
+  @override
+  String errorGramsRange(String max) {
+    return 'Enter a whole number from 0 to $max';
+  }
+
+  @override
   String get editMyInfo => 'Edit my info';
 
   @override
