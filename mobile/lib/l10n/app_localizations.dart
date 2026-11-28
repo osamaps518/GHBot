@@ -542,11 +542,17 @@ abstract class AppLocalizations {
   /// **'سعرة'**
   String get caloriesUnit;
 
-  /// Search without a connection filters only the foods kept on the phone (decision 20).
+  /// Search without a connection filters only the foods kept on the phone: the logged ones and the trainee's own (decision 20).
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
+  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل وأطعمتك فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
   String get searchOffline;
+
+  /// Badge beside a food the trainee added, which only they see.
+  ///
+  /// In ar, this message translates to:
+  /// **'طعامك'**
+  String get ownFoodBadge;
 
   /// No description provided for @noResultsTitle.
   ///

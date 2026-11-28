@@ -335,7 +335,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get searchOffline =>
-      'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.';
+      'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل وأطعمتك فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.';
+
+  @override
+  String get ownFoodBadge => 'طعامك';
 
   @override
   String noResultsTitle(String query) {

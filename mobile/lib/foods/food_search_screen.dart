@@ -292,7 +292,9 @@ class _FoodList extends StatelessWidget {
   }
 }
 
-/// A food's name, a detail line, and calories in tenths.
+/// A food's name, a detail line, and calories in tenths. The trainee's own
+/// food has a badge by its name, and one the server refused is tinted, as
+/// in the diary.
 class _FoodTile extends StatelessWidget {
   const _FoodTile({
     required this.food,
@@ -311,8 +313,24 @@ class _FoodTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    return ListTile(
-      title: Text(food.name(Localizations.localeOf(context).languageCode)),
+    final name = Text(food.name(Localizations.localeOf(context).languageCode));
+    final tile = ListTile(
+      tileColor: food.refused ? theme.colorScheme.errorContainer : null,
+      shape: food.refused
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+          : null,
+      contentPadding: food.refused
+          ? const EdgeInsets.symmetric(horizontal: 10)
+          : null,
+      title: food.own
+          ? Row(
+              spacing: 8,
+              children: [
+                Flexible(child: name),
+                const _OwnFoodBadge(),
+              ],
+            )
+          : name,
       subtitle: Text(detail),
       trailing: Text.rich(
         TextSpan(
@@ -327,6 +345,38 @@ class _FoodTile extends StatelessWidget {
         ),
       ),
       onTap: onTap,
+    );
+    return food.refused
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: tile,
+          )
+        : tile;
+  }
+}
+
+/// The "Yours" pill beside an own food's name.
+class _OwnFoodBadge extends StatelessWidget {
+  const _OwnFoodBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: theme.colorScheme.primary,
+        shape: const StadiumBorder(),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(
+          AppLocalizations.of(context)!.ownFoodBadge,
+          style: theme.textTheme.labelMedium!.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 }

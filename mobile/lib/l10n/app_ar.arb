@@ -286,9 +286,13 @@
   "@caloriesUnit": {
     "description": "After a calorie number, as in 130 سعرة."
   },
-  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
+  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل وأطعمتك فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
   "@searchOffline": {
-    "description": "Search without a connection filters only the foods kept on the phone (decision 20)."
+    "description": "Search without a connection filters only the foods kept on the phone: the logged ones and the trainee's own (decision 20)."
+  },
+  "ownFoodBadge": "طعامك",
+  "@ownFoodBadge": {
+    "description": "Badge beside a food the trainee added, which only they see."
   },
   "noResultsTitle": "لم نجد «{query}»",
   "@noResultsTitle": {

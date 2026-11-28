@@ -232,18 +232,22 @@ class AppDatabase extends _$AppDatabase {
           .get();
 
   /// The phone's foods whose Arabic or English name contains [query],
-  /// ignoring case. This is the search without a connection (decision 20).
+  /// ignoring case, the trainee's own first, as the server ranks them. This
+  /// is the search without a connection (decision 20).
   ///
   /// The names are compared in Dart: SQLite's `LIKE` ignores case only for
   /// A to Z, so "CRÉME" wouldn't find "Créme". The phone keeps only the foods
-  /// the trainee has logged, so reading them all is cheap.
+  /// the trainee has logged and their own, so reading them all is cheap.
   Future<List<Food>> searchStoredFoods(String query) async {
     final typed = query.toLowerCase();
     bool matches(String? name) =>
         name != null && name.toLowerCase().contains(typed);
-    final foods = await (select(
-      foodTable,
-    )..orderBy([(food) => OrderingTerm.asc(food.id)])).get();
+    final foods =
+        await (select(foodTable)..orderBy([
+              (food) => OrderingTerm.desc(food.own),
+              (food) => OrderingTerm.asc(food.id),
+            ]))
+            .get();
     return [
       for (final food in foods)
         if (matches(food.nameAr) || matches(food.nameEn)) food,

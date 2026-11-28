@@ -335,7 +335,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchOffline =>
-      'Couldn\'t connect, so only foods you\'ve logged before show here. Finding other foods needs a connection.';
+      'Couldn\'t connect, so only foods you\'ve logged before and your own foods show here. Finding other foods needs a connection.';
+
+  @override
+  String get ownFoodBadge => 'Yours';
 
   @override
   String noResultsTitle(String query) {
