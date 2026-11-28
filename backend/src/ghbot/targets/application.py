@@ -113,22 +113,7 @@ async def save_custom(
             ).returning(CustomTargets)
         )
     ).one()
-    recommended = calculate_targets(profile)
-    session.add(
-        TargetHistory(
-            user_id=user_id,
-            kind="manual_edit",
-            date=today,
-            recommended_calories=recommended["calories"],
-            recommended_protein_g=recommended["protein_g"],
-            recommended_fat_g=recommended["fat_g"],
-            recommended_carbs_g=recommended["carbs_g"],
-            custom_calories=values["calories"],
-            custom_protein_g=values["protein_g"],
-            custom_fat_g=values["fat_g"],
-            custom_carbs_g=values["carbs_g"],
-        )
-    )
+    session.add(_history(row, "manual_edit", profile, today))
     await session.commit()
     return row
 
@@ -146,23 +131,28 @@ async def reset_custom(
     ).one_or_none()
     if previous is None:
         return
-    recommended = calculate_targets(profile)
-    session.add(
-        TargetHistory(
-            user_id=user_id,
-            kind="reset",
-            date=today,
-            recommended_calories=recommended["calories"],
-            recommended_protein_g=recommended["protein_g"],
-            recommended_fat_g=recommended["fat_g"],
-            recommended_carbs_g=recommended["carbs_g"],
-            custom_calories=previous.calories,
-            custom_protein_g=previous.protein_g,
-            custom_fat_g=previous.fat_g,
-            custom_carbs_g=previous.carbs_g,
-        )
-    )
+    session.add(_history(previous, "reset", profile, today))
     await session.commit()
+
+
+def _history(
+    custom: CustomTargets, kind: str, profile: ProfileSnapshot, today: date
+) -> TargetHistory:
+    """Build a history row from a custom row and the recommended targets today."""
+    recommended = calculate_targets(profile)
+    return TargetHistory(
+        user_id=custom.user_id,
+        kind=kind,
+        date=today,
+        recommended_calories=recommended["calories"],
+        recommended_protein_g=recommended["protein_g"],
+        recommended_fat_g=recommended["fat_g"],
+        recommended_carbs_g=recommended["carbs_g"],
+        custom_calories=custom.calories,
+        custom_protein_g=custom.protein_g,
+        custom_fat_g=custom.fat_g,
+        custom_carbs_g=custom.carbs_g,
+    )
 
 
 def _whole(value: Decimal) -> int:
