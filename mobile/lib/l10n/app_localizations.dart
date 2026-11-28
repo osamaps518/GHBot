@@ -635,8 +635,20 @@ abstract class AppLocalizations {
   /// No description provided for @noResultsBody.
   ///
   /// In ar, this message translates to:
-  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية.'**
+  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية. وإن لم يكن عندنا، فأضفه بقيمه لكل 100 غ وسجّله مباشرة.'**
   String get noResultsBody;
+
+  /// Below search results, before the button that adds an own food.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تجد ما تبحث عنه؟'**
+  String get cantFindIt;
+
+  /// Opens the form for a food the trainee adds, which only they see.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف طعامك'**
+  String get addOwnFood;
 
   /// No description provided for @mealName.
   ///

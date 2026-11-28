@@ -225,4 +225,55 @@ void main() {
       isNot(errorTint),
     );
   });
+
+  group('adding a food', () {
+    /// The text in the form's field with the key [key].
+    String typed(WidgetTester tester, String key) =>
+        tester.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
+
+    Future<void> openForm(WidgetTester tester) async {
+      await tester.tap(find.text(english.addOwnFood));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('with no results, the form starts with the typed name in its '
+        'script, and the saved food is chosen at 100 g', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.reset);
+      final (database, chosen, _) = await _pumpSearch(tester, FakeBackend());
+      await _search(tester, 'قرص عيد');
+      expect(find.text(english.noResultsBody), findsOneWidget);
+
+      await openForm(tester);
+      expect(typed(tester, 'nameAr'), 'قرص عيد');
+      expect(typed(tester, 'nameEn'), isEmpty);
+      for (final key in ['calories', 'protein', 'carbs', 'fat']) {
+        await tester.enterText(find.byKey(ValueKey(key)), '10');
+      }
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      final food = (await database.unsentOwnFoods()).single;
+      expect(chosen, [(foodId: food.id, grams: 1000)]);
+    });
+
+    testWidgets('below results too, online or offline; an English name '
+        'starts in the English field', (tester) async {
+      final backend = FakeBackend();
+      final (database, _, _) = await _pumpSearch(tester, backend);
+      await database.storeFood(Food.fromJson(riceJson));
+
+      for (final (query, offline) in [('rice', false), ('white rice', true)]) {
+        backend.offline = offline;
+        await _search(tester, query);
+        expect(find.text('Cooked white rice'), findsOneWidget);
+        expect(find.text(english.cantFindIt), findsOneWidget);
+      }
+
+      await openForm(tester);
+      expect(typed(tester, 'nameAr'), isEmpty);
+      expect(typed(tester, 'nameEn'), 'white rice');
+    });
+  });
 }

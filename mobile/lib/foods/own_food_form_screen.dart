@@ -22,17 +22,29 @@ enum _Value {
 /// food on the phone, which works offline, and closes with it, unless Back
 /// closed the form while it saved.
 class OwnFoodFormScreen extends StatefulWidget {
-  const OwnFoodFormScreen({super.key, required this.database});
+  const OwnFoodFormScreen({super.key, required this.database, this.name});
 
   final AppDatabase database;
+
+  /// A name to start with: the text searched for. It goes in the Arabic
+  /// field when it has an Arabic letter, otherwise in the English one.
+  final String? name;
 
   @override
   State<OwnFoodFormScreen> createState() => _OwnFoodFormScreenState();
 }
 
 class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
-  final _nameAr = TextEditingController();
-  final _nameEn = TextEditingController();
+  late final _startsArabic = RegExp(
+    r'\p{Script=Arabic}',
+    unicode: true,
+  ).hasMatch(widget.name ?? '');
+  late final _nameAr = TextEditingController(
+    text: _startsArabic ? widget.name : null,
+  );
+  late final _nameEn = TextEditingController(
+    text: _startsArabic ? null : widget.name,
+  );
   final _barcode = TextEditingController();
   final _values = {
     for (final value in _Value.values) value: TextEditingController(),

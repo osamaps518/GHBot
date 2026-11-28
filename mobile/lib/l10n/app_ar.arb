@@ -324,7 +324,15 @@
       }
     }
   },
-  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية.",
+  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية. وإن لم يكن عندنا، فأضفه بقيمه لكل 100 غ وسجّله مباشرة.",
+  "cantFindIt": "لم تجد ما تبحث عنه؟",
+  "@cantFindIt": {
+    "description": "Below search results, before the button that adds an own food."
+  },
+  "addOwnFood": "أضف طعامك",
+  "@addOwnFood": {
+    "description": "Opens the form for a food the trainee adds, which only they see."
+  },
   "mealName": "{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}",
   "@mealName": {
     "placeholders": {

@@ -386,7 +386,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get noResultsBody => 'جرّب اسمًا آخر أو اكتبه بالإنجليزية.';
+  String get noResultsBody =>
+      'جرّب اسمًا آخر أو اكتبه بالإنجليزية. وإن لم يكن عندنا، فأضفه بقيمه لكل 100 غ وسجّله مباشرة.';
+
+  @override
+  String get cantFindIt => 'لم تجد ما تبحث عنه؟';
+
+  @override
+  String get addOwnFood => 'أضف طعامك';
 
   @override
   String mealName(String meal) {

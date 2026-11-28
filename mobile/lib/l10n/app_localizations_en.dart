@@ -383,7 +383,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noResultsBody => 'Try another name, or type it in Arabic.';
+  String get noResultsBody =>
+      'Try another name, or type it in Arabic. If we don\'t have it, add it with its values per 100 g and log it right away.';
+
+  @override
+  String get cantFindIt => 'Can\'t find what you\'re looking for?';
+
+  @override
+  String get addOwnFood => 'Add your food';
 
   @override
   String mealName(String meal) {
