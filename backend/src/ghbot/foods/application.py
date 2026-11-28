@@ -47,44 +47,43 @@ async def put_own_food(
     changes = {name: getattr(statement.excluded, name) for name in values}
     changes["updated_at"] = func.clock_timestamp()
     written = (
-        await session.execute(
-            statement.on_conflict_do_update(
-                index_elements=[Food.id],
-                set_=changes,
-                where=and_(
-                    Food.owner_id == user_id,
-                    Food.revision < statement.excluded.revision,
-                ),
-            ).returning(
-                Food, literal_column("old.id IS NULL", Boolean).label("created")
+        (
+            await session.execute(
+                statement.on_conflict_do_update(
+                    index_elements=[Food.id],
+                    set_=changes,
+                    where=and_(
+                        Food.owner_id == user_id,
+                        Food.revision < statement.excluded.revision,
+                    ),
+                ).returning(
+                    *_SENT_COLUMNS,
+                    literal_column("old.id IS NULL", Boolean).label("created"),
+                )
             )
         )
-    ).first()
+        .mappings()
+        .first()
+    )
     if written is not None:
         await session.commit()
-        return _food_answer(written[0]), written[1]
-    stored = await session.get(Food, food_id)
+        answer = dict(written)
+        return answer, bool(answer.pop("created"))
+    stored = (
+        (
+            await session.execute(
+                select(*_SENT_COLUMNS, Food.owner_id).where(Food.id == food_id)
+            )
+        )
+        .mappings()
+        .first()
+    )
     if stored is None:
         raise RuntimeError("Food conflict row disappeared")
-    if stored.owner_id != user_id:
+    answer = dict(stored)
+    if answer.pop("owner_id") != user_id:
         raise FoodOfAnotherUser
-    return _food_answer(stored), False
-
-
-def _food_answer(row: Food) -> dict[str, object]:
-    """Return the fields sent for one stored food."""
-    return {
-        "id": row.id,
-        "name_ar": row.name_ar,
-        "name_en": row.name_en,
-        "calories": row.calories,
-        "protein": row.protein,
-        "carbs": row.carbs,
-        "fat": row.fat,
-        "barcode": row.barcode,
-        "own": row.owner_id is not None,
-        "revision": row.revision,
-    }
+    return answer, False
 
 
 async def changed_foods(
@@ -120,20 +119,24 @@ def visible_foods(user_id: UUID) -> Select[tuple[Food]]:
     return select(Food).where(or_(Food.owner_id.is_(None), Food.owner_id == user_id))
 
 
+_SENT_COLUMNS = (
+    Food.id,
+    Food.name_ar,
+    Food.name_en,
+    rounded(Food.calories).label("calories"),
+    rounded(Food.protein).label("protein"),
+    rounded(Food.carbs).label("carbs"),
+    rounded(Food.fat).label("fat"),
+    Food.barcode,
+    Food.owner_id.is_not(None).label("own"),
+    Food.revision,
+)
+"""A food's fields as the API sends them, with the rounding of decision 30."""
+
+
 def _sent_foods(user_id: UUID) -> Select[tuple[object, ...]]:
     """Visible foods with the fields and rounding the API sends (decision 30)."""
-    return visible_foods(user_id).with_only_columns(
-        Food.id,
-        Food.name_ar,
-        Food.name_en,
-        rounded(Food.calories).label("calories"),
-        rounded(Food.protein).label("protein"),
-        rounded(Food.carbs).label("carbs"),
-        rounded(Food.fat).label("fat"),
-        Food.barcode,
-        Food.owner_id.is_not(None).label("own"),
-        Food.revision,
-    )
+    return visible_foods(user_id).with_only_columns(*_SENT_COLUMNS)
 
 
 async def search_foods(
