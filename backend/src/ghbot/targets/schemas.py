@@ -8,10 +8,10 @@ from ghbot.targets.models import CustomTargets
 
 
 class CustomTargetsBody(BaseModel):
-    calories: int = Field(strict=True, le=6000)
-    protein_g: int = Field(strict=True, ge=0, le=500)
-    fat_g: int = Field(strict=True, ge=0, le=300)
-    carbs_g: int = Field(strict=True, ge=0, le=1000)
+    calories: int = Field(le=6000)
+    protein_g: int = Field(ge=0, le=500)
+    fat_g: int = Field(ge=0, le=300)
+    carbs_g: int = Field(ge=0, le=1000)
 
 
 class MacroValues(TypedDict):
