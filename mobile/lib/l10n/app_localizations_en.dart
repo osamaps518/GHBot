@@ -352,4 +352,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String deleteEntryTitle(String food) {
+    return 'Delete $food?';
+  }
+
+  @override
+  String deleteEntryBody(String meal, String date, String calories) {
+    return 'It will be removed from $meal on $date, and $calories kcal will come off the day\'s total. This can\'t be undone.';
+  }
+
+  @override
+  String waitingToSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count entries are waiting to sync. They\'ll be sent when you\'re connected.',
+      one:
+          '1 entry is waiting to sync. It will be sent when you\'re connected.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get waitingToSyncEntry => 'Waiting to sync';
+
+  @override
+  String refusedNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count entries weren\'t saved on the server. Tap each one to fix it.',
+      one: '1 entry wasn\'t saved on the server. Tap it to fix it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get entryRefused => 'Not accepted. Tap to fix it.';
+
+  @override
+  String get entryRefusedAlert =>
+      'The server didn\'t accept this entry, so it\'s saved only on your phone. Change it or delete it.';
 }

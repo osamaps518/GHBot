@@ -79,5 +79,14 @@
   "extraMealName": "Meal name",
   "extraMealHint": "The meal stays on your day once you add its first food.",
   "errorMealName": "Enter a name of 1 to 40 characters.",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "deleteEntryTitle": "Delete {food}?",
+  "deleteEntryBody": "It will be removed from {meal} on {date}, and {calories} kcal will come off the day's total. This can't be undone.",
+  "waitingToSync": "{count, plural, =1{1 entry is waiting to sync. It will be sent when you're connected.} other{{count} entries are waiting to sync. They'll be sent when you're connected.}}",
+  "waitingToSyncEntry": "Waiting to sync",
+  "refusedNote": "{count, plural, =1{1 entry wasn't saved on the server. Tap it to fix it.} other{{count} entries weren't saved on the server. Tap each one to fix it.}}",
+  "entryRefused": "Not accepted. Tap to fix it.",
+  "entryRefusedAlert": "The server didn't accept this entry, so it's saved only on your phone. Change it or delete it."
 }

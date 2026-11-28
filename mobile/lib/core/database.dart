@@ -35,10 +35,12 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
-  /// to the next. Version 2 adds the foods and the diary.
+  /// to the next. Version 2 adds the foods and the diary. Version 3 adds
+  /// what sending entries needs (docs/decisions.md, 31); entries logged
+  /// before it are unsent.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -46,6 +48,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(schema.foods);
         await m.createTable(schema.foodLogEntries);
         await m.createIndex(schema.foodLogEntriesDiaryDay);
+      },
+      from2To3: (m, schema) async {
+        final entries = schema.foodLogEntries;
+        await m.addColumn(entries, entries.revision);
+        await m.addColumn(entries, entries.sentRevision);
+        await m.addColumn(entries, entries.deleted);
+        await m.addColumn(entries, entries.refused);
       },
     ),
   );
@@ -132,15 +141,17 @@ class AppDatabase extends _$AppDatabase {
   /// search. Both or neither are saved.
   ///
   /// The entry's ID is a UUIDv7, made here; its diary day comes from the
-  /// phone's clock at [loggedAt].
+  /// phone's clock at [loggedAt]. Throws an [ArgumentError] and saves
+  /// nothing when the server would refuse the entry.
   Future<void> logEntry({
     required Food food,
     required DiaryMeal meal,
     required int grams,
     required DateTime loggedAt,
   }) => transaction(() async {
-    await storeFood(food);
     final totals = entryTotals(food.per100g, grams);
+    _checkForServer(meal.meal, meal.name, grams, food.per100g, totals);
+    await storeFood(food);
     await into(foodLogEntryTable).insert(
       FoodLogEntryTableCompanion.insert(
         id: const Uuid().v7(),
@@ -162,8 +173,97 @@ class AppDatabase extends _$AppDatabase {
     );
   });
 
+  /// Changes an entry's grams (in tenths). The totals are calculated from
+  /// the entry's own values per 100 g, not its food's current ones
+  /// (docs/decisions.md, 21 and 30). The change raises the revision and
+  /// clears a refusal, so the entry is sent again. Throws an
+  /// [ArgumentError] and changes nothing when the server would refuse it.
+  /// An entry sync removed meanwhile, because the server deleted it, stays
+  /// removed.
+  Future<void> changeGrams(String entryId, int grams) => transaction(() async {
+    final entry = await (select(
+      foodLogEntryTable,
+    )..where((row) => row.id.equals(entryId))).getSingleOrNull();
+    if (entry == null) return;
+    final totals = entryTotals(entry.per100g, grams);
+    _checkForServer(entry.meal, entry.mealName, grams, entry.per100g, totals);
+    await (update(
+      foodLogEntryTable,
+    )..where((row) => row.id.equals(entryId))).write(
+      FoodLogEntryTableCompanion(
+        grams: Value(grams),
+        calories: Value(totals.calories),
+        protein: Value(totals.protein),
+        carbs: Value(totals.carbs),
+        fat: Value(totals.fat),
+        revision: Value(entry.revision + 1),
+        refused: const Value(false),
+      ),
+    );
+  });
+
+  /// Marks an entry deleted and raises its revision; the diary hides it.
+  /// The row stays until the server confirms the delete. Like a change, it
+  /// clears a refusal, so the delete is sent.
+  Future<void> deleteEntry(String entryId) =>
+      (update(foodLogEntryTable)..where((row) => row.id.equals(entryId))).write(
+        FoodLogEntryTableCompanion.custom(
+          revision: foodLogEntryTable.revision + const Constant(1),
+          deleted: const Constant(true),
+          refused: const Constant(false),
+        ),
+      );
+
+  /// The entries with a change the server hasn't confirmed, deleted ones
+  /// too, in the order they were logged.
+  Future<List<FoodLogEntry>> unsentEntries() =>
+      (select(foodLogEntryTable)
+            ..where((row) => _unsent)
+            ..orderBy([
+              (row) => OrderingTerm.asc(row.loggedAt),
+              (row) => OrderingTerm.asc(row.id),
+            ]))
+          .get();
+
+  /// How many entries [unsentEntries] has. The stream sends again after
+  /// every change.
+  Stream<int> watchUnsentCount() {
+    final count = foodLogEntryTable.id.count();
+    return (selectOnly(foodLogEntryTable)
+          ..addColumns([count])
+          ..where(_unsent))
+        .map((row) => row.read(count)!)
+        .watchSingle();
+  }
+
+  /// An entry with a change the server hasn't confirmed and will be sent.
+  Expression<bool> get _unsent =>
+      foodLogEntryTable.revision.isBiggerThan(foodLogEntryTable.sentRevision) &
+      foodLogEntryTable.refused.not();
+
+  /// Throws an [ArgumentError] when the server would refuse an entry with
+  /// these values.
+  void _checkForServer(
+    Meal meal,
+    String? mealName,
+    int grams,
+    Nutrients per100g,
+    Nutrients totals,
+  ) {
+    if (!passesServerChecks(
+      meal: meal,
+      mealName: mealName,
+      grams: grams,
+      per100g: per100g,
+      totals: totals,
+    )) {
+      throw ArgumentError('The server would refuse this entry.');
+    }
+  }
+
   /// The entries of [diaryDay] (`YYYY-MM-DD`) with their foods, in the
-  /// order they were logged. The stream sends again after every change.
+  /// order they were logged, without deleted ones. The stream sends again
+  /// after every change.
   Stream<List<LoggedFood>> watchDiaryDay(String diaryDay) {
     final query =
         select(foodLogEntryTable).join([
@@ -172,7 +272,10 @@ class AppDatabase extends _$AppDatabase {
               foodTable.id.equalsExp(foodLogEntryTable.foodId),
             ),
           ])
-          ..where(foodLogEntryTable.diaryDay.equals(diaryDay))
+          ..where(
+            foodLogEntryTable.diaryDay.equals(diaryDay) &
+                foodLogEntryTable.deleted.not(),
+          )
           ..orderBy([
             OrderingTerm.asc(foodLogEntryTable.loggedAt),
             OrderingTerm.asc(foodLogEntryTable.id),
@@ -189,7 +292,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// The 20 foods logged most recently, newest first, each with the grams
-  /// and calories (in tenths) it was last logged with.
+  /// and calories (in tenths) it was last logged with. Deleted entries
+  /// don't count.
   ///
   /// `logged_at` is stored in whole seconds, so two entries can share it.
   /// Like the diary, entries are ordered by `logged_at` and then by ID, which
@@ -203,7 +307,7 @@ class AppDatabase extends _$AppDatabase {
         'ROW_NUMBER() OVER ('
         'PARTITION BY food_id ORDER BY logged_at DESC, id DESC'
         ') AS newest '
-        'FROM food_log_entries'
+        'FROM food_log_entries WHERE NOT deleted'
         ') AS latest '
         'JOIN foods ON foods.id = latest.food_id '
         'WHERE latest.newest = 1 '

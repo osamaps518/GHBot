@@ -17,6 +17,8 @@ final ThemeData lightTheme = _theme(
     outline: const Color(0xFF929298),
     error: const Color(0xFFB3261E),
     onError: Colors.white,
+    errorContainer: const Color(0xFFFBEAE9),
+    onErrorContainer: _charcoal,
     inverseSurface: _charcoal,
     onInverseSurface: Colors.white,
     inversePrimary: const Color(0xFFFF9A4D),
@@ -46,6 +48,8 @@ final ThemeData darkTheme = _theme(
     outline: const Color(0xFF5E5E66),
     error: const Color(0xFFFFB4AB),
     onError: _charcoal,
+    errorContainer: const Color(0xFF3A1D22),
+    onErrorContainer: _offWhite,
     inverseSurface: _offWhite,
     onInverseSurface: _charcoal,
     inversePrimary: const Color(0xFFA34200),
@@ -79,6 +83,11 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
   foregroundColor: theme.colorScheme.onSurface,
 );
 
+/// A text button that deletes: Delete on the entry screen and in its
+/// confirmation, in the error color.
+ButtonStyle deleteButtonStyle(ThemeData theme) =>
+    TextButton.styleFrom(foregroundColor: theme.colorScheme.error);
+
 /// Builds a theme from [colors] and the [targets] colors.
 ///
 /// - Text fields and dropdowns share one look. `DropdownMenu` doesn't read the
@@ -103,7 +112,8 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
 ///   with a check mark. `ChoiceChip` takes its chosen colors from the
 ///   `secondary` chip settings.
 /// - Bottom sheets (naming an extra meal) sit on the card color, with a
-///   drag handle.
+///   drag handle. Dialogs (deleting an entry) sit on the card color too,
+///   with the title at 20 px like app bars and the body muted.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -212,6 +222,18 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       backgroundColor: colors.surfaceContainer,
       showDragHandle: true,
       dragHandleColor: colors.outline,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: colors.surfaceContainer,
+      titleTextStyle: base.textTheme.titleLarge!.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      contentTextStyle: base.textTheme.bodyLarge!.copyWith(
+        fontSize: 15,
+        color: colors.onSurfaceVariant,
+      ),
     ),
     appBarTheme: AppBarThemeData(
       backgroundColor: colors.surface,

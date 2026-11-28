@@ -201,7 +201,10 @@ void main() {
 
     /// Opens search from breakfast, the first meal, and searches for rice.
     Future<void> searchRice() async {
-      await tester.tap(find.text(english.addFood).first);
+      final addFood = find.text(english.addFood).first;
+      await tester.ensureVisible(addFood);
+      await tester.pumpAndSettle();
+      await tester.tap(addFood);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'rice');
       await tester.pump(const Duration(milliseconds: 300));

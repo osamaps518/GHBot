@@ -351,4 +351,58 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cancel => 'إلغاء';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String deleteEntryTitle(String food) {
+    return 'حذف $food؟';
+  }
+
+  @override
+  String deleteEntryBody(String meal, String date, String calories) {
+    return 'ستُحذف من $meal يوم $date، وتُطرح $calories سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.';
+  }
+
+  @override
+  String waitingToSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إدخال بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      many: '$count إدخالًا بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      few: '$count إدخالات بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.',
+      two: 'إدخالان بانتظار المزامنة. سيُرسلان حين يتوفّر الاتصال.',
+      one: 'إدخال واحد بانتظار المزامنة. سيُرسل حين يتوفّر الاتصال.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get waitingToSyncEntry => 'بانتظار المزامنة';
+
+  @override
+  String refusedNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لم يُحفظ $count إدخال على الخادم. اضغط على كل منها لإصلاحه.',
+      many: 'لم يُحفظ $count إدخالًا على الخادم. اضغط على كل منها لإصلاحه.',
+      few: 'لم تُحفظ $count إدخالات على الخادم. اضغط على كل منها لإصلاحه.',
+      two: 'لم يُحفظ إدخالان على الخادم. اضغط على كل منهما لإصلاحه.',
+      one: 'لم يُحفظ إدخال واحد على الخادم. اضغط عليه لإصلاحه.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get entryRefused => 'لم يُقبل. اضغط لإصلاحه.';
+
+  @override
+  String get entryRefusedAlert =>
+      'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.';
 }

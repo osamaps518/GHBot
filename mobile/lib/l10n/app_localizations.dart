@@ -577,6 +577,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إلغاء'**
   String get cancel;
+
+  /// Saves a changed entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
+
+  /// Deletes an entry, after the confirmation dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @deleteEntryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف {food}؟'**
+  String deleteEntryTitle(String food);
+
+  /// No description provided for @deleteEntryBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُحذف من {meal} يوم {date}، وتُطرح {calories} سعرة من مجموع اليوم. لا يمكن التراجع عن الحذف.'**
+  String deleteEntryBody(String meal, String date, String calories);
+
+  /// On the diary while entries on the phone haven't reached the server.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{إدخال واحد بانتظار المزامنة. سيُرسل حين يتوفّر الاتصال.} =2{إدخالان بانتظار المزامنة. سيُرسلان حين يتوفّر الاتصال.} few{{count} إدخالات بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} many{{count} إدخالًا بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.} other{{count} إدخال بانتظار المزامنة. ستُرسل حين يتوفّر الاتصال.}}'**
+  String waitingToSync(int count);
+
+  /// Read out for the clock next to an entry the server hasn't confirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار المزامنة'**
+  String get waitingToSyncEntry;
+
+  /// On the diary while the day has entries the server refused (#61).
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{لم يُحفظ إدخال واحد على الخادم. اضغط عليه لإصلاحه.} =2{لم يُحفظ إدخالان على الخادم. اضغط على كل منهما لإصلاحه.} few{لم تُحفظ {count} إدخالات على الخادم. اضغط على كل منها لإصلاحه.} many{لم يُحفظ {count} إدخالًا على الخادم. اضغط على كل منها لإصلاحه.} other{لم يُحفظ {count} إدخال على الخادم. اضغط على كل منها لإصلاحه.}}'**
+  String refusedNote(int count);
+
+  /// Under a refused entry on the diary, in place of its grams.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُقبل. اضغط لإصلاحه.'**
+  String get entryRefused;
+
+  /// At the top of the entry screen for a refused entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.'**
+  String get entryRefusedAlert;
 }
 
 class _AppLocalizationsDelegate

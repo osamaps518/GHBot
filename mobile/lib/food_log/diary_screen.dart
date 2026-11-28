@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import '../targets/targets.dart';
 import 'amount_screen.dart';
 import 'entry.dart';
+import 'entry_edit_screen.dart';
 import 'extra_meal_sheet.dart';
 import 'meal.dart';
 
@@ -38,6 +39,9 @@ class DiaryScreen extends StatefulWidget {
 class _DiaryScreenState extends State<DiaryScreen> {
   late String _day;
   late Stream<List<LoggedFood>> _entries;
+
+  /// How many entries, on any day, wait to be sent.
+  late final _unsentCount = widget.database.watchUnsentCount();
 
   /// Extra meals named on this screen today. They show until the screen
   /// closes; one stays on the day only through its entries.
@@ -99,6 +103,16 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+  /// Opens [logged] to change or delete it.
+  void _openEntry(LoggedFood logged) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            EntryEditScreen(database: widget.database, logged: logged),
+      ),
+    );
+  }
+
   /// Asks for an extra meal's name, shows the meal, and opens search for it.
   /// [entries] are the day's, to list the meals the amount step offers.
   Future<void> _addMeal(List<LoggedFood> entries) async {
@@ -127,10 +141,22 @@ class _DiaryScreenState extends State<DiaryScreen> {
               entries.map((logged) => logged.entry.totals),
             );
             final mealKeys = [for (final group in meals) group.meal];
+            final refused = entries
+                .where((logged) => logged.entry.refused)
+                .length;
+            final colors = Theme.of(context).colorScheme;
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
               children: [
                 _DayHeader(day: _day),
+                _WaitingNote(count: _unsentCount),
+                if (refused > 0)
+                  _Note(
+                    icon: Icons.error_outline,
+                    text: l10n.refusedNote(refused),
+                    background: colors.errorContainer,
+                    foreground: colors.error,
+                  ),
                 const SizedBox(height: 12),
                 _CaloriesCard(
                   eaten: roundTenths(dayTotals.calories),
@@ -144,6 +170,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   _MealCard(
                     group: group,
                     onAddFood: () => _addFood(group.meal, mealKeys),
+                    onOpen: _openEntry,
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -172,21 +199,86 @@ class _DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final date = DateTime.parse(day);
     return Column(
       children: [
         Text(l10n.today, style: theme.appBarTheme.titleTextStyle),
         Text(
-          l10n.diaryDate(
-            l10n.weekdayName('${date.weekday}'),
-            '${date.day}',
-            l10n.monthName('${date.month}'),
-          ),
+          diaryDateText(l10n, day),
           style: theme.textTheme.bodySmall!.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "3 entries are waiting to sync", while [count] is above 0.
+class _WaitingNote extends StatelessWidget {
+  const _WaitingNote({required this.count});
+
+  final Stream<int> count;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return StreamBuilder(
+      stream: count,
+      builder: (context, snapshot) {
+        final waiting = snapshot.data ?? 0;
+        if (waiting == 0) return const SizedBox.shrink();
+        return _Note(
+          icon: Icons.schedule,
+          text: AppLocalizations.of(context)!.waitingToSync(waiting),
+          background: colors.surfaceContainer,
+          foreground: colors.onSurfaceVariant,
+        );
+      },
+    );
+  }
+}
+
+/// A sentence about the diary's state, with its icon, in a rounded box
+/// under the day.
+class _Note extends StatelessWidget {
+  const _Note({
+    required this.icon,
+    required this.text,
+    required this.background,
+    required this.foreground,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            spacing: 10,
+            children: [
+              Icon(icon, size: 20, color: foreground),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodyMedium!
+                      .copyWith(color: foreground),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -410,19 +502,24 @@ class _MacroCard extends StatelessWidget {
   }
 }
 
-/// A meal's name and calories, its entries, and Add food.
+/// A meal's name and calories, its entries, and Add food. Tapping an entry
+/// opens it.
 class _MealCard extends StatelessWidget {
-  const _MealCard({required this.group, required this.onAddFood});
+  const _MealCard({
+    required this.group,
+    required this.onAddFood,
+    required this.onOpen,
+  });
 
   final MealGroup group;
   final VoidCallback onAddFood;
+  final ValueChanged<LoggedFood> onOpen;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    final languageCode = Localizations.localeOf(context).languageCode;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -450,17 +547,8 @@ class _MealCard extends StatelessWidget {
                 ],
               ),
             ),
-            for (final LoggedFood(:entry, :food) in group.entries)
-              ListTile(
-                title: Text(food.name(languageCode)),
-                subtitle: Text(
-                  '${formatTenths(entry.grams)} ${l10n.gramsUnit}',
-                ),
-                trailing: Text(
-                  '${roundTenths(entry.totals.calories)}',
-                  style: theme.textTheme.titleSmall,
-                ),
-              ),
+            for (final logged in group.entries)
+              _EntryTile(logged: logged, onTap: () => onOpen(logged)),
             if (group.entries.isEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
@@ -481,5 +569,66 @@ class _MealCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// An entry's food, grams and calories. One waiting to sync has a clock by
+/// its calories. One the server refused is tinted and says so in place of
+/// its grams, with an error mark.
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({required this.logged, required this.onTap});
+
+  final LoggedFood logged;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final entry = logged.entry;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final tile = ListTile(
+      onTap: onTap,
+      tileColor: entry.refused ? colors.errorContainer : null,
+      shape: entry.refused
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+          : null,
+      contentPadding: entry.refused
+          ? const EdgeInsets.symmetric(horizontal: 10)
+          : null,
+      title: Text(logged.food.name(languageCode)),
+      subtitle: entry.refused
+          ? Text(
+              l10n.entryRefused,
+              style: theme.textTheme.bodyMedium!.copyWith(color: colors.error),
+            )
+          : Text('${formatTenths(entry.grams)} ${l10n.gramsUnit}'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 6,
+        children: [
+          if (entry.refused)
+            Icon(Icons.error_outline, size: 18, color: colors.error)
+          else if (entry.unsent)
+            Icon(
+              Icons.schedule,
+              size: 16,
+              color: colors.onSurfaceVariant,
+              semanticLabel: l10n.waitingToSyncEntry,
+            ),
+          Text(
+            '${roundTenths(entry.totals.calories)}',
+            style: theme.textTheme.titleSmall,
+          ),
+        ],
+      ),
+    );
+    return entry.refused
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: tile,
+          )
+        : tile;
   }
 }

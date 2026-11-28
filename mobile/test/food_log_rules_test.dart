@@ -173,4 +173,131 @@ void main() {
       });
     }
   });
+
+  group("the server's checks before a save", () {
+    final rice150 = entryTotals(_rice, 1500);
+    const fatty = Nutrients(calories: 9000, protein: 1000, carbs: 0, fat: 0);
+
+    for (final (name, meal, mealName, grams, per100g, totals, passes) in [
+      ('rice, 150 g, lunch', Meal.lunch, null, 1500, _rice, rice150, true),
+      (
+        'the highest values',
+        Meal.lunch,
+        null,
+        10,
+        fatty,
+        entryTotals(fatty, 10),
+        true,
+      ),
+      ('no grams', Meal.lunch, null, 0, _rice, Nutrients.zero, false),
+      (
+        'over 5000 g',
+        Meal.lunch,
+        null,
+        50001,
+        _rice,
+        entryTotals(_rice, 50001),
+        false,
+      ),
+      (
+        'over 900 kcal per 100 g',
+        Meal.lunch,
+        null,
+        1000,
+        const Nutrients(calories: 9001, protein: 0, carbs: 0, fat: 0),
+        const Nutrients(calories: 9001, protein: 0, carbs: 0, fat: 0),
+        false,
+      ),
+      (
+        'over 100 g of a macro per 100 g',
+        Meal.lunch,
+        null,
+        1000,
+        const Nutrients(calories: 0, protein: 0, carbs: 1001, fat: 0),
+        const Nutrients(calories: 0, protein: 0, carbs: 1001, fat: 0),
+        false,
+      ),
+      (
+        'a total one tenth off',
+        Meal.lunch,
+        null,
+        1500,
+        _rice,
+        Nutrients(
+          calories: rice150.calories,
+          protein: rice150.protein + 1,
+          carbs: rice150.carbs,
+          fat: rice150.fat,
+        ),
+        false,
+      ),
+      (
+        'an extra meal with a name',
+        Meal.extra,
+        'Pre-workout',
+        1500,
+        _rice,
+        rice150,
+        true,
+      ),
+      (
+        'an extra meal without a name',
+        Meal.extra,
+        null,
+        1500,
+        _rice,
+        rice150,
+        false,
+      ),
+      (
+        'an extra meal named with spaces only',
+        Meal.extra,
+        '  ',
+        1500,
+        _rice,
+        rice150,
+        false,
+      ),
+      (
+        'an extra meal with 41 characters',
+        Meal.extra,
+        'a' * 41,
+        1500,
+        _rice,
+        rice150,
+        false,
+      ),
+      (
+        'a NUL in the name',
+        Meal.extra,
+        'a\u0000b',
+        1500,
+        _rice,
+        rice150,
+        false,
+      ),
+      (
+        'lunch with a name',
+        Meal.lunch,
+        'Pre-workout',
+        1500,
+        _rice,
+        rice150,
+        false,
+      ),
+    ]) {
+      test('$name ${passes ? 'passes' : 'fails'}', () {
+        expect(
+          passesServerChecks(
+            meal: meal,
+            mealName: mealName,
+            grams: grams,
+            per100g: per100g,
+            totals: totals,
+          ),
+          passes,
+        );
+      });
+    }
+  });
 }

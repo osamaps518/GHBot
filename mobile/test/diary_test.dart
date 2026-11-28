@@ -5,14 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/auth/auth_session.dart';
 import 'package:ghbot/core/api_client.dart';
 import 'package:ghbot/core/database.dart';
+import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/core/theme.dart';
 import 'package:ghbot/food_log/diary_screen.dart';
+import 'package:ghbot/food_log/entry_edit_screen.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
 import 'package:ghbot/foods/food_search_screen.dart';
 import 'package:ghbot/foods/foods_api.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
 import 'package:ghbot/targets/targets.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -69,13 +72,29 @@ Finder _inMeal(String meal, Finder finder) => find.descendant(
   matching: finder,
 );
 
+/// Sends [database]'s unsent entries to [backend], signed in as alice.
+Future<void> _sync(AppDatabase database, FakeBackend backend) async {
+  final session = AuthSession(
+    ApiClient(client: backend.client, baseUrl: 'http://backend.test'),
+  );
+  await session.signIn('alice');
+  await SyncRunner(
+    session: session,
+    userId: userIdFor('alice'),
+    database: database,
+  ).run();
+}
+
 /// Scrolls the diary, which builds only what is on screen, to [finder].
+/// `ensureVisible` covers a widget built just past the screen's edge.
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(
     finder,
     200,
     scrollable: find.byType(Scrollable).first,
   );
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -172,16 +191,198 @@ void main() {
     expect(_inMeal('Pre-workout', find.text('Olive oil')), findsOne);
   });
 
-  testWidgets('an extra meal needs a name of 1 to 40 characters', (
-    tester,
-  ) async {
-    await _pumpDiary(tester);
+  for (final (refused, typed) in [
+    ('only spaces', '   '),
+    ('a NUL character', 'a\u0000b'),
+  ]) {
+    testWidgets('an extra meal name with $refused is refused before search', (
+      tester,
+    ) async {
+      final database = await _pumpDiary(tester);
 
-    await _tap(tester, find.text(english.addMeal));
-    await tester.enterText(find.byType(TextField), '   ');
-    await _tap(tester, find.widgetWithText(FilledButton, english.addFood));
+      await _tap(tester, find.text(english.addMeal));
+      await tester.enterText(find.byType(TextField), typed);
+      await _tap(tester, find.widgetWithText(FilledButton, english.addFood));
 
-    expect(find.text(english.errorMealName), findsOneWidget);
-    expect(find.byType(FoodSearchScreen), findsNothing);
+      expect(find.text(english.errorMealName), findsOneWidget);
+      expect(find.byType(FoodSearchScreen), findsNothing);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+  }
+
+  testWidgets('the diary says how many entries wait to sync, and marks '
+      'each, until they are sent', (tester) async {
+    final database = await _pumpDiary(tester);
+    for (final json in [riceJson, oilJson]) {
+      await database.logEntry(
+        food: Food.fromJson(json),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1000,
+        loggedAt: DateTime.now(),
+      );
+    }
+    await tester.pumpAndSettle();
+    final waitingMarks = find.descendant(
+      of: find.byType(ListTile),
+      matching: find.byIcon(Icons.schedule),
+    );
+
+    expect(find.text(english.waitingToSync(2)), findsOneWidget);
+    expect(waitingMarks, findsNWidgets(2));
+
+    await _sync(database, FakeBackend());
+    await tester.pumpAndSettle();
+
+    expect(find.text(english.waitingToSync(2)), findsNothing);
+    expect(waitingMarks, findsNothing);
+  });
+
+  testWidgets('a refused entry is tinted and says so; tapping it explains '
+      'and offers change or delete', (tester) async {
+    final database = await _pumpDiary(tester);
+    await database.logEntry(
+      food: Food.fromJson(riceJson),
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      loggedAt: DateTime.now(),
+    );
+    final backend = FakeBackend()
+      ..intercept = (request) =>
+          request.url.path.startsWith('/me/food-log/entries/')
+          ? http.Response('{"detail": [{"type": "value_error"}]}', 422)
+          : null;
+
+    await _sync(database, backend);
+    await tester.pumpAndSettle();
+
+    expect(find.text(english.refusedNote(1)), findsOneWidget);
+    expect(find.text(english.waitingToSync(1)), findsNothing);
+    final tile = find.widgetWithText(ListTile, 'Cooked white rice');
+    expect(
+      find.descendant(of: tile, matching: find.text(english.entryRefused)),
+      findsOne,
+    );
+    final colors = lightTheme.colorScheme;
+    expect(tester.widget<ListTile>(tile).tileColor, colors.errorContainer);
+
+    await _tap(tester, find.text('Cooked white rice'));
+    expect(find.text(english.entryRefusedAlert), findsOneWidget);
+    expect(find.text(english.delete), findsOneWidget);
+  });
+
+  group('changing an entry', () {
+    /// Logs rice, 150 g, into today's lunch, and opens it from the diary.
+    Future<AppDatabase> openRice(WidgetTester tester) async {
+      final database = await _pumpDiary(tester);
+      await database.logEntry(
+        food: Food.fromJson(riceJson),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1500,
+        loggedAt: DateTime.now(),
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('Cooked white rice'));
+      return database;
+    }
+
+    FilledButton save(WidgetTester tester) => tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, english.save),
+    );
+
+    testWidgets('Save waits for a new amount, and the diary shows it', (
+      tester,
+    ) async {
+      await openRice(tester);
+      expect(find.text(english.caloriesPer100g('130')), findsOneWidget);
+      expect(save(tester).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), '200');
+      await tester.pump();
+      expect(find.text('260'), findsOneWidget);
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiaryScreen), findsOneWidget);
+      final lunch = english.mealName('lunch');
+      expect(_inMeal(lunch, find.text('200 ${english.gramsUnit}')), findsOne);
+      expect(_inMeal(lunch, find.text('260')), findsOne);
+    });
+
+    testWidgets('Save closes the screen when sync removed the entry '
+        'meanwhile, and the entry stays deleted', (tester) async {
+      final database = await openRice(tester);
+      final id = (await database.unsentEntries()).single.id;
+      final backend = FakeBackend()
+        ..entries[id] = {'id': id, 'revision': 0, 'deleted': true};
+      await _sync(database, backend);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '200');
+      await tester.pump();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+      await _sync(database, backend);
+
+      expect(find.byType(EntryEditScreen), findsNothing);
+      expect(find.text('Cooked white rice'), findsNothing);
+      expect(backend.entryRequests, hasLength(1));
+      expect(backend.entries[id], containsPair('deleted', true));
+    });
+
+    testWidgets('an amount the server would refuse shows the error and '
+        'changes nothing', (tester) async {
+      await openRice(tester);
+
+      await tester.enterText(find.byType(TextField), '0');
+      await tester.pump();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.errorGrams), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('150 ${english.gramsUnit}'), findsOneWidget);
+    });
+
+    testWidgets('Delete asks first; Cancel keeps the entry, Delete removes '
+        'it from the diary', (tester) async {
+      await openRice(tester);
+      final inDialog = find.byType(AlertDialog);
+
+      await tester.tap(find.text(english.delete));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(english.deleteEntryTitle('Cooked white rice')),
+        findsOne,
+      );
+      final now = DateTime.now();
+      final today = english.diaryDate(
+        english.weekdayName('${now.weekday}'),
+        '${now.day}',
+        english.monthName('${now.month}'),
+      );
+      expect(
+        find.text(
+          english.deleteEntryBody(english.mealName('lunch'), today, '195'),
+        ),
+        findsOne,
+      );
+      await tester.tap(
+        find.descendant(of: inDialog, matching: find.text(english.cancel)),
+      );
+      await tester.pumpAndSettle();
+      expect(inDialog, findsNothing);
+      expect(find.byType(EntryEditScreen), findsOneWidget);
+
+      await tester.tap(find.text(english.delete));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(of: inDialog, matching: find.text(english.delete)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiaryScreen), findsOneWidget);
+      expect(find.text('Cooked white rice'), findsNothing);
+    });
   });
 }

@@ -35,13 +35,22 @@ class AuthSession {
     return _subject != null;
   }
 
-  /// Signs in and stores the name and ID only once both calls succeed.
+  /// Signs in and stores the name and ID only once both calls succeed. Until
+  /// then, calls keep the previous user's name, ID and token, so no call
+  /// sees the new token with the old ID.
   Future<void> signIn(String name) async {
     final token = await _requestToken(name);
-    _subject = name;
-    _token = Future.value(token);
-    await fetchUserId();
+    final response = await _client.send(
+      'GET',
+      '/me',
+      headers: {'authorization': 'Bearer $token'},
+    );
+    final id = _parse(() => _client.decode(response)['id'] as String);
+    await _preferences.setString(_userIdKey, id);
     await _preferences.setString(_subjectKey, name);
+    _subject = name;
+    _userId = id;
+    _token = Future.value(token);
   }
 
   /// Gets the signed-in user's ID from the server and stores it.
@@ -84,13 +93,26 @@ class AuthSession {
     return _parse(() => parse(_client.decode(response)));
   }
 
+  Future<T> delete<T>(
+    String path,
+    T Function(Map<String, Object?>) parse,
+  ) async {
+    final response = await _sendAuthorized('DELETE', path);
+    return _parse(() => parse(_client.decode(response)));
+  }
+
   /// Sends with the current token, and once more with a new one after a 401.
   /// Calls made in parallel share one new token.
+  ///
+  /// A call belongs to the user signed in when it starts. If another user
+  /// signed in since, its 401 is the answer: a retry would send this user's
+  /// request with the other user's token.
   Future<http.Response> _sendAuthorized(
     String method,
     String path, {
     Object? body,
   }) async {
+    final subject = _subject;
     final token = _currentToken();
     final response = await _client.send(
       method,
@@ -98,7 +120,7 @@ class AuthSession {
       body: body,
       headers: {'authorization': 'Bearer ${await token}'},
     );
-    if (response.statusCode != 401) return response;
+    if (response.statusCode != 401 || _subject != subject) return response;
     if (identical(_token, token)) _token = null;
     return _client.send(
       method,
