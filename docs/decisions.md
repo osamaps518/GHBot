@@ -817,9 +817,9 @@ them and does not calculate its own (decision 31).
 **Status:** Accepted, 2026-11-24 (#59).
 
 An entry's diary day comes from the phone's clock and time zone when it is
-logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00
-(`dayStartHour` in `mobile/lib/food_log/entry.dart`), so a snack at 1:30 still
-belongs to the evening before. When it is logged is stored separately, in UTC.
+logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00, so
+a snack at 1:30 still belongs to the evening before. When it is logged is stored
+separately, in UTC.
 
 - The server doesn't know the phone's time zone.
 - An entry keeps its day: travel, or a later change to the day start, doesn't

@@ -2,8 +2,8 @@ import '../core/typed_number.dart';
 import '../foods/food.dart';
 import 'meal.dart';
 
-/// The diary day starts at 4:00 on the phone's clock, so a late snack at
-/// 1:30 still belongs to the evening before (decision 34).
+/// The hour the diary day starts on the phone's clock: an entry logged
+/// before 4:00 belongs to the day before (decision 34).
 const dayStartHour = 4;
 
 /// The diary day of [localTime], as `YYYY-MM-DD`.
