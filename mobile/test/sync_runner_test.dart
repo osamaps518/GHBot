@@ -529,6 +529,20 @@ void main() {
       expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
     });
 
+    test('a fixed catalog food replaces the copy on the phone; entries keep '
+        'the values they were logged with', () async {
+      await logRice();
+      await runner.run();
+      backend.changeFood({...riceJson, 'calories': 140.0});
+
+      await runner.run();
+
+      final logged = (await database.watchDiaryDay('2026-11-23').first).single;
+      expect(logged.food.per100g.calories, 1400);
+      expect(logged.entry.per100g.calories, 1300);
+      expect(logged.entry.totals.calories, 1950);
+    });
+
     test('a pull whose answer is lost keeps the old marker, and the next one '
         'asks again from it', () async {
       await runner.run();

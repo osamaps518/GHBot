@@ -132,6 +132,16 @@ class FakeBackend {
     _entryTicks[id] = ++_clock;
   }
 
+  /// Replaces the catalog food with [food]'s ID, as when the catalog is
+  /// fixed.
+  void changeFood(Map<String, Object?> food) {
+    foods = [
+      for (final old in foods)
+        if (old['id'] == food['id']) food else old,
+    ];
+    _foodTicks[food['id']! as String] = ++_clock;
+  }
+
   /// Makes every token issued so far invalid, as when they expire. Tokens last
   /// 15 minutes; the app may stay open longer.
   void expireTokens() => _validTokens.clear();
