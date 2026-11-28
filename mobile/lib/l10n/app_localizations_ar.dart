@@ -510,4 +510,18 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get entryRefusedAlert =>
       'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.';
+
+  @override
+  String get entryDate => 'التاريخ';
+
+  @override
+  String get moveToAnotherDay => 'نقل إلى يوم آخر';
+
+  @override
+  String moveStaysInMeal(String meal) {
+    return 'يبقى في $meal في اليوم الذي تختاره.';
+  }
+
+  @override
+  String get otherDate => 'تاريخ آخر…';
 }

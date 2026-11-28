@@ -101,6 +101,16 @@ ButtonStyle backToTodayStyle(ThemeData theme) => TextButton.styleFrom(
   padding: const EdgeInsets.symmetric(horizontal: 16),
 );
 
+/// The entry screen's day: a field-shaped button like the grams field, its
+/// text at the start.
+ButtonStyle dayFieldStyle(ThemeData theme) => OutlinedButton.styleFrom(
+  backgroundColor: theme.colorScheme.surfaceContainer,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  padding: const EdgeInsets.symmetric(horizontal: 14),
+  alignment: AlignmentDirectional.centerStart,
+  textStyle: theme.textTheme.bodyLarge,
+);
+
 /// A text button on the daily calories card: Edit targets, in the card's
 /// text color.
 ButtonStyle heroLinkStyle(TargetsColors colors) => TextButton.styleFrom(
@@ -124,8 +134,9 @@ ButtonStyle deleteButtonStyle(ThemeData theme) =>
 /// - `displayLarge` is the daily calories number on the targets screen.
 /// - Text buttons (Add food, Targets, Cancel) take the text color, not the
 ///   orange, in dark mode too.
-/// - List tiles (foods and diary entries) line up with their cards' 18 px
-///   padding.
+/// - List tiles (foods, diary entries and the move sheet's days) line up
+///   with their cards' 18 px padding. The chosen one (the entry's day in
+///   the move sheet) sits on the track color, in the text color.
 /// - Segmented buttons are the gender and goal pickers: a pill-shaped track,
 ///   the chosen option filled.
 /// - Progress indicators are the macro bars on the targets screen. Each bar's
@@ -218,8 +229,10 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       linearTrackColor: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(999),
     ),
-    listTileTheme: const ListTileThemeData(
-      contentPadding: EdgeInsets.symmetric(horizontal: 18),
+    listTileTheme: ListTileThemeData(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+      selectedColor: colors.onSurface,
+      selectedTileColor: colors.surfaceContainerHighest,
     ),
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),

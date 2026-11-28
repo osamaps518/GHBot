@@ -496,5 +496,27 @@
   "entryRefusedAlert": "لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.",
   "@entryRefusedAlert": {
     "description": "At the top of the entry screen for a refused entry."
+  },
+  "entryDate": "التاريخ",
+  "@entryDate": {
+    "description": "Label of the entry screen's day row, which opens the move sheet."
+  },
+  "moveToAnotherDay": "نقل إلى يوم آخر",
+  "@moveToAnotherDay": {
+    "description": "Title of the sheet that moves an entry to another day."
+  },
+  "moveStaysInMeal": "يبقى في {meal} في اليوم الذي تختاره.",
+  "@moveStaysInMeal": {
+    "description": "Under the move sheet's title: a moved entry keeps its meal.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The entry's meal, or an extra meal's name."
+      }
+    }
+  },
+  "otherDate": "تاريخ آخر…",
+  "@otherDate": {
+    "description": "Last row of the move sheet; opens the date picker."
   }
 }

@@ -775,6 +775,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.'**
   String get entryRefusedAlert;
+
+  /// Label of the entry screen's day row, which opens the move sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get entryDate;
+
+  /// Title of the sheet that moves an entry to another day.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل إلى يوم آخر'**
+  String get moveToAnotherDay;
+
+  /// Under the move sheet's title: a moved entry keeps its meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبقى في {meal} في اليوم الذي تختاره.'**
+  String moveStaysInMeal(String meal);
+
+  /// Last row of the move sheet; opens the date picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ آخر…'**
+  String get otherDate;
 }
 
 class _AppLocalizationsDelegate

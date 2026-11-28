@@ -108,6 +108,25 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+/// Flutter's own English text, as in the date picker.
+const _material = DefaultMaterialLocalizations();
+
+/// Types [day] into the open date picker, switching it to typing first,
+/// and taps OK.
+Future<void> _typeDate(WidgetTester tester, String day) async {
+  final typing = find.byIcon(Icons.edit_outlined);
+  if (typing.evaluate().isNotEmpty) {
+    await tester.tap(typing);
+    await tester.pumpAndSettle();
+  }
+  await tester.enterText(
+    find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+    _material.formatCompactDate(DateTime.parse(day)),
+  );
+  await tester.tap(find.text(_material.okButtonLabel));
+  await tester.pumpAndSettle();
+}
+
 /// Scrolls the diary back to its day and totals.
 Future<void> _scrollToTop(WidgetTester tester) async {
   await tester.drag(find.byType(Scrollable).first, const Offset(0, 3000));
@@ -391,30 +410,14 @@ void main() {
     testWidgets('tapping the day opens the date picker, which goes from the '
         'account day to today', (tester) async {
       await _pumpDiary(tester, firstDay: _daysAgo(5));
-      final material = MaterialLocalizations.of(
-        tester.element(find.byType(DiaryScreen)),
-      );
-      Future<void> typeDate(String day) async {
-        await tester.enterText(
-          find.descendant(
-            of: find.byType(Dialog),
-            matching: find.byType(TextField),
-          ),
-          material.formatCompactDate(DateTime.parse(day)),
-        );
-        await tester.tap(find.text(material.okButtonLabel));
-        await tester.pumpAndSettle();
-      }
 
       await tester.tap(find.text(english.today));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.edit_outlined));
-      await tester.pumpAndSettle();
       for (final outside in [_daysAgo(6), addDays(_today(), 1)]) {
-        await typeDate(outside);
-        expect(find.text(material.dateOutOfRangeLabel), findsOneWidget);
+        await _typeDate(tester, outside);
+        expect(find.text(_material.dateOutOfRangeLabel), findsOneWidget);
       }
-      await typeDate(_daysAgo(5));
+      await _typeDate(tester, _daysAgo(5));
 
       expect(find.byType(Dialog), findsNothing);
       expect(find.text(_dateText(_daysAgo(5))), findsOneWidget);
@@ -423,9 +426,13 @@ void main() {
   });
 
   group('changing an entry', () {
-    /// Logs rice, 150 g, into today's lunch, and opens it from the diary.
-    Future<AppDatabase> openRice(WidgetTester tester) async {
-      final database = await _pumpDiary(tester);
+    /// Logs rice, 150 g, into today's lunch, and opens it from the diary of
+    /// an account created on [firstDay].
+    Future<AppDatabase> openRice(
+      WidgetTester tester, {
+      String? firstDay,
+    }) async {
+      final database = await _pumpDiary(tester, firstDay: firstDay);
       await database.logEntry(
         food: Food.fromJson(riceJson),
         meal: const DiaryMeal(Meal.lunch),
@@ -536,6 +543,92 @@ void main() {
 
       expect(find.byType(DiaryScreen), findsOneWidget);
       expect(find.text('Cooked white rice'), findsNothing);
+    });
+
+    /// The move sheet's row for [day], by its name or date.
+    Finder sheetRow(String text) => find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.widgetWithText(ListTile, text),
+    );
+
+    testWidgets('the date opens the move sheet with today and the six days '
+        "before it, the entry's day marked; Save moves it there with its "
+        'new amount', (tester) async {
+      final database = await openRice(tester);
+
+      await tester.tap(find.text(_dateText(_today())));
+      await tester.pumpAndSettle();
+      expect(find.text(english.moveToAnotherDay), findsOneWidget);
+      expect(
+        find.text(english.moveStaysInMeal(english.mealName('lunch'))),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: sheetRow(english.today),
+          matching: find.byIcon(Icons.check),
+        ),
+        findsOne,
+      );
+      expect(sheetRow(english.yesterday), findsOne);
+      for (var days = 2; days <= 6; days++) {
+        expect(sheetRow(_dateText(_daysAgo(days))), findsOne);
+      }
+      expect(find.text(_dateText(_daysAgo(7))), findsNothing);
+      expect(find.text(english.otherDate), findsOneWidget);
+
+      await tester.tap(sheetRow(_dateText(_daysAgo(3))));
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text(_dateText(_daysAgo(3))), findsOneWidget);
+      await tester.enterText(find.byType(TextField), '200');
+      await tester.pump();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiaryScreen), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('0', '2210')), findsOneWidget);
+      final moved = (await database.unsentEntries()).single;
+      expect(
+        (moved.diaryDay, moved.grams, moved.meal),
+        (_daysAgo(3), 2000, Meal.lunch),
+      );
+    });
+
+    testWidgets('the sheet lists no day before the account day, and Another '
+        'date opens the date picker from the account day to today', (
+      tester,
+    ) async {
+      final database = await openRice(tester, firstDay: _daysAgo(3));
+
+      await tester.tap(find.text(_dateText(_today())));
+      await tester.pumpAndSettle();
+      expect(sheetRow(_dateText(_daysAgo(3))), findsOne);
+      expect(find.text(_dateText(_daysAgo(4))), findsNothing);
+
+      await tester.tap(find.text(english.otherDate));
+      await tester.pumpAndSettle();
+      await _typeDate(tester, _daysAgo(4));
+      expect(find.text(_material.dateOutOfRangeLabel), findsOneWidget);
+      await _typeDate(tester, _daysAgo(3));
+      expect(find.byType(BottomSheet), findsNothing);
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect((await database.unsentEntries()).single.diaryDay, _daysAgo(3));
+    });
+
+    testWidgets('choosing the day the entry is on leaves Save off', (
+      tester,
+    ) async {
+      await openRice(tester);
+
+      await tester.tap(find.text(_dateText(_today())));
+      await tester.pumpAndSettle();
+      await tester.tap(sheetRow(english.today));
+      await tester.pumpAndSettle();
+
+      expect(save(tester).onPressed, isNull);
     });
   });
 }

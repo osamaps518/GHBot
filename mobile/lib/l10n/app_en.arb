@@ -112,5 +112,9 @@
   "waitingToSyncEntry": "Waiting to sync",
   "refusedNote": "{count, plural, =1{1 entry wasn't saved on the server. Tap it to fix it.} other{{count} entries weren't saved on the server. Tap each one to fix it.}}",
   "entryRefused": "Not accepted. Tap to fix it.",
-  "entryRefusedAlert": "The server didn't accept this entry, so it's saved only on your phone. Change it or delete it."
+  "entryRefusedAlert": "The server didn't accept this entry, so it's saved only on your phone. Change it or delete it.",
+  "entryDate": "Date",
+  "moveToAnotherDay": "Move to another day",
+  "moveStaysInMeal": "It stays in {meal} on the day you choose.",
+  "otherDate": "Another date…"
 }

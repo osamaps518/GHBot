@@ -14,6 +14,7 @@ import 'entry.dart';
 import 'entry_edit_screen.dart';
 import 'extra_meal_sheet.dart';
 import 'meal.dart';
+import 'move_day_sheet.dart';
 
 /// The home screen: one day's entries under their meals, and the day's
 /// calories and macros next to the current targets. It opens on today; the
@@ -106,18 +107,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   /// Opens the date picker on the day shown, from [_firstDay] to today, and
-  /// shows the day chosen. The picker marks the diary's today, which before
-  /// 4:00 is the calendar's yesterday.
+  /// shows the day chosen.
   Future<void> _pickDay() async {
-    final today = DateTime.parse(_today);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.parse(_day),
-      firstDate: DateTime.parse(_firstDay),
-      lastDate: today,
-      currentDate: today,
+    final picked = await showDiaryDayPicker(
+      context,
+      day: _day,
+      firstDay: _firstDay,
+      today: _today,
     );
-    if (picked != null && mounted) _go(dayOfDate(picked));
+    if (picked != null && mounted) _go(picked);
   }
 
   /// Opens search for [meal], then the amount step for the chosen food.
@@ -153,12 +151,16 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
-  /// Opens [logged] to change or delete it.
+  /// Opens [logged] to change, move or delete it.
   void _openEntry(LoggedFood logged) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            EntryEditScreen(database: widget.database, logged: logged),
+        builder: (_) => EntryEditScreen(
+          database: widget.database,
+          logged: logged,
+          firstDay: _firstDay,
+          today: _today,
+        ),
       ),
     );
   }

@@ -7,9 +7,10 @@ import '../l10n/app_localizations.dart';
 import 'amount_screen.dart';
 import 'entry.dart';
 import 'meal.dart';
+import 'move_day_sheet.dart';
 
-/// Changes a logged entry's grams, or deletes it after asking. The totals
-/// come from the entry's own values per 100 g (decision 21).
+/// Changes a logged entry's grams or its day, or deletes it after asking.
+/// The totals come from the entry's own values per 100 g (decision 21).
 /// Both write to the phone's database, then close the screen, unless Back
 /// closed it meanwhile.
 class EntryEditScreen extends StatefulWidget {
@@ -17,10 +18,16 @@ class EntryEditScreen extends StatefulWidget {
     super.key,
     required this.database,
     required this.logged,
+    required this.firstDay,
+    required this.today,
   });
 
   final AppDatabase database;
   final LoggedFood logged;
+
+  /// The earliest and latest days the entry can move to, `YYYY-MM-DD`.
+  final String firstDay;
+  final String today;
 
   @override
   State<EntryEditScreen> createState() => _EntryEditScreenState();
@@ -30,6 +37,9 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
   FoodLogEntry get _entry => widget.logged.entry;
 
   late final _grams = TextEditingController(text: formatTenths(_entry.grams));
+
+  /// The day chosen in the move sheet, the entry's own until then.
+  late var _day = _entry.diaryDay;
 
   /// Set once Save was tapped with grams the server would refuse.
   var _showError = false;
@@ -41,6 +51,7 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
     super.dispose();
   }
 
+  /// Saves the grams and the day that changed, both or neither.
   Future<void> _save() async {
     final grams = parseGrams(_grams.text);
     if (grams == null) {
@@ -48,8 +59,25 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
       return;
     }
     setState(() => _saving = true);
-    await widget.database.changeGrams(_entry.id, grams);
+    final database = widget.database;
+    await database.transaction(() async {
+      if (grams != _entry.grams) await database.changeGrams(_entry.id, grams);
+      if (_day != _entry.diaryDay) await database.moveEntry(_entry.id, _day);
+    });
     if (mounted && ModalRoute.of(context)!.isCurrent) Navigator.pop(context);
+  }
+
+  /// Opens the move sheet and keeps the day chosen there until Save.
+  Future<void> _chooseDay() async {
+    final l10n = AppLocalizations.of(context)!;
+    final chosen = await showMoveDaySheet(
+      context,
+      day: _day,
+      firstDay: widget.firstDay,
+      today: widget.today,
+      meal: DiaryMeal(_entry.meal, _entry.mealName).label(l10n),
+    );
+    if (chosen != null && mounted) setState(() => _day = chosen);
   }
 
   /// Asks first, then deletes the entry and closes.
@@ -93,14 +121,14 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
     );
   }
 
-  /// Save stays off until the grams differ from the entry's. Like the
-  /// amount step, Save sits below the scrolling part, so the keyboard
-  /// doesn't cover it.
+  /// Save stays off until the grams or the day differ from the entry's.
+  /// Like the amount step, Save sits below the scrolling part, so the
+  /// keyboard doesn't cover it.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final grams = parseGrams(_grams.text);
-    final changed = grams != _entry.grams;
+    final changed = grams != _entry.grams || _day != _entry.diaryDay;
     return Scaffold(
       appBar: AppBar(
         title: FoodHeading(food: widget.logged.food, per100g: _entry.per100g),
@@ -134,6 +162,8 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
                   TotalsPreview(
                     totals: entryTotals(_entry.per100g, grams ?? 0),
                   ),
+                  const SizedBox(height: 18),
+                  _DayField(day: _day, onTap: _saving ? null : _chooseDay),
                 ],
               ),
             ),
@@ -150,6 +180,45 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "Date" over the entry's [day], such as "Monday, November 23". Tapping
+/// it opens the move sheet.
+class _DayField extends StatelessWidget {
+  const _DayField({required this.day, required this.onTap});
+
+  /// `YYYY-MM-DD`.
+  final String day;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 6,
+      children: [
+        Text(l10n.entryDate, style: theme.textTheme.titleSmall),
+        OutlinedButton(
+          style: dayFieldStyle(theme),
+          onPressed: onTap,
+          child: Row(
+            spacing: 10,
+            children: [
+              const Icon(Icons.calendar_today_outlined, size: 20),
+              Expanded(child: Text(diaryDateText(l10n, day))),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
