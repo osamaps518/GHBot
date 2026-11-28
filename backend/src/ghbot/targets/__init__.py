@@ -13,7 +13,8 @@ For wiring the app (main.py):
         GET /me/targets: the signed-in user's targets in effect (custom or
             recommended) plus the recommended ones, or 404 if they have no
             saved profile.
-        PUT /me/targets/custom: save custom values and return effective targets.
+        PUT /me/targets/custom: save custom values and return effective targets;
+            422 `below_minimum`, with the minimum in `ctx`, or `macros_mismatch`.
         DELETE /me/targets/custom: reset to recommended targets.
 """
 

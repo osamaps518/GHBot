@@ -57,7 +57,15 @@ def calorie_minimum(sex: Sex) -> int:
 
 
 def adjusted_custom(profile: ProfileSnapshot, custom: CustomTargets) -> dict[str, int]:
-    """Raise an older custom target to the current minimum and fill its macros."""
+    """Raise an older custom target to the current minimum and fill its macros.
+
+    Calories at or above the minimum come back as they are. Otherwise calories
+    become the minimum, protein rises to at least 1.6 g/kg and fat to at least
+    20% of the calories. Carbs then fall, no lower than zero, while the macros
+    give more than the calories. What is left goes, in order, to carbs up to 65%
+    of the calories, protein up to 2.2 g/kg and fat up to 35%. Protein uses the
+    weight `_protein_weight` gives (decision 37).
+    """
     minimum = calorie_minimum(profile.sex)
     if custom.calories >= minimum:
         return {
@@ -98,7 +106,11 @@ async def save_custom(
     values: dict[str, int],
     today: date,
 ) -> CustomTargets:
-    """Save values and their history together after checking the profile floor."""
+    """Save values and their history together.
+
+    Raises BelowMinimum under the profile's minimum, and MacrosMismatch when the
+    macro energy is 100 kcal or more from the calories.
+    """
     if values["calories"] < calorie_minimum(profile.sex):
         raise BelowMinimum
     energy = 4 * (values["protein_g"] + values["carbs_g"]) + 9 * values["fat_g"]
@@ -121,7 +133,10 @@ async def save_custom(
 async def reset_custom(
     session: AsyncSession, user_id: UUID, profile: ProfileSnapshot, today: date
 ) -> None:
-    """Remove an existing custom row and record its former values once."""
+    """Remove an existing custom row and record its former values once.
+
+    Without a custom row, nothing changes.
+    """
     previous = (
         await session.scalars(
             delete(CustomTargets)

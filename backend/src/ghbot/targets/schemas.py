@@ -30,6 +30,11 @@ class TargetsResponse(Targets):
 def response_for(
     profile: ProfileSnapshot, custom: CustomTargets | None = None
 ) -> TargetsResponse:
+    """Return the targets in effect, custom or recommended, with the recommended ones.
+
+    `macros_adjusted` is true when the read changed a custom row's macros. With
+    custom targets, `at_minimum` says whether their calories were raised.
+    """
     recommended = calculate_targets(profile)
     effective = adjusted_custom(profile, custom) if custom else None
     in_effect = effective or recommended

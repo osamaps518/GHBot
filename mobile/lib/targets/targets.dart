@@ -82,9 +82,9 @@ enum TargetsField { calories, protein, carbs, fat }
 /// What the trainee typed into the targets form, each field read as a whole
 /// number with Western or Arabic-Indic digits (null when it isn't one).
 ///
-/// The ranges and the 100 kcal rule are the server's (decision 37), checked
-/// here for quicker errors. The calorie minimum is checked only by the
-/// server, so it has one copy (docs/security.md).
+/// The ranges and the 100 kcal rule are the server's, checked here too
+/// (decision 37). The calorie minimum is checked only by the server, so it
+/// has one copy (docs/security.md).
 class TargetsDraft {
   TargetsDraft.parse({
     required String calories,
