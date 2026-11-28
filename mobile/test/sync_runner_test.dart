@@ -620,6 +620,48 @@ void main() {
       expect(await database.watchDiaryDay('2026-11-23').first, hasLength(1));
     });
 
+    test('a pull whose storing fails stores none of it and keeps the old '
+        'marker, and the next one asks again from it', () async {
+      final id = await logRice();
+      await runner.run();
+      final oldMarker =
+          (await database.select(database.pullMarkerTable).getSingle()).marker;
+      backend
+        ..changeFood({...riceJson, 'calories': 140.0})
+        ..storeEntry('alice', _rice150Json('later'));
+      // Fails the pull's last write: by then the food and the entry are
+      // written and the old marker deleted.
+      await database.customStatement(
+        'CREATE TRIGGER fail_marker BEFORE INSERT ON pull_marker '
+        "BEGIN SELECT RAISE(ABORT, 'disk full'); END",
+      );
+
+      await expectLater(runner.run(), throwsA(isA<SqliteException>()));
+
+      final logged = (await database.watchDiaryDay('2026-11-23').first).single;
+      expect(logged.entry.id, id);
+      expect(logged.food.per100g.calories, 1300);
+      expect(
+        (await database.select(database.pullMarkerTable).getSingle()).marker,
+        oldMarker,
+      );
+
+      await database.customStatement('DROP TRIGGER fail_marker');
+      await runner.run();
+
+      expect(pulls().last.url.queryParameters['since'], oldMarker);
+      final diary = await database.watchDiaryDay('2026-11-23').first;
+      expect(
+        diary.map((logged) => logged.entry.id),
+        unorderedEquals([id, 'later']),
+      );
+      expect(diary.first.food.per100g.calories, 1400);
+      expect(
+        (await database.select(database.pullMarkerTable).getSingle()).marker,
+        isNot(oldMarker),
+      );
+    });
+
     test(
       "a pull answered after another user's sign-in stores nothing",
       () async {
