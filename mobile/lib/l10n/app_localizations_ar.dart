@@ -211,6 +211,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get raisedToMinimum => 'رُفع إلى الحد الأدنى الآمن';
 
   @override
+  String get customBadge => 'مخصّصة';
+
+  @override
+  String customTargetsNote(String calories) {
+    return 'حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن $calories سعرة.';
+  }
+
+  @override
+  String get macrosAdjustedNote =>
+      'سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.';
+
+  @override
+  String get howWeCalculatedRecommended => 'كيف حسبنا الأهداف الموصى بها';
+
+  @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override

@@ -368,6 +368,30 @@ abstract class AppLocalizations {
   /// **'رُفع إلى الحد الأدنى الآمن'**
   String get raisedToMinimum;
 
+  /// Badge beside the calories when the trainee set the targets by hand.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخصّصة'**
+  String get customBadge;
+
+  /// No description provided for @customTargetsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن {calories} سعرة.'**
+  String customTargetsNote(String calories);
+
+  /// Shown when the server raised custom calories to the minimum and adjusted the macros.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.'**
+  String get macrosAdjustedNote;
+
+  /// The How we calculated panel's title while custom targets are in effect.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف حسبنا الأهداف الموصى بها'**
+  String get howWeCalculatedRecommended;
+
   /// No description provided for @editMyInfo.
   ///
   /// In ar, this message translates to:

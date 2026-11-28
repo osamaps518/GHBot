@@ -211,6 +211,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raisedToMinimum => 'Raised to the safe minimum';
 
   @override
+  String get customBadge => 'Custom';
+
+  @override
+  String customTargetsNote(String calories) {
+    return 'You set these targets yourself, so they don\'t change when you edit your info. Your recommended target is now $calories calories.';
+  }
+
+  @override
+  String get macrosAdjustedNote =>
+      'Your custom calories are below the safe minimum, so we raised them to it and adjusted your protein, carbs and fat. For a lower intake, talk to a doctor or dietitian.';
+
+  @override
+  String get howWeCalculatedRecommended =>
+      'How we calculated your recommended targets';
+
+  @override
   String get editMyInfo => 'Edit my info';
 
   @override

@@ -19,17 +19,18 @@ class TargetsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            _CaloriesHero(
-              calories: targets.calories,
-              aboveTestedAge: targets.aboveTestedAge,
-            ),
+            _CaloriesHero(targets: targets),
             const SizedBox(height: 12),
             if (targets.atMinimum) ...[
-              const _MinimumNote(),
+              _MinimumNote(macrosAdjusted: targets.macrosAdjusted),
               const SizedBox(height: 12),
             ],
             _MacroCards(targets),
             const SizedBox(height: 12),
+            if (targets.custom) ...[
+              _CustomNote(recommendedCalories: targets.recommendedCalories),
+              const SizedBox(height: 12),
+            ],
             _HowWeCalculated(targets: targets),
           ],
         ),
@@ -47,12 +48,12 @@ class TargetsScreen extends StatelessWidget {
   }
 }
 
-/// The day's calories, large, on the colored card at the top.
+/// The day's calories, large, on the colored card at the top, marked when
+/// they are custom.
 class _CaloriesHero extends StatelessWidget {
-  const _CaloriesHero({required this.calories, required this.aboveTestedAge});
+  const _CaloriesHero({required this.targets});
 
-  final int calories;
-  final bool aboveTestedAge;
+  final Targets targets;
 
   @override
   Widget build(BuildContext context) {
@@ -69,31 +70,40 @@ class _CaloriesHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
             children: [
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    '$calories',
-                    style: text.displayLarge!.copyWith(
-                      color: colors.heroNumber,
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          '${targets.calories}',
+                          style: text.displayLarge!.copyWith(
+                            color: colors.heroNumber,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (targets.aboveTestedAge)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 8),
+                        child: Tooltip(
+                          message: l10n.ageWarning,
+                          child: Icon(
+                            Icons.warning_amber_rounded,
+                            size: 20,
+                            color: colors.heroNumber,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (aboveTestedAge)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 8),
-                  child: Tooltip(
-                    message: l10n.ageWarning,
-                    child: Icon(
-                      Icons.warning_amber_rounded,
-                      size: 20,
-                      color: colors.heroNumber,
-                    ),
-                  ),
-                ),
+              if (targets.custom) const _CustomBadge(),
             ],
           ),
           Text(
@@ -106,12 +116,42 @@ class _CaloriesHero extends StatelessWidget {
   }
 }
 
-/// Says the target was raised to the safe minimum.
-class _MinimumNote extends StatelessWidget {
-  const _MinimumNote();
+/// The "Custom" pill beside the calories.
+class _CustomBadge extends StatelessWidget {
+  const _CustomBadge();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: theme.colorScheme.primary,
+        shape: const StadiumBorder(),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        child: Text(
+          AppLocalizations.of(context)!.customBadge,
+          style: theme.textTheme.labelLarge!.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Says the target was raised to the safe minimum. For custom targets the
+/// server adjusted the macros too ([macrosAdjusted]).
+class _MinimumNote extends StatelessWidget {
+  const _MinimumNote({required this.macrosAdjusted});
+
+  final bool macrosAdjusted;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -123,7 +163,11 @@ class _MinimumNote extends StatelessWidget {
               Icons.info_outline,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            Expanded(child: Text(AppLocalizations.of(context)!.minimumNote)),
+            Expanded(
+              child: Text(
+                macrosAdjusted ? l10n.macrosAdjustedNote : l10n.minimumNote,
+              ),
+            ),
           ],
         ),
       ),
@@ -162,8 +206,31 @@ class _MacroCards extends StatelessWidget {
   }
 }
 
+/// Says the trainee set these targets, which stay when the profile changes,
+/// and what the recommended calories are now.
+class _CustomNote extends StatelessWidget {
+  const _CustomNote({required this.recommendedCalories});
+
+  final int recommendedCalories;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Text(
+          AppLocalizations.of(context)!
+              .customTargetsNote('$recommendedCalories'),
+        ),
+      ),
+    );
+  }
+}
+
 /// The "How we calculated this" panel: maintenance calories and the goal's
-/// adjustment.
+/// adjustment, for the recommended targets. The raise to the minimum shows
+/// only when the recommended targets are in effect: for custom ones,
+/// [Targets.atMinimum] is about the custom calories.
 class _HowWeCalculated extends StatelessWidget {
   const _HowWeCalculated({required this.targets});
 
@@ -176,7 +243,11 @@ class _HowWeCalculated extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         initiallyExpanded: true,
-        title: Text(l10n.howWeCalculated),
+        title: Text(
+          targets.custom
+              ? l10n.howWeCalculatedRecommended
+              : l10n.howWeCalculated,
+        ),
         tilePadding: const EdgeInsets.symmetric(horizontal: 18),
         childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
         children: [
@@ -192,7 +263,7 @@ class _HowWeCalculated extends StatelessWidget {
               '${targets.goalAdjustmentPercent.abs()}',
             ),
           ),
-          if (targets.atMinimum) ...[
+          if (targets.atMinimum && !targets.custom) ...[
             const SizedBox(height: 8),
             _Row(label: l10n.raisedToMinimum, value: '${targets.calories}'),
           ],

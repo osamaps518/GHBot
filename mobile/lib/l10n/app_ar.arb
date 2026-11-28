@@ -126,6 +126,27 @@
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
   "raisedToMinimum": "رُفع إلى الحد الأدنى الآمن",
+  "customBadge": "مخصّصة",
+  "@customBadge": {
+    "description": "Badge beside the calories when the trainee set the targets by hand."
+  },
+  "customTargetsNote": "حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن {calories} سعرة.",
+  "@customTargetsNote": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The recommended calories, in Western digits."
+      }
+    }
+  },
+  "macrosAdjustedNote": "سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
+  "@macrosAdjustedNote": {
+    "description": "Shown when the server raised custom calories to the minimum and adjusted the macros."
+  },
+  "howWeCalculatedRecommended": "كيف حسبنا الأهداف الموصى بها",
+  "@howWeCalculatedRecommended": {
+    "description": "The How we calculated panel's title while custom targets are in effect."
+  },
   "editMyInfo": "تعديل معلوماتي",
   "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
   "@ageWarning": {
