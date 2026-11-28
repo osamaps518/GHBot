@@ -16,6 +16,7 @@ import 'package:ghbot/core/database.dart';
 import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
+import 'package:ghbot/foods/foods_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -825,7 +826,11 @@ void main() {
     /// Answers every own food call with [status] and [body].
     void answerOwnFoods(int status, Object? body) {
       backend.intercept = (request) => request.url.path.startsWith('/me/foods/')
-          ? http.Response(jsonEncode(body), status)
+          ? http.Response(
+              jsonEncode(body),
+              status,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            )
           : null;
     }
 
@@ -882,6 +887,70 @@ void main() {
       expect(backend.ownFoodRequests, hasLength(2));
       expect(await database.unsentOwnFoods(), hasLength(1));
     });
+
+    /// The phone's only food.
+    Future<Food> storedFood() async =>
+        (await database.select(database.foodTable).get()).single;
+
+    for (final status in [200, 201]) {
+      test("a $status with another copy at the revision sent: the phone takes "
+          'the copy the server kept, confirmed', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, {
+          ...maamoulJson(food.id),
+          'name_ar': 'معمول',
+          'name_en': 'Maamoul',
+          'calories': 450.0,
+          'barcode': '12345678',
+        });
+
+        await FoodsApi(session).send(database, food);
+
+        final stored = await storedFood();
+        expect(
+          [stored.nameAr, stored.nameEn, stored.per100g.calories],
+          ['معمول', 'Maamoul', 4500],
+        );
+        expect(
+          [
+            stored.barcode,
+            stored.revision,
+            stored.sentRevision,
+            stored.refused,
+          ],
+          ['12345678', 1, 1, false],
+        );
+      });
+    }
+
+    for (final (status, body) in [
+      (201, null),
+      (422, refusal),
+      (409, refusal),
+    ]) {
+      test('a $status for a revision changed since it was sent leaves the new '
+          'revision as it is, unsent and not refused', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, body ?? maamoulJson(food.id));
+        backend.holdSave = Completer();
+        final sending = FoodsApi(session).send(database, food);
+        await pumpEventQueue();
+
+        // #66 will change own foods; until then the test writes the change.
+        await database.customStatement(
+          "UPDATE foods SET name_ar = 'معمول بالجوز', revision = 2",
+        );
+        backend.holdSave!.complete();
+        await sending;
+
+        final stored = await storedFood();
+        expect(
+          [stored.nameAr, stored.revision, stored.sentRevision, stored.refused],
+          ['معمول بالجوز', 2, 0, false],
+        );
+        expect(await database.unsentOwnFoods(), hasLength(1));
+      });
+    }
 
     test('a new install pulls the own foods, logged or not', () async {
       final food = await addMaamoul();

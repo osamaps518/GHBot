@@ -121,6 +121,7 @@ void main() {
       required int revision,
       int? sentRevision,
       int calories = 0,
+      bool refused = false,
     }) => Food(
       id: 'maamoul',
       nameAr: 'معمول بالتمر',
@@ -129,21 +130,26 @@ void main() {
       own: true,
       revision: revision,
       sentRevision: sentRevision ?? revision,
+      refused: refused,
     );
 
     Future<Food> stored() async =>
         (await database.select(database.foodTable).get()).single;
 
-    test("doesn't overwrite an own food with a change the server hasn't "
-        'confirmed', () async {
-      await database.storeFood(maamoul(revision: 2, sentRevision: 1));
+    for (final refused in [false, true]) {
+      test("doesn't overwrite an own food with a change the server hasn't "
+          'confirmed, ${refused ? '' : 'not '}refused', () async {
+        await database.storeFood(
+          maamoul(revision: 2, sentRevision: 1, refused: refused),
+        );
 
-      await database.storeFood(maamoul(revision: 1, calories: 4420));
+        await database.storeFood(maamoul(revision: 1, calories: 4420));
 
-      final food = await stored();
-      expect([food.revision, food.sentRevision], [2, 1]);
-      expect(food.per100g.calories, 0);
-    });
+        final food = await stored();
+        expect([food.revision, food.sentRevision], [2, 1]);
+        expect([food.refused, food.per100g.calories], [refused, 0]);
+      });
+    }
 
     test('replaces a confirmed own food', () async {
       await database.storeFood(maamoul(revision: 1));
