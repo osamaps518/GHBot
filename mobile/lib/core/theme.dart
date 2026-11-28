@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The app's look: option D4, charcoal and tangerine (docs/decisions.md).
+/// The app's look: option D4, charcoal and tangerine (decision 16).
 /// Screens read colors and text styles from the theme, never hardcode them.
 final ThemeData lightTheme = _theme(
   ColorScheme.fromSeed(

@@ -21,8 +21,8 @@ async def changed_foods(
     """Return distinct visible foods for a pull of this trainee's diary.
 
     These are the foods it uses that changed since the marker, and the foods
-    in `pulled`, those of the entries the pull returns, changed or not: the
-    phone may not have them.
+    in `pulled`, those of the entries the pull returns, changed or not
+    (decision 31). They are ordered by ID.
     """
     statement = _sent_foods(user_id).where(Food.id.in_(used)).order_by(Food.id)
     if since is not None:
@@ -58,7 +58,12 @@ def _sent_foods(
 async def search_foods(
     session: AsyncSession, user_id: UUID, query: str
 ) -> list[dict[str, object]]:
-    """Search visible foods using the same SQL cleaning as stored names."""
+    """Search visible foods using the same SQL cleaning as stored names.
+
+    A food's `search` text is its cleaned names joined with " | ", so a name
+    that begins with the query starts the text or follows " | ". Cleaning
+    leaves pipes unchanged.
+    """
     cleaned = await session.scalar(select(func.food_search_clean(query)))
     if not cleaned:
         return []

@@ -8,29 +8,29 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// Sends diary entries to the server, brings down what changed there, and
-/// stores what it answers (docs/decisions.md, 31).
+/// stores what it answers (decision 31).
 class FoodLogApi {
   const FoodLogApi(this._session);
 
   final AuthSession _session;
 
   /// Sends [entry] as it is now, and stores the server's answer in
-  /// [database]. Throws an `ApiFailure` when the call should be tried again.
+  /// [database]. Throws an `ApiFailure` when the call should be tried again:
+  /// any failure but a refusal, such as no connection, a 5xx, a 401 after
+  /// the session's own retry, or an unexpected answer.
   ///
-  /// A deleted entry is sent as a `DELETE`, even one never sent: its `PUT`
-  /// may have arrived with the answer lost. Once the server confirms, the
-  /// row leaves the phone.
+  /// A deleted entry is sent as a `DELETE`, even one never sent (decision
+  /// 31). Once the server confirms, the row leaves the phone.
   ///
   /// The answer is the copy the server kept: the phone takes it, marked
-  /// sent, or removes the row when it is deleted. It takes it even at the
-  /// revision sent, since another phone may have sent its own change at that
-  /// revision first. Either way, only if the entry is still the revision
-  /// sent: a newer change waits for the next send.
+  /// sent, even at the revision sent (decision 31), or removes the row when
+  /// it is deleted. Either way, only if the entry is still the revision
+  /// sent: a newer change waits for the next send. A kept copy whose food
+  /// isn't on the phone stays out of the diary until a pull brings the food.
   ///
   /// A 422 or 409 is the server refusing the row itself: the entry is
   /// marked refused and isn't sent again until the trainee changes it. A
-  /// refused `DELETE` leaves the phone as a confirmed one does: its 409
-  /// means another user owns the ID, and the trainee can't fix either.
+  /// refused `DELETE` leaves the phone as a confirmed one does (decision 31).
   Future<void> send(AppDatabase database, FoodLogEntry entry) async {
     final table = database.foodLogEntryTable;
     Expression<bool> unchanged($FoodLogEntryTableTable row) =>
@@ -68,12 +68,16 @@ class FoodLogApi {
   /// user other than [userId] signed in while it read the marker, and stores
   /// nothing when one signed in during the call.
   ///
-  /// Foods are stored first. A pulled entry replaces the phone's copy,
-  /// unless that has a change the server hasn't confirmed, refused or not:
-  /// the trainee's edits and deletes wait for the next send. A pulled
-  /// deleted entry leaves the phone even then, since deletes are final on
-  /// the server. A copy the phone has at the same revision isn't written
-  /// again, so the rows each pull repeats don't start another run.
+  /// The marker goes back as the server sent it, in a query built with
+  /// `Uri`: a raw `+` would arrive as a space. With no marker stored, the
+  /// pull asks for everything.
+  ///
+  /// Foods are stored first, replacing the phone's copies. A pulled entry
+  /// replaces the phone's copy, marked sent, unless that has a change the
+  /// server hasn't confirmed, refused or not: the trainee's edits and deletes
+  /// wait for the next send. A pulled deleted entry leaves the phone even
+  /// then. A copy the phone has at the same revision isn't written again
+  /// (decision 31).
   Future<void> pull(AppDatabase database, String userId) async {
     final marker =
         (await database.select(database.pullMarkerTable).getSingleOrNull())
@@ -184,7 +188,7 @@ class _KeptEntry {
 }
 
 /// [entry] as the server reads it: grams and values as plain numbers with
-/// 1 decimal (docs/decisions.md, 30).
+/// 1 decimal (decision 30).
 Map<String, Object?> _json(FoodLogEntry entry) {
   Map<String, double> nutrients(Nutrients values) => {
     'calories': values.calories / 10,

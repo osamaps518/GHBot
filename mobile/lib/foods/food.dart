@@ -1,5 +1,5 @@
 /// Calories, protein, carbs and fat, each a whole number of tenths: 1234 is
-/// 123.4 (docs/decisions.md, 30).
+/// 123.4 (decision 30).
 class Nutrients {
   const Nutrients({
     required this.calories,

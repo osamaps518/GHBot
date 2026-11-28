@@ -2,8 +2,8 @@ import '../core/typed_number.dart';
 import '../foods/food.dart';
 import 'meal.dart';
 
-/// The diary day starts at 4:00 on the phone's clock, so a late snack at
-/// 1:30 still belongs to the evening before (docs/decisions.md, 34).
+/// The hour the diary day starts on the phone's clock: an entry logged
+/// before 4:00 belongs to the day before (decision 34).
 const dayStartHour = 4;
 
 /// The diary day of [localTime], as `YYYY-MM-DD`.
@@ -36,7 +36,7 @@ DateTime nextDayStart(DateTime localTime) {
 }
 
 /// An entry's totals: each value per 100 g × grams ÷ 100, rounded half up
-/// to tenths, all in integers (docs/decisions.md, 30). [grams] is in tenths.
+/// to tenths, all in integers (decision 30). [grams] is in tenths.
 Nutrients entryTotals(Nutrients per100g, int grams) {
   int total(int valuePer100g) => (valuePer100g * grams + 500) ~/ 1000;
   return Nutrients(
@@ -60,8 +60,8 @@ int? parseGrams(String typed) {
 /// Whether the server would accept an entry with these values (#60): grams
 /// greater than 0 and at most 5000, at most 900 kcal and 100 g of each macro
 /// per 100 g, a name of 1 to 40 characters only for an extra meal, and
-/// totals that match the grams. The phone checks before every save, so the
-/// server rarely refuses an entry. All numbers are in tenths.
+/// totals that match the grams. The phone checks before every save
+/// (decision 31). All numbers are in tenths.
 bool passesServerChecks({
   required Meal meal,
   required String? mealName,
@@ -91,7 +91,7 @@ bool passesServerChecks({
 }
 
 /// One food logged into a meal, with the values it was logged with
-/// (docs/decisions.md, 21). [grams] and all values are in tenths.
+/// (decision 21). [grams] and all values are in tenths.
 class FoodLogEntry {
   const FoodLogEntry({
     required this.id,

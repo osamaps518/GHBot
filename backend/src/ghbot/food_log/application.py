@@ -24,7 +24,12 @@ logger = logging.getLogger(__name__)
 async def pull_changes(
     session: AsyncSession, user_id: UUID, since: datetime | None
 ) -> tuple[datetime, list[FoodLogEntry], list[dict[str, object]]]:
-    """Take the overlapping marker before reading entries and their used foods."""
+    """Return the next marker and this trainee's changed entries and their foods.
+
+    The marker is taken before the read, so it overlaps it (decision 31). Rows
+    count as changed when their `updated_at` is at or after `since`; without
+    `since`, all of them do. Deleted entries come too.
+    """
     marker = await _pull_marker(session)
     entries = await _pull_entries(session, user_id, since)
     used = select(FoodLogEntry.food_id).where(FoodLogEntry.user_id == user_id)
@@ -34,7 +39,10 @@ async def pull_changes(
 
 
 async def _pull_marker(session: AsyncSession) -> datetime:
-    """Reserve an overlapping database-time marker before reading changes."""
+    """Return the database's time minus 30 seconds (decision 31).
+
+    `clock_timestamp()` gives the time now, not the transaction's start.
+    """
     marker = await session.scalar(
         select(func.clock_timestamp() - text("interval '30 seconds'"))
     )
@@ -46,7 +54,10 @@ async def _pull_marker(session: AsyncSession) -> datetime:
 async def _pull_entries(
     session: AsyncSession, user_id: UUID, since: datetime | None
 ) -> list[FoodLogEntry]:
-    """Return this trainee's changed rows, including tombstones."""
+    """Return this trainee's changed rows, including tombstones.
+
+    They are ordered by update time, then ID.
+    """
     statement = select(FoodLogEntry).where(FoodLogEntry.user_id == user_id)
     if since is not None:
         statement = statement.where(FoodLogEntry.updated_at >= since)

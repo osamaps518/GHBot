@@ -38,6 +38,8 @@ Rules for AI coding agents (and people) working on GHBot.
 
 ## Docs
 - Short and plain. Decisions go in docs/decisions.md, in the same style as existing entries.
+- A docstring says what the code does: what it takes and returns, and its edge cases. `docs/decisions.md` says why: the reason, the options turned down, and the numbers behind it.
+- The test for a sentence: would it go out of date if the code were rewritten without changing the decision? Then it belongs only in the docstring, and the docstring points to the decision for the why, as "(decision 31)".
 - Never write inline comments, use docstrings. One exception: in Dart tests, an inline comment inside a test body is fine, since a `testWidgets` callback has no declaration to hold a doc comment.
 
 ## Before a PR

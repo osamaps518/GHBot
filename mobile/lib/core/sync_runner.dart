@@ -9,8 +9,7 @@ import 'api_failure.dart';
 import 'database.dart';
 
 /// Sends one user's unsent diary entries from their database to the server,
-/// each with its own call, then brings down what changed there
-/// (docs/decisions.md, 31).
+/// each with its own call, then brings down what changed there (decision 31).
 class SyncRunner {
   /// Callers pass `session:` and `database:`; private named parameters keep
   /// the fields private.
@@ -49,8 +48,9 @@ class SyncRunner {
   AppLifecycleListener? _lifecycle;
 
   /// Runs now, then whenever the app returns to the foreground, and 2 s
-  /// after the last local change to the diary, until [close]. There is no
-  /// background job: the app runs it only while open.
+  /// after the last local change to the diary, its own writes included,
+  /// until [close]. There is no background job: the app runs it only while
+  /// open.
   void start() {
     _localChanges = _database
         .tableUpdates(TableUpdateQuery.onTable(_database.foodLogEntryTable))

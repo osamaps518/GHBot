@@ -15,10 +15,10 @@ import 'targets/targets_api.dart';
 enum AppStage { loading, signIn, onboarding, diary, failed }
 
 /// Gates the app: sign-in, onboarding, the one-time age warning, then the
-/// diary (docs/decisions.md, 35). Screens read the diary from [database].
+/// diary (decision 35). Screens read the diary from [database].
 ///
 /// The profile and targets are read from the user's database on the phone and
-/// refreshed from the server (docs/decisions.md, 24 and 25).
+/// refreshed from the server (decisions 24 and 25).
 class AppFlow extends ChangeNotifier {
   AppFlow(
     this._session,
@@ -34,7 +34,7 @@ class AppFlow extends ChangeNotifier {
   AppDatabase? _database;
 
   /// Sends the diary from [database], for the user it belongs to, from
-  /// when it opens until the app closes (docs/decisions.md, 31).
+  /// when it opens until the app closes (decision 31).
   SyncRunner? _syncRunner;
 
   /// The signed-in user's database, open from the diary stage on.
@@ -84,8 +84,11 @@ class AppFlow extends ChangeNotifier {
   }
 
   /// Opens the user's database and shows what it holds, then refreshes it in
-  /// the background. A failed background refresh keeps the stored data and
-  /// shows nothing. With nothing stored, it waits for the server instead.
+  /// the background (decision 25). A failed background refresh keeps the
+  /// stored data and shows nothing. With nothing stored, it waits for the
+  /// server instead. A name stored before IDs were gets its ID from the
+  /// server first; without a connection, that fails and the error screen
+  /// shows, with Retry.
   Future<void> load() async {
     stage = AppStage.loading;
     notifyListeners();
@@ -119,9 +122,9 @@ class AppFlow extends ChangeNotifier {
     }
   }
 
-  /// Gets the profile and targets from the server and stores them. The
-  /// server is the authority for the profile: when it has none, the stored
-  /// one is cleared.
+  /// Gets the profile and targets from the server and stores them. When the
+  /// server has no profile, the stored one is cleared and onboarding opens
+  /// (decision 24).
   Future<void> _refresh(AppDatabase database) async {
     final version = ++_startedVersion;
     final results = await Future.wait([
@@ -190,8 +193,7 @@ class AppFlow extends ChangeNotifier {
   }
 
   /// Saves custom targets on the server, then stores and shows the targets
-  /// it sends back (docs/decisions.md, 37). Offline, it throws and stores
-  /// nothing.
+  /// it sends back (decision 37). Offline, it throws and stores nothing.
   Future<void> saveCustomTargets(TargetValues values) =>
       _storeTargets(() => _targetsApi.putCustom(values));
 

@@ -6,9 +6,9 @@ import '../core/api_failure.dart';
 
 /// Owns dev sign-in and the token for authorized calls.
 ///
-/// Dev sign-in (docs/decisions.md, 17): the name is the token subject. We
-/// store the name, not the token, because tokens last 15 minutes. A token is
-/// fetched on the first call that needs one, and again on a 401.
+/// Dev sign-in: the name is the token subject, and the name is stored, not
+/// the token (decision 17). A token is fetched on the first call that needs
+/// one, and again on a 401.
 ///
 /// The user's ID from `GET /me` is stored with the name: it names the user's
 /// database file (decision 25).

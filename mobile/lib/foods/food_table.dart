@@ -3,7 +3,7 @@ import 'package:drift/drift.dart';
 import 'food.dart';
 
 /// The foods the trainee has logged, so they can be logged again without a
-/// connection (docs/decisions.md, 20). Values per 100 g are whole tenths.
+/// connection (decision 20). Values per 100 g are whole tenths.
 @UseRowClass(Food, constructor: 'fromColumns')
 class FoodTable extends Table {
   @override

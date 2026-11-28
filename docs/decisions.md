@@ -107,7 +107,7 @@ Not needed for the first version (basic CRUD). We decide when we build the coach
 - **Ruff** for lint and formatting, **mypy** (strict) for types, **pytest** with coverage.
 - Python 3.14 and PostgreSQL 18, the same versions locally and in CI.
 
-**Async database access**, chosen over plain (sync) SQLAlchemy, so a request waiting on the database doesn't hold up a thread. The trade-off: async SQLAlchemy can't load related data behind the scenes, so queries must load what they need explicitly.
+**Async database access**, chosen over plain (sync) SQLAlchemy, so a request waiting on the database doesn't hold up a thread. The trade-off: async SQLAlchemy can't load related data behind the scenes, so queries must load what they need explicitly. For the same reason, sessions keep their objects' fields after a commit instead of expiring them: an expired field would be loaded again when read, implicit I/O during ordinary attribute access that an async session must avoid.
 
 **Rules**
 - One database session per request. It never commits by itself: code that writes data commits explicitly.
@@ -131,10 +131,8 @@ while the production provider remains deferred (see #5).
 `ENVIRONMENT` is required, with no default. Until a real provider exists, the app
 refuses to start unless it is `development`; only then is `/dev/token` mounted.
 
-`AuthProvider` has one method: verify a token and return its subject, or raise.
-`get_current_user` maps that subject to our `users` table, creating the row on
-first use. A unique `auth_subject` and `ON CONFLICT DO NOTHING` handle simultaneous
-first requests. Our IDs are UUIDv7; future tables reference these IDs.
+A user's row in our `users` table is created on their first request. Our IDs
+are UUIDv7; future tables reference these IDs.
 
 ---
 
@@ -183,9 +181,7 @@ The earlier Arabic fallback was considered, but it would show Arabic when the ph
 **Status:** Superseded, 2026-10-26 by 14 for the age limit; other choices remain accepted.
 
 Store each user's onboarding profile in a separate `profiles` table keyed by their
-user ID. A missing row means onboarding has not been completed. `PUT /me/profile`
-creates or fully replaces that row; `GET /me/profile` reads it for the signed-in
-user only.
+user ID. A missing row means onboarding has not been completed.
 
 The API and database use English text codes for sex, activity level, and goal;
 the app translates their labels. Height and weight are stored in metric units as
@@ -238,10 +234,8 @@ agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GH
 **Status:** Accepted, 2026-10-31 (#40). Amended 2026-11-24 (#59): dark mode's orange and error colors.
 
 The app uses option D4, charcoal and tangerine, in light and dark, following the
-phone's setting. The theme lives in `mobile/lib/core/theme.dart`; screens take colors
-and text styles from it instead of hardcoding them. Colors Material has no role
-for (the daily calories card and the three macros) are in a `TargetsColors`
-theme extension.
+phone's setting. Screens take colors and text styles from the theme instead of
+hardcoding them.
 
 Dark mode uses a deeper orange, #D9661A, and the error color #FFB4AB with
 charcoal on it, as chosen in the #51 mockups. Light mode keeps tangerine
@@ -390,8 +384,7 @@ stable file format. Drift checks queries before the app runs and has tools for
 testing migrations.
 
 Each module declares its own tables, with typed columns rather than JSON, so
-Drift checks them. The database class is in `mobile/lib/core/database.dart`.
-Each schema version is exported to `mobile/drift_schemas/`, so upgrades can be
+Drift checks them. Each schema version is exported to `mobile/drift_schemas/`, so upgrades can be
 tested against it.
 
 Options ruled out:
@@ -422,8 +415,8 @@ nothing.
   Dart. A health rule must have one copy.
 - A profile changes a few times a year; a meal is logged several times a day.
 
-The server is the authority. A refresh replaces what is stored, and if the
-server has no profile, the stored one is cleared and onboarding opens.
+The server is the authority: a refresh replaces what is stored, even when the
+server has no profile.
 
 ---
 
@@ -436,23 +429,16 @@ targets from the server at every start, so it gets a token only when a call
 needs one. Sign-in protects the server's data; data already on the phone is
 protected by the lock screen and Android's app storage.
 
-At sign-in the app gets the user's ID from `GET /me` and stores it with the
-name. At start:
-- Name and ID stored: open that user's database, show the stored profile and
-  targets at once, then refresh them in the background. A failed refresh
-  changes nothing and shows nothing. With nothing stored, load from the server
-  as before.
-- Name but no ID (installs from before #52): get the ID first. Offline, this
-  shows the error screen with Retry.
-- No name: the sign-in screen.
+At start, the app shows the signed-in user's stored profile and targets at once
+and refreshes them in the background; it waits for the server only when nothing
+is stored. Installs from before #52 stored the name without the user's ID, so
+they get the ID first.
 
-Each user has their own database, `<userId>.sqlite` in a `user_data/` folder
-under the app support folder. Each refresh and save writes only to the database
-it started with, and a refresh that started before a save never replaces what
-the save returned. The profile and the targets are each checked on their own:
-a custom targets save or reset returns only targets (decision 37), so a profile
-save that started before it still stores its profile. The age-warning mark is kept for each user too. `user_data/`
-is left out of Android backup and device transfer; the name and ID stay in backup.
+Each user has their own database file, named by their ID, and their own
+age-warning mark. Each refresh and save writes only to the database it started
+with, and an older result never replaces a newer one. `user_data/`, the folder
+of these files, is left out of Android backup and device transfer; the name and
+ID stay in backup.
 
 Rejected:
 - Wiping the database when the user changes: it would destroy unsent diary entries.
@@ -490,7 +476,7 @@ synced together, and units are not queried on their own.
 
 Curated catalog foods live in CSV files in the repo, one per source. Changes go
 through pull requests so health numbers are reviewed. A command loads the files,
-not a migration: it validates all rows before writing and is safe to rerun.
+not a migration, and is safe to rerun.
 There is no scheduled refetch. Removed CSV rows remain in the table.
 
 ---
@@ -631,9 +617,9 @@ remove Arabic diacritics, Latin accents and tatweel, normalize أ إ آ ٱ to ا
 ء. NFD splits hamza from some letters before marks are removed; this also
 turns ؤ into و. #57 did not test ؤ, and no test has shown that this hurts.
 One immutable SQL function cleans both stored names and typed text. A stored
-generated column joins the Arabic, English and other names using a separator
-that cannot occur inside a cleaned name. This keeps all write paths and old
-rows consistent without duplicate cleaning code in Python.
+generated column combines the cleaned Arabic, English and other names. This
+keeps all write paths and old rows consistent without duplicate cleaning code in
+Python.
 
 Meaning lives in the data: every catalog food has an Arabic name, so a user can
 find the same row through Arabic or English without translating the query.
@@ -708,16 +694,10 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
-`food_log` uses `foods` to check that a logged food is visible to the trainee
-and to get changed foods for a pull, passing its used-food IDs query to `foods`.
-It does not use `targets`.
 
-**Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
-rows, including deleted rows, and the changed foods used by those rows. Without
-`since`, it returns all of them. With a time-zone-aware ISO timestamp, it returns
-entries and foods whose `updated_at` is at or after that timestamp. Entries are
-ordered by update time and ID; foods are unique and ordered by ID. The foods
-query uses `visible_foods`, so another trainee's own foods cannot appear.
+**Pulling (#62, server).** A pull returns the caller's diary rows changed since
+a marker, deleted ones too, and the changed foods they use; without a marker,
+all of them.
 
 It also returns the foods of the entries it returns, changed or not. An entry
 that changed on the server can use a food that didn't, one the phone may not
@@ -725,83 +705,59 @@ have, and the diary hides an entry without its food. We rejected a call for
 foods by ID, a second request per pull, and a full pull whenever a food is
 missing.
 
-The server takes `next_marker` from the database's `clock_timestamp()` minus
-30 seconds before reading the changes. The phone sends this marker back exactly
-as text. The overlap lets a later pull catch writes that commit after the read
-but began inside the margin; repeated rows replace by ID. The entry query has
-an index on `(user_id, updated_at)` so each pull need not scan other trainees'
-diaries. There is no pagination yet: 15 entries per day for three years is about
-16,000 rows, a few MB on the occasional full reinstall pull.
+The next marker is the database's time minus 30 seconds, taken before reading
+the changes. The overlap lets a later pull catch writes that commit after the
+read but began inside the margin; repeated rows replace by ID. The entry query
+has an index on `(user_id, updated_at)` so each pull need not scan other
+trainees' diaries. There is no pagination yet: 15 entries per day for three
+years is about 16,000 rows, a few MB on the occasional full reinstall pull.
 
-The seed loader validates all files first and commits each CSV file in its own
-transaction. Changed rows use `clock_timestamp()`, the time of the write, and
-each file's transaction is far shorter than the 30-second margin, so a row
-commits within the margin of its timestamp and no marker can pass it unseen.
-A real load of the 239-row `open_food_facts.csv` into a local database took
-**0.140 seconds** on 2026-11-24, measured inside the loader call
-with `time.perf_counter()`; this is one local run, not a throughput guarantee.
+The seed loader commits each CSV file in its own transaction, and a changed row
+takes the time of the write. Each file's transaction is far shorter than the
+30-second margin, so a row commits within the margin of its timestamp and no
+marker can pass it unseen. A real load of the 239-row `open_food_facts.csv`
+into a local database took **0.140 seconds** on 2026-11-24, measured inside the
+loader call with `time.perf_counter()`; this is one local run, not a throughput
+guarantee.
 
-**Sending (#61, phone).** Each entry on the phone has a revision (1 when
-logged, plus 1 on every change and on delete), the last revision the server
-confirmed, and two marks: deleted and refused. An entry is unsent when its
-revision is above the confirmed one and it isn't refused. The phone runs the
-server's checks before every save, so refusals are rare.
+**Sending (#61, phone).** Each entry on the phone keeps its revision and the
+last revision the server confirmed; an entry is unsent when its revision is
+newer and it isn't refused.
+One runner for each user and their database sends the unsent entries, each in
+its own call, then pulls, one run at a time. It stops when another user signs
+in, so one user's rows never go out with another's sign-in.
 
-- **One runner** in `mobile/lib/core/sync_runner.dart`, made for one user ID and
-  their database. Before each call it checks that the session's user is still
-  that one, and stops if not, so one user's rows never go out with another's
-  sign-in. The session doesn't retry a 401 once another user has signed in,
-  and a new sign-in changes the session's name, ID and token only together,
-  after `GET /me`. The calls and the handling of answers are in
-  `food_log/food_log_api.dart`. One run at a time; asking during a run queues
-  one more. `AppFlow` starts the runner when it opens the user's database and
-  stops it before closing the database.
-- **When it runs:** at start, when the app returns to the foreground, 2 s after
-  the last write to the entries table, and after a failed run on a timer: 30 s,
-  doubling up to 5 min, back to 30 s after a run that succeeds. There is no
-  Android background job and no connectivity package: trying the call is the
-  test for being online. The runner's own writes also start the 2 s timer.
-  That costs one more run, so one more pull; after a run that sent some rows
-  and then failed, it can retry the rest early.
-- **Each entry is its own call**, in the order logged. A deleted entry is sent
-  as `DELETE` even if it was never sent: its `PUT` may have arrived with the
-  answer lost. A failed call stops the run.
-- **Answers** are stored in one update that checks the entry is still the
-  revision sent. The answer is the server's copy, and the phone takes it as
-  confirmed, even at the revision sent: once a pull puts an entry on two
-  phones, each can send its own change at the same revision, and the server
-  keeps the first. A deleted row leaves the phone. If the entry changed since
-  it was sent, the answer is dropped and the newer revision goes next. A
-  server copy whose food isn't on the phone stays hidden until the pull after
-  the sends brings the food.
-- **Refused** is a 422 or 409: the entry is marked and not sent again until the
-  trainee changes or deletes it. A refused `DELETE` leaves the phone as a
-  confirmed one does: its 409 means another user owns the ID, its 422 an ID
-  the phone never sends, and the trainee can't fix either. Connection
-  failures, 5xx, a 401 after the session's own retry, and unexpected answers
-  are retried.
+- **When it runs:** at start, when the app returns to the foreground, shortly
+  after a write to the diary, and after a failed run on a timer that backs off.
+  There is no Android background job and no connectivity package: trying the
+  call is the test for being online. The runner's own writes also count as
+  writes to the diary. That costs one more run, so one more pull; after a run
+  that sent some rows and then failed, it can retry the rest early.
+- **Deletes:** a deleted entry is sent as `DELETE` even if it was never sent:
+  its `PUT` may have arrived with the answer lost.
+- **Answers:** the phone takes the server's copy as confirmed, even at the
+  revision sent: once a pull puts an entry on two phones, each can send its own
+  change at the same revision, and the server keeps the first.
+- **Refused** entries, a 422 or 409, wait until the trainee changes or deletes
+  them. The phone runs the server's checks before every save, so refusals are
+  rare. A refused `DELETE` leaves the phone as a confirmed one does: its 409
+  means another user owns the ID, its 422 an ID the phone never sends, and the
+  trainee can't fix either.
 
-**Pulling (#62, phone).** Each run sends, then pulls; after a failed send the
-pull waits for the next run. Like a send, the pull stops if the session's user
-changed, checked before the call and again before storing. The phone keeps the
-last marker in a one-row table and sends it back as text, in a query built with
-`Uri` (a raw `+` would arrive as a space). With no marker, a new install or a
-new database, it asks for everything: that is how a reinstall gets the diary
-back. The foods, the entries and the new marker are stored in one transaction,
-so a pull that is interrupted keeps the old marker and is simply repeated.
+**Pulling (#62, phone).** With no marker, a new install or a new database, the
+phone asks for everything: that is how a reinstall gets the diary back.
 
-- **Foods** are stored first, as search stores them, so a fixed catalog food
-  replaces the phone's copy. Entries keep the values they were logged with
-  (decision 21).
-- **A pulled entry** replaces the phone's copy, as confirmed, unless the
-  phone's has a change the server hasn't confirmed, refused or not. That keeps
-  the trainee's edits and pending deletes: a pull never brings back an entry
-  deleted on the phone. A pulled deleted entry removes the row even then:
-  deletes are final, so the change would only come back deleted.
+- **Foods:** a fixed catalog food replaces the phone's copy. Entries keep the
+  values they were logged with (decision 21).
+- **A pulled entry** replaces the phone's copy, unless the phone's has a change
+  the server hasn't confirmed, refused or not. That keeps the trainee's edits
+  and pending deletes: a pull never brings back an entry deleted on the phone.
+  A pulled deleted entry removes the row even then: deletes are final, so the
+  change would only come back deleted.
 - **Repeated rows:** an entry the phone has at the same revision isn't written
   again. A confirmed copy at that revision already has the server's values,
   since every answer stores them. The 30-second margin sends recent rows with
-  every pull, and writing them would start the 2 s timer, then another pull,
+  every pull, and writing them would start another run, then another pull,
   until they left the margin.
 
 **Backup.** `user_data/` stays out of Android backup and device transfer
@@ -862,9 +818,9 @@ them and does not calculate its own (decision 31).
 **Status:** Accepted, 2026-11-24 (#59).
 
 An entry's diary day comes from the phone's clock and time zone when it is
-logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00
-(`dayStartHour` in `mobile/lib/food_log/entry.dart`), so a snack at 1:30 still
-belongs to the evening before. When it is logged is stored separately, in UTC.
+logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00, so
+a snack at 1:30 still belongs to the evening before. When it is logged is stored
+separately, in UTC.
 
 - The server doesn't know the phone's time zone.
 - An entry keeps its day: travel, or a later change to the day start, doesn't
@@ -886,9 +842,6 @@ the error screen. It exposes the user's database, and the diary, search and
 amount screens read and write it directly. Navigation is Flutter's built-in,
 with no bottom tabs.
 
-The targets screen follows `AppFlow`, so a save from Edit my info shows at once,
-and the age warning shows over it when the save makes it due.
-
 We considered a diary notifier next to `AppFlow`. Drift's live queries already
 tell the screens about every change, so it would only pass them along.
 
@@ -898,27 +851,11 @@ tell the screens about every change, so it would only pass them along.
 
 **Status:** Accepted, 2026-11-25 (#61). Amended 2026-11-28 (#62): pulling.
 
-The runner is tested in `mobile/test/sync_runner_test.dart` against the
-stand-in server in `mobile/test/fake_backend.dart` and an in-memory Drift
-database. The stand-in answers the entry calls and the pull as decision 31
-says. Its markers count its own changes, and the last change before a marker
-comes again with the next pull, like the 30-second margin. It can go offline,
-lose an answer after handling the request, hold a `PUT` or a pull, or answer
-anything a test chooses. The tests cover a lost answer then a retry, offline
-then online, an edit during a send, a refusal, a delete before the first send,
-another user's sign-in during a run, one run at a time, the server keeping
-another copy, and the retry timer. For pulling, they cover the marker sent
-back, a send before each pull, a change or delete on the phone during a pull,
-a refused entry, a delete from the server, a fixed catalog food, an entry
-whose food the phone lacks, a lost pull answer, another user's sign-in during a
-pull, and the rows each pull repeats.
-`mobile/test/app_sync_test.dart` checks when the app starts a run: at start, on
-return to the foreground, and 2 s after a change; and that a reinstall brings
-the diary back.
+The runner is tested against a stand-in server and an in-memory Drift database.
+The stand-in lets each test control failed, delayed, or lost answers without
+running the backend. The database exercises the runner's real queries without
+creating persistent database files.
 
-- The timer test runs in fake time (`testWidgets`). It makes its stand-in and
-  sign-in inside the test: calls to the stand-in started outside fake time never
-  finish inside it.
 - We accept that the stand-in can drift from the real API. The backend tests
   (#60) check the same calls from the server's side.
 - No automated test drives the app on an emulator.
@@ -929,34 +866,27 @@ the diary back.
 
 **Status:** Accepted, 2026-11-28 (#21).
 
-The backend keeps one custom row per trainee and inserts a history row for each
-save or real reset in the same transaction. A reset without a custom row does
-nothing. Profile edits leave custom values in place. Recommended targets are
+The backend keeps one custom row per trainee and a history row for each save or
+real reset. Profile edits leave custom values in place. Recommended targets are
 still calculated from the current profile on every read.
 
-One server function gives the calorie minimum: 1500 for male and 1200 for
-female profiles. Save and read use it. A save below it returns 422 with code
-`below_minimum`. A save whose macro energy differs from calories by 100 kcal or
-more returns 422 with code `macros_mismatch`. The API accepts whole numbers up
-to 6000 calories, 500 g protein, 300 g fat and 1000 g carbs.
+The calorie minimum is 1500 for male and 1200 for female profiles, from one
+server function that save and read share. A save is refused below the minimum,
+or when its macro energy differs from its calories by 100 kcal or more. The API
+accepts whole numbers up to 6000 calories, 500 g protein, 300 g fat and 1000 g
+carbs.
 
-If an older custom row is below today's minimum, the read raises calories to
-the minimum, then raises protein to 1.6 g/kg and fat to 20% of calories. It
-fills remaining calories in order: carbs to 65%, protein to 2.2 g/kg, fat to
-35%. If the first raises need more than the calorie increase, carbs fall no
-lower than zero. Carbs also come down whenever the macros add up to more than
-the raised calories, even when protein and fat needed no raise. That only
-happens inside the 99 kcal gap a save allows, and it keeps the macros matching
-the calories shown. At BMI 30 or higher, the protein limits use weight at BMI
-25. The response marks adjusted macros and keeps the recommended values
-alongside the effective values.
+If an older custom row is below today's minimum, the read raises it to the
+minimum and adjusts its macros. The adjustment uses protein and fat floors of
+1.6 g/kg and 20% of calories; additional calories use ceilings of 65% for carbs,
+2.2 g/kg for protein, and 35% for fat. At BMI 30 or higher, the protein limits
+use weight at BMI 25. Carbs also come down whenever the macros add up to
+more than the raised calories, even when protein and fat needed no raise. That
+only happens inside the 99 kcal gap a save allows, and it keeps the macros
+matching the calories shown.
 
-The phone caches the effective targets with `custom`, `macros_adjusted` and the
-recommended values (schema version 4), so custom targets show offline. Like a
-profile save (decision 24), saving and resetting need internet: offline, they
-show the no-connection error and change nothing, and the form keeps the typed
-numbers. The form checks the ranges and the 100 kcal rule before sending: at
-100 kcal or more it shows an error and can't save, and under 100 it shows the
-difference and asks to fix the numbers or keep them. The phone has no copy of
-the minimum: the `below_minimum` 422 carries it in `ctx`, and the form shows it
-on the calories field.
+The phone caches the effective and recommended targets, so custom targets show
+offline. Like a profile save (decision 24), saving and resetting need internet:
+offline, they show the no-connection error and change nothing. The form checks
+the ranges and the 100 kcal rule before sending, for quicker errors. The phone
+has no copy of the minimum: the server's refusal carries it.

@@ -17,7 +17,7 @@ import 'meal.dart';
 
 /// The home screen: today's entries under their meals, and the day's
 /// calories and macros next to the targets. It reads only from the phone's
-/// database and updates whenever an entry is saved (docs/decisions.md, 32).
+/// database and updates whenever an entry is saved (decision 32).
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({
     super.key,

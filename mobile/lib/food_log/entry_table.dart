@@ -4,8 +4,8 @@ import 'entry.dart';
 import 'meal.dart';
 
 /// The trainee's diary entries. They are saved here first and the diary
-/// reads only from here (docs/decisions.md, 32). Grams and all values are
-/// whole tenths.
+/// reads only from here (decision 32). Grams and all values are whole
+/// tenths.
 ///
 /// The diary reads one day at a time, so `diary_day` has an index.
 @UseRowClass(FoodLogEntry, constructor: 'fromColumns')
@@ -19,7 +19,7 @@ class FoodLogEntryTable extends Table {
   TextColumn get meal => textEnum<Meal>()();
   TextColumn get mealName => text().nullable()();
 
-  /// `YYYY-MM-DD` text: a diary day is a date, not a point in time.
+  /// `YYYY-MM-DD` text (decision 34).
   TextColumn get diaryDay => text()();
   IntColumn get grams => integer()();
   IntColumn get caloriesPer100g => integer().named('calories_per_100g')();

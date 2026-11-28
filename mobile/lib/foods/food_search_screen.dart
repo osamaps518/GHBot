@@ -175,7 +175,7 @@ class _SearchField extends StatelessWidget {
 }
 
 /// Says the results come from the phone, and that other foods need a
-/// connection (docs/decisions.md, 20).
+/// connection (decision 20).
 class _OfflineNote extends StatelessWidget {
   const _OfflineNote();
 
