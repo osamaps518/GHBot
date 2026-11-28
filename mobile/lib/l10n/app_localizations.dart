@@ -584,6 +584,18 @@ abstract class AppLocalizations {
   /// **'أدخل اسمًا من 80 حرفًا على الأكثر.'**
   String get errorFoodName;
 
+  /// No description provided for @barcodeOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود (اختياري)'**
+  String get barcodeOptional;
+
+  /// No description provided for @errorBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 8 إلى 14 رقمًا، أو اتركه فارغًا.'**
+  String get errorBarcode;
+
   /// No description provided for @valuesPer100g.
   ///
   /// In ar, this message translates to:

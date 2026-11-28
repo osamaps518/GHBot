@@ -357,6 +357,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorFoodName => 'أدخل اسمًا من 80 حرفًا على الأكثر.';
 
   @override
+  String get barcodeOptional => 'الباركود (اختياري)';
+
+  @override
+  String get errorBarcode => 'أدخل من 8 إلى 14 رقمًا، أو اتركه فارغًا.';
+
+  @override
   String get valuesPer100g => 'القيم لكل 100 غ';
 
   @override

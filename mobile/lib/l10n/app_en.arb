@@ -81,6 +81,8 @@
   "nameInEnglish": "Name in English",
   "namesHint": "Enter at least one name, in Arabic or English.",
   "errorFoodName": "Enter a name of up to 80 characters.",
+  "barcodeOptional": "Barcode (optional)",
+  "errorBarcode": "Enter 8 to 14 digits, or leave it empty.",
   "valuesPer100g": "Values per 100 g",
   "valuesHint": "Copy them from the product label.",
   "errorCaloriesPer100g": "Enter 0 to 900, with at most 1 decimal.",

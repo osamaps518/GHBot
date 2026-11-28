@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/database.dart';
+import '../core/typed_number.dart';
 import '../l10n/app_localizations.dart';
 import 'food.dart';
 
@@ -16,10 +17,10 @@ enum _Value {
   final int max;
 }
 
-/// The form for a new own food: names and the values per 100 g. Save
-/// checks them as the server does (decision 38), keeps the food on the
-/// phone, which works offline, and closes with it, unless Back closed the
-/// form while it saved.
+/// The form for a new own food: names, an optional barcode and the values
+/// per 100 g. Save checks them as the server does (decision 38), keeps the
+/// food on the phone, which works offline, and closes with it, unless Back
+/// closed the form while it saved.
 class OwnFoodFormScreen extends StatefulWidget {
   const OwnFoodFormScreen({super.key, required this.database});
 
@@ -32,6 +33,7 @@ class OwnFoodFormScreen extends StatefulWidget {
 class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
   final _nameAr = TextEditingController();
   final _nameEn = TextEditingController();
+  final _barcode = TextEditingController();
   final _values = {
     for (final value in _Value.values) value: TextEditingController(),
   };
@@ -43,7 +45,7 @@ class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_nameAr, _nameEn, ..._values.values]) {
+    for (final controller in [_nameAr, _nameEn, _barcode, ..._values.values]) {
       controller.dispose();
     }
     super.dispose();
@@ -52,6 +54,7 @@ class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
   _Draft get _draft => _Draft(
     nameAr: _nameAr.text,
     nameEn: _nameEn.text,
+    barcode: _barcode.text,
     values: {
       for (final MapEntry(key: value, value: controller) in _values.entries)
         value: controller.text,
@@ -70,7 +73,7 @@ class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
       nameAr: draft.nameAr,
       nameEn: draft.nameEn,
       per100g: per100g,
-      barcode: null,
+      barcode: draft.barcode,
     );
     if (mounted && ModalRoute.of(context)!.isCurrent) {
       Navigator.pop(context, food);
@@ -98,6 +101,12 @@ class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
                     nameAr: _nameAr,
                     nameEn: _nameEn,
                     errors: errors,
+                    onChanged: _changed,
+                  ),
+                  const SizedBox(height: 16),
+                  _BarcodeField(
+                    controller: _barcode,
+                    error: errors?.barcodeWrong ?? false,
                     onChanged: _changed,
                   ),
                   const SizedBox(height: 20),
@@ -134,14 +143,16 @@ class _OwnFoodFormScreenState extends State<OwnFoodFormScreen> {
 }
 
 /// What the form holds, read as the server takes it: names trimmed, an
-/// empty name as none, values in tenths.
+/// empty name or barcode as none, digits as Western ones, values in tenths.
 class _Draft {
   _Draft({
     required String nameAr,
     required String nameEn,
+    required String barcode,
     required Map<_Value, String> values,
   }) : nameAr = _orNone(nameAr.trim()),
        nameEn = _orNone(nameEn.trim()),
+       barcode = _orNone(westernNumberText(barcode)),
        tenths = {
          for (final MapEntry(key: value, value: typed) in values.entries)
            value: parsePer100g(typed, value.max),
@@ -149,6 +160,7 @@ class _Draft {
 
   final String? nameAr;
   final String? nameEn;
+  final String? barcode;
 
   /// Each value in tenths, or null when it isn't one the server takes.
   final Map<_Value, int?> tenths;
@@ -156,6 +168,7 @@ class _Draft {
   bool get noName => nameAr == null && nameEn == null;
   bool get nameArWrong => !ownFoodNameFits(nameAr);
   bool get nameEnWrong => !ownFoodNameFits(nameEn);
+  bool get barcodeWrong => !ownFoodBarcodeFits(barcode);
 
   Set<_Value> get wrongValues => {
     for (final MapEntry(key: value, value: tenths) in tenths.entries)
@@ -190,7 +203,7 @@ class _Draft {
       nameAr: nameAr,
       nameEn: nameEn,
       per100g: per100g,
-      barcode: null,
+      barcode: barcode,
     ),
     null => false,
   };
@@ -265,6 +278,7 @@ class _LabeledField extends StatelessWidget {
     required this.error,
     required this.errorText,
     required this.onChanged,
+    this.keyboardType,
   });
 
   final String fieldKey;
@@ -273,6 +287,7 @@ class _LabeledField extends StatelessWidget {
   final bool error;
   final String? errorText;
   final VoidCallback onChanged;
+  final TextInputType? keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -291,6 +306,7 @@ class _LabeledField extends StatelessWidget {
         TextField(
           key: ValueKey(fieldKey),
           controller: controller,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             error: error ? const SizedBox.shrink() : null,
           ),
@@ -302,6 +318,32 @@ class _LabeledField extends StatelessWidget {
             style: theme.textTheme.bodySmall!.copyWith(color: colors.error),
           ),
       ],
+    );
+  }
+}
+
+class _BarcodeField extends StatelessWidget {
+  const _BarcodeField({
+    required this.controller,
+    required this.error,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final bool error;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _LabeledField(
+      fieldKey: 'barcode',
+      label: l10n.barcodeOptional,
+      controller: controller,
+      error: error,
+      errorText: error ? l10n.errorBarcode : null,
+      keyboardType: TextInputType.number,
+      onChanged: onChanged,
     );
   }
 }

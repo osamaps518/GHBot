@@ -69,6 +69,7 @@ void main() {
     expect(find.text(english.newFood), findsOneWidget);
 
     await _type(tester, 'nameAr', '  معمول بالتمر ');
+    await _type(tester, 'barcode', '٦٢٥١٠٠٣٤٥١٢٠٥');
     await _type(tester, 'calories', '442');
     await _type(tester, 'protein', '5.6');
     await _type(tester, 'carbs', '٦٤');
@@ -77,8 +78,8 @@ void main() {
 
     final stored = (await database.unsentOwnFoods()).single;
     expect(
-      [stored.nameAr, stored.nameEn, stored.own],
-      ['معمول بالتمر', null, true],
+      [stored.nameAr, stored.nameEn, stored.barcode, stored.own],
+      ['معمول بالتمر', null, '6251003451205', true],
     );
     final values = stored.per100g;
     expect(
@@ -94,6 +95,7 @@ void main() {
     final (database, closedWith) = await _pumpForm(tester);
 
     await _type(tester, 'nameEn', '   ');
+    await _type(tester, 'barcode', '1234567');
     await _type(tester, 'calories', '900.1');
     await _type(tester, 'protein', '50');
     await _type(tester, 'carbs', '40');
@@ -103,6 +105,7 @@ void main() {
     expect(find.text(english.newFood), findsOneWidget);
     final hint = tester.widget<Text>(find.text(english.namesHint));
     expect(hint.style!.color, lightTheme.colorScheme.error);
+    expect(find.text(english.errorBarcode), findsOneWidget);
     expect(find.text(english.errorCaloriesPer100g), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text(english.errorMacrosOver100g),

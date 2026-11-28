@@ -356,6 +356,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorFoodName => 'Enter a name of up to 80 characters.';
 
   @override
+  String get barcodeOptional => 'Barcode (optional)';
+
+  @override
+  String get errorBarcode => 'Enter 8 to 14 digits, or leave it empty.';
+
+  @override
   String get valuesPer100g => 'Values per 100 g';
 
   @override
