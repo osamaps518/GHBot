@@ -256,7 +256,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String macrosTooFar(String calories, String difference) {
+    return 'Protein, carbs and fat give $calories kcal, $difference away from your calories. Bring the numbers closer, to under 100 kcal apart.';
+  }
+
+  @override
   String get saveNeedsInternet => 'Saving needs an internet connection';
+
+  @override
+  String macrosApartTitle(String difference) {
+    return 'The numbers are $difference kcal apart';
+  }
+
+  @override
+  String macrosApartBody(String calories, String macroCalories) {
+    return 'You entered $calories kcal, but protein, carbs and fat give $macroCalories kcal. You can fix the numbers or save them as they are.';
+  }
+
+  @override
+  String get keepNumbers => 'Save as they are';
+
+  @override
+  String get fixNumbers => 'Fix the numbers';
 
   @override
   String get errorCaloriesRange => 'Enter a whole number up to 6000';

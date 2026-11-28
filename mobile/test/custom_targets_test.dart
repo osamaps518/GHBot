@@ -52,6 +52,10 @@ Future<void> _tapText(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
+FilledButton _saveButton(WidgetTester tester) => tester.widget<FilledButton>(
+  find.widgetWithText(FilledButton, english.save),
+);
+
 void main() {
   testWidgets('custom targets show as custom, with the recommended calories '
       'and how those were calculated', (tester) async {
@@ -126,6 +130,60 @@ void main() {
       await openTargets(tester);
       expect(find.text(english.customBadge), findsOneWidget);
       expect(find.text('2400'), findsOneWidget);
+    });
+
+    testWidgets("macros 100 kcal or more from the calories show an error and "
+        "can't be saved", (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _openForm(tester);
+
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '330',
+        fat: '60',
+      );
+      expect(find.text(english.macrosTooFar('2500', '100')), findsOneWidget);
+      expect(_saveButton(tester).onPressed, isNull);
+
+      await _typeTargets(
+        tester,
+        calories: '2401',
+        protein: '160',
+        carbs: '330',
+        fat: '60',
+      );
+      expect(find.text(english.macrosTooFar('2500', '99')), findsNothing);
+      expect(_saveButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets('macros under 100 kcal from the calories ask first: fix the '
+        'numbers goes back, keep saves', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '300',
+        fat: '60',
+      );
+
+      await _tapText(tester, english.save);
+      expect(find.text(english.macrosApartTitle('20')), findsOneWidget);
+      await _tapText(tester, english.fixNumbers);
+      expect(find.text(english.macrosApartTitle('20')), findsNothing);
+      expect(find.text('300'), findsOneWidget);
+      expect(backend.requestsTo('PUT', '/me/targets/custom'), isEmpty);
+
+      await _tapText(tester, english.save);
+      await _tapText(tester, english.keepNumbers);
+      final put = backend.requestsTo('PUT', '/me/targets/custom').single;
+      expect(jsonDecode(put.body), containsPair('carbs_g', 300));
+      expect(find.text(english.customBadge), findsOneWidget);
     });
   });
 }

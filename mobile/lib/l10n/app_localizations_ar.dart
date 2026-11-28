@@ -256,7 +256,28 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String macrosTooFar(String calories, String difference) {
+    return 'البروتين والكربوهيدرات والدهون تعطي $calories سعرة، أي بفرق $difference عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.';
+  }
+
+  @override
   String get saveNeedsInternet => 'الحفظ يحتاج إلى الإنترنت';
+
+  @override
+  String macrosApartTitle(String difference) {
+    return 'الأرقام مختلفة بـ $difference سعرة';
+  }
+
+  @override
+  String macrosApartBody(String calories, String macroCalories) {
+    return 'أدخلت $calories سعرة، لكن البروتين والكربوهيدرات والدهون تعطي $macroCalories سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.';
+  }
+
+  @override
+  String get keepNumbers => 'حفظ كما هي';
+
+  @override
+  String get fixNumbers => 'تعديل الأرقام';
 
   @override
   String get errorCaloriesRange => 'أدخل عددًا صحيحًا حتى 6000';

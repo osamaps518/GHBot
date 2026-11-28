@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import 'choice_dialog.dart';
 import 'targets.dart';
 
 /// The form for custom targets, opened on the targets in effect. It checks
@@ -53,12 +54,15 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
 
   void _changed(TargetsField field) => setState(() => _errors.remove(field));
 
-  /// Checks the form, then saves.
+  /// Checks the form, asks first when the macros don't quite give the
+  /// calories, then saves.
   Future<void> _save() async {
     final draft = _draft;
     final values = draft.values;
     setState(() => _errors = draft.invalidFields);
     if (values == null) return;
+    if (draft.difference != 0 && !await _keepAnyway(draft)) return;
+    if (!mounted) return;
 
     setState(() => _busy = true);
     try {
@@ -68,6 +72,26 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     }
   }
 
+  /// Shows how far apart the numbers are. True when the trainee keeps them.
+  Future<bool> _keepAnyway(TargetsDraft draft) async {
+    final keep = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return ChoiceDialog(
+          title: l10n.macrosApartTitle('${draft.difference}'),
+          body: l10n.macrosApartBody(
+            '${draft.calories}',
+            '${draft.macroCalories}',
+          ),
+          confirm: l10n.keepNumbers,
+          cancel: l10n.fixNumbers,
+        );
+      },
+    );
+    return keep ?? false;
+  }
+
   String _error(AppLocalizations l10n, TargetsField field) => switch (field) {
     TargetsField.calories => l10n.errorCaloriesRange,
     TargetsField.protein => l10n.errorGramsRange('500'),
@@ -75,7 +99,9 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     TargetsField.fat => l10n.errorGramsRange('300'),
   };
 
-  /// Save sits below the scrolling part, so the keyboard doesn't cover it.
+  /// Save stays off while the macros are 100 kcal or more from the
+  /// calories. It sits below the scrolling part, so the keyboard doesn't
+  /// cover it.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -111,7 +137,12 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
                     ),
                     const SizedBox(height: 20),
                   ],
-                  if (draft.macroCalories case final calories?)
+                  if (draft.macrosTooFar)
+                    _MacrosTooFarAlert(
+                      macroCalories: draft.macroCalories!,
+                      difference: draft.difference!,
+                    )
+                  else if (draft.macroCalories case final calories?)
                     _MacroCaloriesLine(calories: calories),
                 ],
               ),
@@ -130,7 +161,7 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
                     ),
                   ),
                   FilledButton(
-                    onPressed: _busy ? null : _save,
+                    onPressed: _busy || draft.macrosTooFar ? null : _save,
                     child: Text(l10n.save),
                   ),
                 ],
@@ -210,7 +241,8 @@ class _TargetField extends StatelessWidget {
   }
 }
 
-/// The calories the macros give.
+/// The calories the macros give, while they're under 100 kcal from the
+/// calories.
 class _MacroCaloriesLine extends StatelessWidget {
   const _MacroCaloriesLine({required this.calories});
 
@@ -231,6 +263,48 @@ class _MacroCaloriesLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Why Save is off: the macros are 100 kcal or more from the calories.
+class _MacrosTooFarAlert extends StatelessWidget {
+  const _MacrosTooFarAlert({
+    required this.macroCalories,
+    required this.difference,
+  });
+
+  final int macroCalories;
+  final int difference;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 10,
+          children: [
+            Icon(Icons.error_outline, size: 20, color: colors.error),
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context)!
+                    .macrosTooFar('$macroCalories', '$difference'),
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  color: colors.onErrorContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

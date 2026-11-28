@@ -180,7 +180,45 @@
       }
     }
   },
+  "macrosTooFar": "البروتين والكربوهيدرات والدهون تعطي {calories} سعرة، أي بفرق {difference} عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.",
+  "@macrosTooFar": {
+    "description": "The form can't save: the server refuses macros 100 kcal or more from the calories.",
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The calories the macros give, in Western digits."
+      },
+      "difference": {
+        "type": "String",
+        "description": "How far that is from the typed calories, in Western digits."
+      }
+    }
+  },
   "saveNeedsInternet": "الحفظ يحتاج إلى الإنترنت",
+  "macrosApartTitle": "الأرقام مختلفة بـ {difference} سعرة",
+  "@macrosApartTitle": {
+    "placeholders": {
+      "difference": {
+        "type": "String",
+        "description": "Under 100, in Western digits."
+      }
+    }
+  },
+  "macrosApartBody": "أدخلت {calories} سعرة، لكن البروتين والكربوهيدرات والدهون تعطي {macroCalories} سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.",
+  "@macrosApartBody": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The typed calories, in Western digits."
+      },
+      "macroCalories": {
+        "type": "String",
+        "description": "The calories the macros give, in Western digits."
+      }
+    }
+  },
+  "keepNumbers": "حفظ كما هي",
+  "fixNumbers": "تعديل الأرقام",
   "errorCaloriesRange": "أدخل عددًا صحيحًا حتى 6000",
   "errorGramsRange": "أدخل عددًا صحيحًا من 0 إلى {max}",
   "@errorGramsRange": {

@@ -416,11 +416,41 @@ abstract class AppLocalizations {
   /// **'البروتين والكربوهيدرات والدهون تعطي {calories} سعرة.'**
   String macroCaloriesLine(String calories);
 
+  /// The form can't save: the server refuses macros 100 kcal or more from the calories.
+  ///
+  /// In ar, this message translates to:
+  /// **'البروتين والكربوهيدرات والدهون تعطي {calories} سعرة، أي بفرق {difference} عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.'**
+  String macrosTooFar(String calories, String difference);
+
   /// No description provided for @saveNeedsInternet.
   ///
   /// In ar, this message translates to:
   /// **'الحفظ يحتاج إلى الإنترنت'**
   String get saveNeedsInternet;
+
+  /// No description provided for @macrosApartTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام مختلفة بـ {difference} سعرة'**
+  String macrosApartTitle(String difference);
+
+  /// No description provided for @macrosApartBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخلت {calories} سعرة، لكن البروتين والكربوهيدرات والدهون تعطي {macroCalories} سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.'**
+  String macrosApartBody(String calories, String macroCalories);
+
+  /// No description provided for @keepNumbers.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كما هي'**
+  String get keepNumbers;
+
+  /// No description provided for @fixNumbers.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الأرقام'**
+  String get fixNumbers;
 
   /// No description provided for @errorCaloriesRange.
   ///
