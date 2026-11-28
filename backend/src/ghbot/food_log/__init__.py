@@ -9,8 +9,9 @@ For other modules:
 
 For wiring the app (main.py):
     router:
-        GET /me/food-log/changes: return the caller's changed entries and used
-            foods since an optional marker, plus the next overlapping marker.
+        GET /me/food-log/changes: return the caller's changed entries, and
+            their changed own and used foods, since an optional marker, plus
+            the next overlapping marker.
             The foods of the returned entries come too, changed or not. The
             marker, `since`, is a time-zone-aware timestamp, such as ISO 8601.
         PUT /me/food-log/entries/{id}: save the entry if its revision is newer,

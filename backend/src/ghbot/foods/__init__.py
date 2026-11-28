@@ -2,8 +2,8 @@
 
 For other modules:
     Food: the persisted food row.
-    changed_foods: visible foods for a pull, rounded like search: those a
-        trainee's used-food IDs select that changed since a marker, and
+    changed_foods: visible foods for a pull, rounded like search: the
+        trainee's own foods and used foods that changed since a marker, and
         those of the pulled entries, changed or not.
     visible_foods: select the catalog and a trainee's own foods.
 
@@ -11,7 +11,9 @@ For wiring the app (main.py):
     router:
         GET /foods?q=: up to 20 catalog and own foods whose Arabic or English
             name matches q, own foods first.
-        PUT /me/foods/{id}: create or replace the caller's own food.
+        PUT /me/foods/{id}: save the caller's own food if its revision is
+            newer, else return the stored one; 409 if the id is a catalog food
+            or another trainee's.
 """
 
 from ghbot.foods.application import changed_foods, visible_foods
