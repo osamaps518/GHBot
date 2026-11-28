@@ -131,10 +131,8 @@ while the production provider remains deferred (see #5).
 `ENVIRONMENT` is required, with no default. Until a real provider exists, the app
 refuses to start unless it is `development`; only then is `/dev/token` mounted.
 
-`AuthProvider` has one method: verify a token and return its subject, or raise.
-`get_current_user` maps that subject to our `users` table, creating the row on
-first use. A unique `auth_subject` and `ON CONFLICT DO NOTHING` handle simultaneous
-first requests. Our IDs are UUIDv7; future tables reference these IDs.
+A user's row in our `users` table is created on their first request. Our IDs
+are UUIDv7; future tables reference these IDs.
 
 ---
 

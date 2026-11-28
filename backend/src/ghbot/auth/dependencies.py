@@ -16,6 +16,11 @@ async def get_current_user(
     session: SessionDependency,
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
 ) -> SignedInUser:
+    """Return the user the bearer token names, or answer 401.
+
+    The app's `AuthProvider` verifies the token and gives its subject, which is
+    mapped to our users table, creating the row on first use.
+    """
     provider: AuthProvider = request.app.state.auth_provider
     try:
         subject = provider.verify_token(credentials.credentials)
