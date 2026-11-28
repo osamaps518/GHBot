@@ -285,6 +285,33 @@ void main() {
       expect(find.text(english.customBadge), findsOneWidget);
     });
 
+    testWidgets('Retry after an offline save keeps the 100 kcal check', (
+      tester,
+    ) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '296',
+        fat: '64',
+      );
+      backend.offline = true;
+      await _tapText(tester, english.save);
+      expect(find.text(english.retry), findsOneWidget);
+
+      await tester.enterText(find.byKey(const ValueKey('calories')), '2500');
+      await tester.pump();
+      backend.offline = false;
+      await _tapText(tester, english.retry);
+
+      expect(find.text(english.macrosTooFar('2400', '100')), findsOneWidget);
+      expect(find.text(english.macrosApartTitle('100')), findsNothing);
+      expect(backend.requestsTo('PUT', '/me/targets/custom'), hasLength(1));
+    });
+
     testWidgets("a save below the minimum shows the server's minimum on the "
         'calories', (tester) async {
       final backend = FakeBackend()..profile = savedProfile();

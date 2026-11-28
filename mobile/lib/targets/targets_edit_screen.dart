@@ -66,9 +66,9 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     if (field == TargetsField.calories) _minimum = null;
   });
 
-  /// Checks the form, asks first when the macros don't quite give the
-  /// calories, then saves. Offline, the numbers stay and Retry checks and
-  /// saves them again. Back may have closed the form while it saved, so a
+  /// Checks the form, stops when the macros are 100 kcal or more from the
+  /// calories, asks first when they don't quite give them, then saves.
+  /// Offline, the numbers stay and Retry checks and saves them again. Back may have closed the form while it saved, so a
   /// failure shows only while the form is still open.
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
@@ -79,7 +79,7 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
       _errors = draft.invalidFields;
       _minimum = null;
     });
-    if (values == null) return;
+    if (values == null || draft.macrosTooFar) return;
     if (draft.difference != 0 && !await _keepAnyway(draft)) return;
     if (!mounted) return;
 
