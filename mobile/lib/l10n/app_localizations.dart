@@ -554,6 +554,66 @@ abstract class AppLocalizations {
   /// **'طعامك'**
   String get ownFoodBadge;
 
+  /// Title of the form for adding an own food.
+  ///
+  /// In ar, this message translates to:
+  /// **'طعام جديد'**
+  String get newFood;
+
+  /// No description provided for @nameInArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالعربية'**
+  String get nameInArabic;
+
+  /// No description provided for @nameInEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالإنجليزية'**
+  String get nameInEnglish;
+
+  /// Below the name fields; shown in the error color when both are empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمًا واحدًا على الأقل، بالعربية أو بالإنجليزية.'**
+  String get namesHint;
+
+  /// No description provided for @errorFoodName.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسمًا من 80 حرفًا على الأكثر.'**
+  String get errorFoodName;
+
+  /// No description provided for @valuesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيم لكل 100 غ'**
+  String get valuesPer100g;
+
+  /// No description provided for @valuesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخها من ملصق المنتج.'**
+  String get valuesHint;
+
+  /// No description provided for @errorCaloriesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 0 إلى 900، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorCaloriesPer100g;
+
+  /// No description provided for @errorMacroPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 0 إلى 100، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorMacroPer100g;
+
+  /// The server refuses an own food whose macros add up to more than 100 g per 100 g (decision 38).
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن أن يزيد مجموع البروتين والكربوهيدرات والدهون على 100 غ في 100 غ من الطعام.'**
+  String get errorMacrosOver100g;
+
   /// No description provided for @noResultsTitle.
   ///
   /// In ar, this message translates to:

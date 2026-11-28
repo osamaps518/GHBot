@@ -341,6 +341,40 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ownFoodBadge => 'طعامك';
 
   @override
+  String get newFood => 'طعام جديد';
+
+  @override
+  String get nameInArabic => 'الاسم بالعربية';
+
+  @override
+  String get nameInEnglish => 'الاسم بالإنجليزية';
+
+  @override
+  String get namesHint =>
+      'اكتب اسمًا واحدًا على الأقل، بالعربية أو بالإنجليزية.';
+
+  @override
+  String get errorFoodName => 'أدخل اسمًا من 80 حرفًا على الأكثر.';
+
+  @override
+  String get valuesPer100g => 'القيم لكل 100 غ';
+
+  @override
+  String get valuesHint => 'انسخها من ملصق المنتج.';
+
+  @override
+  String get errorCaloriesPer100g =>
+      'أدخل من 0 إلى 900، بمنزلة عشرية واحدة على الأكثر.';
+
+  @override
+  String get errorMacroPer100g =>
+      'أدخل من 0 إلى 100، بمنزلة عشرية واحدة على الأكثر.';
+
+  @override
+  String get errorMacrosOver100g =>
+      'لا يمكن أن يزيد مجموع البروتين والكربوهيدرات والدهون على 100 غ في 100 غ من الطعام.';
+
+  @override
   String noResultsTitle(String query) {
     return 'لم نجد «$query»';
   }

@@ -65,22 +65,26 @@ bool passesOwnFoodChecks({
 }) {
   bool inRange(int value, int max) => value >= 0 && value <= max;
   return (nameAr != null || nameEn != null) &&
-      _nameFits(nameAr) &&
-      _nameFits(nameEn) &&
+      ownFoodNameFits(nameAr) &&
+      ownFoodNameFits(nameEn) &&
       inRange(per100g.calories, maxCaloriesPer100g) &&
       inRange(per100g.protein, maxMacroPer100g) &&
       inRange(per100g.carbs, maxMacroPer100g) &&
       inRange(per100g.fat, maxMacroPer100g) &&
       per100g.protein + per100g.carbs + per100g.fat <= maxMacroPer100g &&
-      (barcode == null || RegExp(r'^[0-9]{8,14}$').hasMatch(barcode));
+      ownFoodBarcodeFits(barcode);
 }
 
-/// Whether [name] is none, or one the server takes.
-bool _nameFits(String? name) =>
+/// Whether [name] is none, or an own food name the server takes.
+bool ownFoodNameFits(String? name) =>
     name == null ||
     (name.runes.length <= 80 &&
         !_blank.hasMatch(name) &&
         !name.contains('\u0000'));
+
+/// Whether [barcode] is none, or 8 to 14 digits.
+bool ownFoodBarcodeFits(String? barcode) =>
+    barcode == null || RegExp(r'^[0-9]{8,14}$').hasMatch(barcode);
 
 /// Empty, or only characters that are spaces to Dart or to the server's
 /// Python (`str.isspace`), so the phone never takes a name the server
