@@ -685,7 +685,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, answers at the same revision, and backup. Amended 2026-11-28 (#65): own foods, server side.
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, answers at the same revision, and backup. Amended 2026-11-28 (#65): own foods, server side. Amended 2026-11-28 (#65): own foods, phone side.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -771,6 +771,24 @@ phone asks for everything: that is how a reinstall gets the diary back.
   since every answer stores them. The 30-second margin sends recent rows with
   every pull, and writing them would start another run, then another pull,
   until they left the margin.
+
+**Own foods (#65, phone).** An own food is made on the phone, with its ID, and
+sent like an entry: a revision, the last revision confirmed, a refusal mark,
+the server's answer taken at the revision sent. Catalog foods are at revision
+0 and never count as unsent.
+
+- **Foods first:** each run sends the unsent own foods before the entries, so an
+  entry logged with a new food goes in the same run. An entry whose food has a
+  change the server hasn't confirmed, refused or not, waits for a later run:
+  sent first, the server would refuse it for a food it doesn't have, and the
+  refusal would stay after the food arrived. A deleted entry goes all the same:
+  a delete doesn't need the food.
+- **Search and pulls:** storing a food the server sent never overwrites an own
+  food with such a change, as for entries above.
+- **When it runs:** writes to foods don't start a run. Every pull writes the
+  foods it brings, and a catalog food's revision stays 0 when it is fixed, so
+  repeated foods can't be skipped as entries are: a run would follow every
+  pull. A new own food goes with the next run, and logging it starts one.
 
 **Backup.** `user_data/` stays out of Android backup and device transfer
 (decision 25). Pulling adds a reason: it puts a trainee's entries on every
@@ -929,3 +947,9 @@ Calories are not checked against the macros: food labels round their values,
 and fiber and alcohol can add calories the three macros do not show. The
 limits match the diary's per-100 g ranges (decision 30), rather than adding a
 second scale for the same kind of value.
+
+On the phone, a name's characters are counted as the server counts them, in
+code points, so 80 emoji fit on both sides. The form trims names and sends an
+empty one as none. Where Dart and Python disagree on what a space is, the phone
+takes the wider set: a refusal it shows at once is better than one from the
+server, which leaves the food and its entries waiting.
