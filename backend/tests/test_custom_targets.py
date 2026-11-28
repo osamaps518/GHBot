@@ -156,6 +156,27 @@ def test_read_raises_older_custom_targets_to_minimum(app, client, auth_headers):
     assert response.json()["at_minimum"] is True
 
 
+def test_read_rounds_filled_carbs_half_up(app, client, auth_headers):
+    app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
+    headers = auth_headers()
+    assert save_profile(client, headers, weight_kg=60).status_code == 201
+    user_id = UUID(client.get("/me", headers=headers).json()["id"])
+    with Session(create_engine(Settings().database_url.get_secret_value())) as session:
+        session.add(
+            CustomTargets(
+                user_id=user_id, calories=1100, protein_g=85, fat_g=29, carbs_g=125
+            )
+        )
+        session.commit()
+
+    response = client.get("/me/targets", headers=headers)
+
+    assert {
+        key: response.json()[key]
+        for key in ("calories", "protein_g", "fat_g", "carbs_g")
+    } == {"calories": 1200, "protein_g": 96, "fat_g": 29, "carbs_g": 139}
+
+
 def test_read_uses_bmi_25_weight_and_reduces_carbs_when_needed(
     app, client, auth_headers
 ):

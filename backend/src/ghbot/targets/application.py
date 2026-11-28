@@ -74,9 +74,10 @@ def adjusted_custom(profile: ProfileSnapshot, custom: CustomTargets) -> dict[str
     fat = max(custom.fat_g, _whole(Decimal(minimum) * Decimal("0.2") / 9))
     available = minimum - 4 * protein - 9 * fat
     carbs = min(custom.carbs_g, max(0, _whole(Decimal(available) / 4)))
-    remaining = minimum - 4 * protein - 9 * fat - 4 * carbs
     carb_cap = _whole(Decimal(minimum) * Decimal("0.65") / 4)
-    carbs += min(max(0, carb_cap - carbs), max(0, remaining // 4))
+    carbs = max(
+        carbs, min(carb_cap, _whole(Decimal(minimum - 4 * protein - 9 * fat) / 4))
+    )
     remaining = minimum - 4 * protein - 9 * fat - 4 * carbs
     protein += min(
         max(0, _whole(Decimal("2.2") * weight) - protein), max(0, remaining // 4)
