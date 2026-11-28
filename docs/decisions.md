@@ -850,13 +850,10 @@ tell the screens about every change, so it would only pass them along.
 
 **Status:** Accepted, 2026-11-25 (#61). Amended 2026-11-28 (#62): pulling.
 
-The runner is tested against a stand-in server and an in-memory Drift database,
-not the real backend. The stand-in answers the entry calls and the pull as
-decision 31 says, and it can fail at the moment a test needs: go offline, lose
-an answer after handling the request, hold a call, or answer anything a test
-chooses. Those failures are what sync must survive, and a real server can't be
-made to produce them on cue. The in-memory database runs the runner's real
-queries, with nothing to clean up between tests.
+The runner is tested against a stand-in server and an in-memory Drift database.
+The stand-in lets each test control failed, delayed, or lost answers without
+running the backend. The database exercises the runner's real queries without
+creating persistent database files.
 
 - We accept that the stand-in can drift from the real API. The backend tests
   (#60) check the same calls from the server's side.
