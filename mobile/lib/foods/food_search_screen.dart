@@ -127,14 +127,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     _onChanged('');
   }
 
-  /// Opens the form, starting with [query] as the name, and chooses the
-  /// food it saved.
-  Future<void> _addOwnFood(String query) async {
+  /// Opens the form, starting with the text typed now as the name, and
+  /// chooses the food it saved. The text is read on the tap: the results on
+  /// screen may be from an earlier text while a new search waits.
+  Future<void> _addOwnFood() async {
+    final name = _text.text.trim();
     final food = await Navigator.push<Food>(
       context,
       MaterialPageRoute(
         builder: (_) =>
-            OwnFoodFormScreen(database: widget.database, name: query),
+            OwnFoodFormScreen(database: widget.database, name: name),
       ),
     );
     if (food != null && mounted) widget.onChosen(food, 1000);
@@ -166,13 +168,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           else if (results.failed)
             const _SearchFailed()
           else if (results.foods.isEmpty)
-            _NoResults(
-              query: results.query,
-              onAdd: () => _addOwnFood(results.query),
-            )
+            _NoResults(query: results.query, onAdd: _addOwnFood)
           else ...[
             _FoundFoods(foods: results.foods, onChosen: widget.onChosen),
-            _AddBelowResults(onAdd: () => _addOwnFood(results.query)),
+            _AddBelowResults(onAdd: _addOwnFood),
           ],
         ],
       ),

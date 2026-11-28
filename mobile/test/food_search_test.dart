@@ -307,5 +307,25 @@ void main() {
       expect(typed(tester, 'nameAr'), isEmpty);
       expect(typed(tester, 'nameEn'), 'white rice');
     });
+
+    for (final (shown, previous) in [
+      ('results', 'white rice'),
+      ('no results', 'bread'),
+    ]) {
+      testWidgets('with $shown still showing, the form starts with the text '
+          'typed since, before its search answers', (tester) async {
+        final backend = FakeBackend()..offline = true;
+        final (database, _, _) = await _pumpSearch(tester, backend);
+        await database.storeFood(Food.fromJson(riceJson));
+        await _search(tester, previous);
+
+        // Before the 300 ms wait, so the last results still show.
+        await tester.enterText(find.byType(TextField), '  Date maamoul ');
+        await tester.pump();
+        await openForm(tester);
+
+        expect(typed(tester, 'nameEn'), 'Date maamoul');
+      });
+    }
   });
 }
