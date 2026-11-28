@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../food_log/entry.dart';
 import '../food_log/entry_table.dart';
 import '../food_log/meal.dart';
+import '../food_log/pull_marker_table.dart';
 import '../foods/food.dart';
 import '../foods/food_table.dart';
 import '../profiles/profile.dart';
@@ -29,13 +30,19 @@ AppDatabase openUserDatabase(String userId) => AppDatabase(
 
 /// One user's data on the phone, in its own file (docs/decisions.md, 25).
 @DriftDatabase(
-  tables: [ProfileTable, TargetsTable, FoodTable, FoodLogEntryTable],
+  tables: [
+    ProfileTable,
+    TargetsTable,
+    FoodTable,
+    FoodLogEntryTable,
+    PullMarkerTable,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
@@ -43,7 +50,9 @@ class AppDatabase extends _$AppDatabase {
   /// before it are unsent. Version 4 adds custom targets (docs/decisions.md,
   /// 37); targets stored before it are recommended ones, so they are their
   /// own recommended values. SQLite can't add a column without a default,
-  /// so the step copies the table with the new columns filled in.
+  /// so the step copies the table with the new columns filled in. Version 5
+  /// adds the pull marker (docs/decisions.md, 31); with none stored, the
+  /// first pull brings everything.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -82,6 +91,9 @@ class AppDatabase extends _$AppDatabase {
             ],
           ),
         );
+      },
+      from4To5: (m, schema) async {
+        await m.createTable(schema.pullMarker);
       },
     ),
   );

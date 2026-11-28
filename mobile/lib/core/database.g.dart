@@ -2062,6 +2062,173 @@ class FoodLogEntryTableCompanion extends UpdateCompanion<FoodLogEntry> {
   }
 }
 
+class $PullMarkerTableTable extends PullMarkerTable
+    with TableInfo<$PullMarkerTableTable, PullMarkerTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PullMarkerTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _markerMeta = const VerificationMeta('marker');
+  @override
+  late final GeneratedColumn<String> marker = GeneratedColumn<String>(
+    'marker',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [marker];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pull_marker';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PullMarkerTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('marker')) {
+      context.handle(
+        _markerMeta,
+        marker.isAcceptableOrUnknown(data['marker']!, _markerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_markerMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  PullMarkerTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PullMarkerTableData(
+      marker: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}marker'],
+      )!,
+    );
+  }
+
+  @override
+  $PullMarkerTableTable createAlias(String alias) {
+    return $PullMarkerTableTable(attachedDatabase, alias);
+  }
+}
+
+class PullMarkerTableData extends DataClass
+    implements Insertable<PullMarkerTableData> {
+  /// Kept exactly as the server sent it: the phone never reads it.
+  final String marker;
+  const PullMarkerTableData({required this.marker});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['marker'] = Variable<String>(marker);
+    return map;
+  }
+
+  PullMarkerTableCompanion toCompanion(bool nullToAbsent) {
+    return PullMarkerTableCompanion(marker: Value(marker));
+  }
+
+  factory PullMarkerTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PullMarkerTableData(
+      marker: serializer.fromJson<String>(json['marker']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'marker': serializer.toJson<String>(marker)};
+  }
+
+  PullMarkerTableData copyWith({String? marker}) =>
+      PullMarkerTableData(marker: marker ?? this.marker);
+  PullMarkerTableData copyWithCompanion(PullMarkerTableCompanion data) {
+    return PullMarkerTableData(
+      marker: data.marker.present ? data.marker.value : this.marker,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PullMarkerTableData(')
+          ..write('marker: $marker')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => marker.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PullMarkerTableData && other.marker == this.marker);
+}
+
+class PullMarkerTableCompanion extends UpdateCompanion<PullMarkerTableData> {
+  final Value<String> marker;
+  final Value<int> rowid;
+  const PullMarkerTableCompanion({
+    this.marker = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PullMarkerTableCompanion.insert({
+    required String marker,
+    this.rowid = const Value.absent(),
+  }) : marker = Value(marker);
+  static Insertable<PullMarkerTableData> custom({
+    Expression<String>? marker,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (marker != null) 'marker': marker,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PullMarkerTableCompanion copyWith({
+    Value<String>? marker,
+    Value<int>? rowid,
+  }) {
+    return PullMarkerTableCompanion(
+      marker: marker ?? this.marker,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (marker.present) {
+      map['marker'] = Variable<String>(marker.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PullMarkerTableCompanion(')
+          ..write('marker: $marker, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2070,6 +2237,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodTableTable foodTable = $FoodTableTable(this);
   late final $FoodLogEntryTableTable foodLogEntryTable =
       $FoodLogEntryTableTable(this);
+  late final $PullMarkerTableTable pullMarkerTable = $PullMarkerTableTable(
+    this,
+  );
   late final Index foodLogEntriesDiaryDay = Index(
     'food_log_entries_diary_day',
     'CREATE INDEX food_log_entries_diary_day ON food_log_entries (diary_day)',
@@ -2083,6 +2253,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     targetsTable,
     foodTable,
     foodLogEntryTable,
+    pullMarkerTable,
     foodLogEntriesDiaryDay,
   ];
 }
@@ -3488,6 +3659,140 @@ typedef $$FoodLogEntryTableTableProcessedTableManager =
       FoodLogEntry,
       PrefetchHooks Function()
     >;
+typedef $$PullMarkerTableTableCreateCompanionBuilder =
+    PullMarkerTableCompanion Function({
+      required String marker,
+      Value<int> rowid,
+    });
+typedef $$PullMarkerTableTableUpdateCompanionBuilder =
+    PullMarkerTableCompanion Function({Value<String> marker, Value<int> rowid});
+
+class $$PullMarkerTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PullMarkerTableTable> {
+  $$PullMarkerTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get marker => $composableBuilder(
+    column: $table.marker,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PullMarkerTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PullMarkerTableTable> {
+  $$PullMarkerTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get marker => $composableBuilder(
+    column: $table.marker,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PullMarkerTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PullMarkerTableTable> {
+  $$PullMarkerTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get marker =>
+      $composableBuilder(column: $table.marker, builder: (column) => column);
+}
+
+class $$PullMarkerTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PullMarkerTableTable,
+          PullMarkerTableData,
+          $$PullMarkerTableTableFilterComposer,
+          $$PullMarkerTableTableOrderingComposer,
+          $$PullMarkerTableTableAnnotationComposer,
+          $$PullMarkerTableTableCreateCompanionBuilder,
+          $$PullMarkerTableTableUpdateCompanionBuilder,
+          (
+            PullMarkerTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $PullMarkerTableTable,
+              PullMarkerTableData
+            >,
+          ),
+          PullMarkerTableData,
+          PrefetchHooks Function()
+        > {
+  $$PullMarkerTableTableTableManager(
+    _$AppDatabase db,
+    $PullMarkerTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PullMarkerTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PullMarkerTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PullMarkerTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> marker = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => PullMarkerTableCompanion(marker: marker, rowid: rowid),
+          createCompanionCallback: ({
+            required String marker,
+            Value<int> rowid = const Value.absent(),
+          }) => PullMarkerTableCompanion.insert(marker: marker, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PullMarkerTableTable, PullMarkerTableData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PullMarkerTableTable,
+                    PullMarkerTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PullMarkerTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PullMarkerTableTable,
+      PullMarkerTableData,
+      $$PullMarkerTableTableFilterComposer,
+      $$PullMarkerTableTableOrderingComposer,
+      $$PullMarkerTableTableAnnotationComposer,
+      $$PullMarkerTableTableCreateCompanionBuilder,
+      $$PullMarkerTableTableUpdateCompanionBuilder,
+      (
+        PullMarkerTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $PullMarkerTableTable,
+          PullMarkerTableData
+        >,
+      ),
+      PullMarkerTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3500,4 +3805,6 @@ class $AppDatabaseManager {
       $$FoodTableTableTableManager(_db, _db.foodTable);
   $$FoodLogEntryTableTableTableManager get foodLogEntryTable =>
       $$FoodLogEntryTableTableTableManager(_db, _db.foodLogEntryTable);
+  $$PullMarkerTableTableTableManager get pullMarkerTable =>
+      $$PullMarkerTableTableTableManager(_db, _db.pullMarkerTable);
 }

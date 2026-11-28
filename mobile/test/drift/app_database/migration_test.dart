@@ -8,6 +8,7 @@ import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
+import 'generated/schema_v5.dart' as v5;
 
 const _profileV1 = v1.ProfileData(
   birthYear: 1996,
@@ -99,6 +100,55 @@ const _targetsV3 = v3.TargetsData(
   aboveTestedAge: 1,
   goal: 'lose',
   goalAdjustmentPercent: -20,
+);
+
+const _riceV4 = v4.FoodsData(
+  id: 'rice',
+  nameAr: 'أرز أبيض مطبوخ',
+  nameEn: 'Cooked white rice',
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+);
+
+const _entryV4 = v4.FoodLogEntriesData(
+  id: 'entry-1',
+  foodId: 'rice',
+  meal: 'lunch',
+  diaryDay: '2026-11-23',
+  grams: 1500,
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+  calories: 1950,
+  protein: 41,
+  carbs: 423,
+  fat: 5,
+  loggedAt: 1795435200,
+  revision: 2,
+  sentRevision: 1,
+  deleted: 0,
+  refused: 0,
+);
+
+const _customTargetsV4 = v4.TargetsData(
+  calories: 2500,
+  proteinG: 180,
+  fatG: 70,
+  carbsG: 283,
+  maintenanceCalories: 2760,
+  atMinimum: 0,
+  aboveTestedAge: 0,
+  goal: 'lose',
+  goalAdjustmentPercent: -20,
+  custom: 1,
+  macrosAdjusted: 0,
+  recommendedCalories: 2210,
+  recommendedProteinG: 176,
+  recommendedFatG: 49,
+  recommendedCarbsG: 266,
 );
 
 /// Upgrades each exported schema to every later one, and checks that the
@@ -202,6 +252,33 @@ void main() {
           'recommendedFatG': 49,
           'recommendedCarbsG': 266,
         });
+      },
+    );
+  });
+
+  test('upgrading from 4 to 5 keeps the entries and targets, with no pull '
+      'marker, so the first pull brings everything', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 4,
+      newVersion: 5,
+      createOld: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.foods, _riceV4);
+        batch.insert(oldDb.foodLogEntries, _entryV4);
+        batch.insert(oldDb.targets, _customTargetsV4);
+      },
+      validateItems: (newDb) async {
+        expect(
+          (await newDb.select(newDb.foodLogEntries).getSingle()).toJson(),
+          _entryV4.toJson(),
+        );
+        expect(
+          (await newDb.select(newDb.targets).getSingle()).toJson(),
+          _customTargetsV4.toJson(),
+        );
+        expect(await newDb.select(newDb.pullMarker).get(), isEmpty);
       },
     );
   });
