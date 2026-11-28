@@ -288,6 +288,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String errorBelowMinimum(String minimum) {
+    return 'الحد الأدنى الآمن $minimum سعرة';
+  }
+
+  @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override

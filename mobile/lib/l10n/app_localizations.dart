@@ -464,6 +464,12 @@ abstract class AppLocalizations {
   /// **'أدخل عددًا صحيحًا من 0 إلى {max}'**
   String errorGramsRange(String max);
 
+  /// On the calories field when the server refused calories below the minimum.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى الآمن {minimum} سعرة'**
+  String errorBelowMinimum(String minimum);
+
   /// No description provided for @editMyInfo.
   ///
   /// In ar, this message translates to:

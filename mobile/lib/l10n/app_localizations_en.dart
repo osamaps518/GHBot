@@ -288,6 +288,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String errorBelowMinimum(String minimum) {
+    return 'The safe minimum is $minimum kcal';
+  }
+
+  @override
   String get editMyInfo => 'Edit my info';
 
   @override

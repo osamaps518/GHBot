@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/api_failure.dart';
+import '../core/error_views.dart';
 import '../l10n/app_localizations.dart';
 import 'choice_dialog.dart';
 import 'targets.dart';
@@ -35,7 +37,14 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
   /// The fields shown as wrong: set when Save is tapped, cleared for a field
   /// when it changes.
   var _errors = <TargetsField>{};
+
+  /// The server's minimum, once it refused calories below it. Cleared when
+  /// the calories change.
+  int? _minimum;
   var _busy = false;
+
+  /// The form's own snackbars, so they and their Retry go when it closes.
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void dispose() {
@@ -52,14 +61,24 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     fat: _controllers[TargetsField.fat]!.text,
   );
 
-  void _changed(TargetsField field) => setState(() => _errors.remove(field));
+  void _changed(TargetsField field) => setState(() {
+    _errors.remove(field);
+    if (field == TargetsField.calories) _minimum = null;
+  });
 
   /// Checks the form, asks first when the macros don't quite give the
-  /// calories, then saves.
+  /// calories, then saves. Offline, the numbers stay and Retry checks and
+  /// saves them again. Back may have closed the form while it saved, so a
+  /// failure shows only while the form is still open.
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = _messenger.currentState!..hideCurrentSnackBar();
     final draft = _draft;
     final values = draft.values;
-    setState(() => _errors = draft.invalidFields);
+    setState(() {
+      _errors = draft.invalidFields;
+      _minimum = null;
+    });
     if (values == null) return;
     if (draft.difference != 0 && !await _keepAnyway(draft)) return;
     if (!mounted) return;
@@ -67,6 +86,22 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     setState(() => _busy = true);
     try {
       await widget.onSave(values);
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+      switch (failure) {
+        case ValidationFailure(
+          ctx: {'below_minimum': {'minimum': final int minimum}},
+        ):
+          setState(() => _minimum = minimum);
+        case ValidationFailure():
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.errorCheckDetails)),
+          );
+        case ConnectionFailure():
+          messenger.showSnackBar(connectionSnackBar(l10n, onRetry: _save));
+        case ServerFailure() || UnexpectedResponseFailure():
+          messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneral)));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -92,12 +127,18 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
     return keep ?? false;
   }
 
-  String _error(AppLocalizations l10n, TargetsField field) => switch (field) {
-    TargetsField.calories => l10n.errorCaloriesRange,
-    TargetsField.protein => l10n.errorGramsRange('500'),
-    TargetsField.carbs => l10n.errorGramsRange('1000'),
-    TargetsField.fat => l10n.errorGramsRange('300'),
-  };
+  String? _error(AppLocalizations l10n, TargetsField field) {
+    if (field == TargetsField.calories && _minimum != null) {
+      return l10n.errorBelowMinimum('$_minimum');
+    }
+    if (!_errors.contains(field)) return null;
+    return switch (field) {
+      TargetsField.calories => l10n.errorCaloriesRange,
+      TargetsField.protein => l10n.errorGramsRange('500'),
+      TargetsField.carbs => l10n.errorGramsRange('1000'),
+      TargetsField.fat => l10n.errorGramsRange('300'),
+    };
+  }
 
   /// Save stays off while the macros are 100 kcal or more from the
   /// calories. It sits below the scrolling part, so the keyboard doesn't
@@ -113,61 +154,62 @@ class _TargetsEditScreenState extends State<TargetsEditScreen> {
       TargetsField.carbs: widget.targets.recommendedCarbsG,
       TargetsField.fat: widget.targets.recommendedFatG,
     };
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.editTargets)),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                children: [
-                  for (final field in TargetsField.values) ...[
-                    _TargetField(
-                      field: field,
-                      controller: _controllers[field]!,
-                      helper: l10n.recommendedValue(
-                        field.name,
-                        '${recommended[field]}',
+    return ScaffoldMessenger(
+      key: _messenger,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.editTargets)),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  children: [
+                    for (final field in TargetsField.values) ...[
+                      _TargetField(
+                        field: field,
+                        controller: _controllers[field]!,
+                        helper: l10n.recommendedValue(
+                          field.name,
+                          '${recommended[field]}',
+                        ),
+                        error: _error(l10n, field),
+                        onChanged: () => _changed(field),
                       ),
-                      error: _errors.contains(field)
-                          ? _error(l10n, field)
-                          : null,
-                      onChanged: () => _changed(field),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                    ],
+                    if (draft.macrosTooFar)
+                      _MacrosTooFarAlert(
+                        macroCalories: draft.macroCalories!,
+                        difference: draft.difference!,
+                      )
+                    else if (draft.macroCalories case final calories?)
+                      _MacroCaloriesLine(calories: calories),
                   ],
-                  if (draft.macrosTooFar)
-                    _MacrosTooFarAlert(
-                      macroCalories: draft.macroCalories!,
-                      difference: draft.difference!,
-                    )
-                  else if (draft.macroCalories case final calories?)
-                    _MacroCaloriesLine(calories: calories),
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 12,
-                children: [
-                  Text(
-                    l10n.saveNeedsInternet,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall!.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 12,
+                  children: [
+                    Text(
+                      l10n.saveNeedsInternet,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall!.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  FilledButton(
-                    onPressed: _busy || draft.macrosTooFar ? null : _save,
-                    child: Text(l10n.save),
-                  ),
-                ],
+                    FilledButton(
+                      onPressed: _busy || draft.macrosTooFar ? null : _save,
+                      child: Text(l10n.save),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

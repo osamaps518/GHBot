@@ -229,6 +229,16 @@
       }
     }
   },
+  "errorBelowMinimum": "الحد الأدنى الآمن {minimum} سعرة",
+  "@errorBelowMinimum": {
+    "description": "On the calories field when the server refused calories below the minimum.",
+    "placeholders": {
+      "minimum": {
+        "type": "String",
+        "description": "The server's minimum for this profile, in Western digits."
+      }
+    }
+  },
   "editMyInfo": "تعديل معلوماتي",
   "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
   "@ageWarning": {

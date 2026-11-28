@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/l10n/app_localizations.dart';
+import 'package:http/http.dart' as http;
 
 import 'fake_backend.dart';
 
@@ -184,6 +185,80 @@ void main() {
       final put = backend.requestsTo('PUT', '/me/targets/custom').single;
       expect(jsonDecode(put.body), containsPair('carbs_g', 300));
       expect(find.text(english.customBadge), findsOneWidget);
+    });
+
+    testWidgets('offline, a save shows the connection error, keeps the typed '
+        'numbers and changes nothing; Retry saves them', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '296',
+        fat: '64',
+      );
+
+      backend.offline = true;
+      await _tapText(tester, english.save);
+      expect(find.text(english.errorConnection), findsOneWidget);
+      expect(find.text('2400'), findsOneWidget);
+      expect(backend.targets, exampleTargets);
+
+      await restartApp(tester, backend, storage);
+      await openTargets(tester);
+      expect(find.text('2210'), findsOneWidget);
+      expect(find.text(english.customBadge), findsNothing);
+
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '296',
+        fat: '64',
+      );
+      await _tapText(tester, english.save);
+      backend.offline = false;
+      await _tapText(tester, english.retry);
+      expect(find.text(english.customBadge), findsOneWidget);
+    });
+
+    testWidgets("a save below the minimum shows the server's minimum on the "
+        'calories', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      backend.intercept = (request) => request.method == 'PUT'
+          ? http.Response(
+              jsonEncode({
+                'detail': [
+                  {
+                    'type': 'below_minimum',
+                    'loc': ['body', 'calories'],
+                    'msg': 'Calories are below the minimum',
+                    'input': 1100,
+                    'ctx': {'minimum': 1500},
+                  },
+                ],
+              }),
+              422,
+            )
+          : null;
+      await pumpApp(tester, backend, storedName: 'alice');
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '1100',
+        protein: '85',
+        carbs: '136',
+        fat: '24',
+      );
+
+      await _tapText(tester, english.save);
+
+      expect(find.text(english.errorBelowMinimum('1500')), findsOneWidget);
+      expect(find.text(english.customBadge), findsNothing);
     });
   });
 }
