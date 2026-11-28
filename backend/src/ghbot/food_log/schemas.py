@@ -13,21 +13,11 @@ from pydantic import (
 )
 
 from ghbot.food_log.models import FoodLogEntry
-from ghbot.foods.schemas import FoodResponse
+from ghbot.foods import Calories, FoodResponse, Macro
 
 Grams = Annotated[
     Decimal,
     Field(gt=0, le=5000, decimal_places=1),
-    PlainSerializer(float, when_used="json"),
-]
-Calories = Annotated[
-    Decimal,
-    Field(ge=0, le=900, decimal_places=1),
-    PlainSerializer(float, when_used="json"),
-]
-Macro = Annotated[
-    Decimal,
-    Field(ge=0, le=100, decimal_places=1),
     PlainSerializer(float, when_used="json"),
 ]
 Total = Annotated[

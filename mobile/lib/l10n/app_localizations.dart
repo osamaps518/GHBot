@@ -542,11 +542,89 @@ abstract class AppLocalizations {
   /// **'سعرة'**
   String get caloriesUnit;
 
-  /// Search without a connection filters only the foods kept on the phone (decision 20).
+  /// Search without a connection filters only the foods kept on the phone: the logged ones and the trainee's own (decision 20).
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
+  /// **'تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل وأطعمتك فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.'**
   String get searchOffline;
+
+  /// Badge beside a food the trainee added, which only they see.
+  ///
+  /// In ar, this message translates to:
+  /// **'طعامك'**
+  String get ownFoodBadge;
+
+  /// Title of the form for adding an own food.
+  ///
+  /// In ar, this message translates to:
+  /// **'طعام جديد'**
+  String get newFood;
+
+  /// No description provided for @nameInArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالعربية'**
+  String get nameInArabic;
+
+  /// No description provided for @nameInEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالإنجليزية'**
+  String get nameInEnglish;
+
+  /// Below the name fields; shown in the error color when both are empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمًا واحدًا على الأقل، بالعربية أو بالإنجليزية.'**
+  String get namesHint;
+
+  /// No description provided for @errorFoodName.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسمًا من 80 حرفًا على الأكثر.'**
+  String get errorFoodName;
+
+  /// No description provided for @barcodeOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود (اختياري)'**
+  String get barcodeOptional;
+
+  /// No description provided for @errorBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 8 إلى 14 رقمًا، أو اتركه فارغًا.'**
+  String get errorBarcode;
+
+  /// No description provided for @valuesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيم لكل 100 غ'**
+  String get valuesPer100g;
+
+  /// No description provided for @valuesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخها من ملصق المنتج.'**
+  String get valuesHint;
+
+  /// No description provided for @errorCaloriesPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 0 إلى 900، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorCaloriesPer100g;
+
+  /// No description provided for @errorMacroPer100g.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل من 0 إلى 100، بمنزلة عشرية واحدة على الأكثر.'**
+  String get errorMacroPer100g;
+
+  /// The server refuses an own food whose macros add up to more than 100 g per 100 g (decision 38).
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن أن يزيد مجموع البروتين والكربوهيدرات والدهون على 100 غ في 100 غ من الطعام.'**
+  String get errorMacrosOver100g;
 
   /// No description provided for @noResultsTitle.
   ///
@@ -557,8 +635,20 @@ abstract class AppLocalizations {
   /// No description provided for @noResultsBody.
   ///
   /// In ar, this message translates to:
-  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية.'**
+  /// **'جرّب اسمًا آخر أو اكتبه بالإنجليزية. وإن لم يكن عندنا، فأضفه بقيمه لكل 100 غ وسجّله مباشرة.'**
   String get noResultsBody;
+
+  /// Below search results, before the button that adds an own food.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تجد ما تبحث عنه؟'**
+  String get cantFindIt;
+
+  /// Opens the form for a food the trainee adds, which only they see.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف طعامك'**
+  String get addOwnFood;
 
   /// No description provided for @mealName.
   ///

@@ -16,6 +16,7 @@ import 'package:ghbot/core/database.dart';
 import 'package:ghbot/core/sync_runner.dart';
 import 'package:ghbot/food_log/meal.dart';
 import 'package:ghbot/foods/food.dart';
+import 'package:ghbot/foods/foods_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -791,6 +792,273 @@ void main() {
       expect(pulls(), hasLength(settled));
       expect(backend.entries, hasLength(1));
       await runner.close();
+    });
+  });
+
+  group('own foods', () {
+    /// Adds date maamoul, from the mockups, as an own food and returns it.
+    Future<Food> addMaamoul() => database.addOwnFood(
+      nameAr: 'معمول بالتمر',
+      nameEn: null,
+      per100g: const Nutrients(
+        calories: 4420,
+        protein: 56,
+        carbs: 640,
+        fat: 182,
+      ),
+      barcode: '6251003451205',
+    );
+
+    /// Date maamoul as the server stores it.
+    Map<String, Object?> maamoulJson(String id) => {
+      'id': id,
+      'revision': 1,
+      'name_ar': 'معمول بالتمر',
+      'name_en': null,
+      'calories': 442.0,
+      'protein': 5.6,
+      'carbs': 64.0,
+      'fat': 18.2,
+      'barcode': '6251003451205',
+      'own': true,
+    };
+
+    /// Answers every own food call with [status] and [body].
+    void answerOwnFoods(int status, Object? body) {
+      backend.intercept = (request) => request.url.path.startsWith('/me/foods/')
+          ? http.Response(
+              jsonEncode(body),
+              status,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            )
+          : null;
+    }
+
+    test('a new own food is sent, and marked sent once the server keeps '
+        'it', () async {
+      final food = await addMaamoul();
+
+      await runner.run();
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(await database.unsentOwnFoods(), isEmpty);
+    });
+
+    test('a lost answer leaves the own food unsent; the retry marks it '
+        'sent', () async {
+      final food = await addMaamoul();
+      backend.loseAnswers = true;
+
+      await runner.run();
+
+      expect(await database.unsentOwnFoods(), hasLength(1));
+
+      backend.loseAnswers = false;
+      await runner.run();
+
+      expect(await database.unsentOwnFoods(), isEmpty);
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(backend.ownFoodRequests, hasLength(2));
+    });
+
+    for (final status in [422, 409]) {
+      test('a $status refuses the own food: it is marked and not sent '
+          'again', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, refusal);
+
+        await runner.run();
+        await runner.run();
+
+        expect(backend.ownFoodRequests, hasLength(1));
+        expect(await database.unsentOwnFoods(), isEmpty);
+        final stored = (await database.searchStoredFoods('معمول')).single;
+        expect([stored.id, stored.refused], [food.id, isTrue]);
+      });
+    }
+
+    test('a server error is tried again', () async {
+      await addMaamoul();
+      answerOwnFoods(500, {'detail': 'Internal Server Error'});
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.ownFoodRequests, hasLength(2));
+      expect(await database.unsentOwnFoods(), hasLength(1));
+    });
+
+    /// The phone's only food.
+    Future<Food> storedFood() async =>
+        (await database.select(database.foodTable).get()).single;
+
+    for (final status in [200, 201]) {
+      test("a $status with another copy at the revision sent: the phone takes "
+          'the copy the server kept, confirmed', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, {
+          ...maamoulJson(food.id),
+          'name_ar': 'معمول',
+          'name_en': 'Maamoul',
+          'calories': 450.0,
+          'barcode': '12345678',
+        });
+
+        await FoodsApi(session).send(database, food);
+
+        final stored = await storedFood();
+        expect(
+          [stored.nameAr, stored.nameEn, stored.per100g.calories],
+          ['معمول', 'Maamoul', 4500],
+        );
+        expect(
+          [
+            stored.barcode,
+            stored.revision,
+            stored.sentRevision,
+            stored.refused,
+          ],
+          ['12345678', 1, 1, false],
+        );
+      });
+    }
+
+    for (final (status, body) in [
+      (201, null),
+      (422, refusal),
+      (409, refusal),
+    ]) {
+      test('a $status for a revision changed since it was sent leaves the new '
+          'revision as it is, unsent and not refused', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, body ?? maamoulJson(food.id));
+        backend.holdSave = Completer();
+        final sending = FoodsApi(session).send(database, food);
+        await pumpEventQueue();
+
+        // #66 will change own foods; until then the test writes the change.
+        await database.customStatement(
+          "UPDATE foods SET name_ar = 'معمول بالجوز', revision = 2",
+        );
+        backend.holdSave!.complete();
+        await sending;
+
+        final stored = await storedFood();
+        expect(
+          [stored.nameAr, stored.revision, stored.sentRevision, stored.refused],
+          ['معمول بالجوز', 2, 0, false],
+        );
+        expect(await database.unsentOwnFoods(), hasLength(1));
+      });
+    }
+
+    testWidgets('a saved own food is sent 2 s later, without an entry; the '
+        'pulls that bring it again start no more runs', (tester) async {
+      await database.close();
+      await startAsAlice();
+      runner.start();
+      await tester.pump(const Duration(seconds: 10));
+      Iterable<http.Request> pulls() =>
+          backend.requestsTo('GET', '/me/food-log/changes');
+
+      final food = await addMaamoul();
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(await database.unsentOwnFoods(), isEmpty);
+      final settled = pulls().length;
+
+      // The stand-in sends the own food again with every pull, as the
+      // server does inside its 30-second margin.
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(pulls(), hasLength(settled));
+      expect(backend.ownFoodRequests, hasLength(1));
+      await runner.close();
+    });
+
+    test('a new install pulls the own foods, logged or not', () async {
+      final food = await addMaamoul();
+      await runner.run();
+      final reinstalled = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(reinstalled.close);
+
+      await SyncRunner(
+        session: session,
+        userId: userIdFor('alice'),
+        database: reinstalled,
+      ).run();
+
+      final pulled = (await reinstalled.searchStoredFoods('معمول')).single;
+      expect(
+        [pulled.id, pulled.own, pulled.barcode, pulled.per100g.fat],
+        [food.id, true, '6251003451205', 182],
+      );
+      expect(await reinstalled.unsentOwnFoods(), isEmpty);
+    });
+
+    /// Logs 50 g of [food] into lunch on 2026-11-23 and returns the entry's
+    /// ID.
+    Future<String> logFood(Food food) async {
+      await database.logEntry(
+        food: food,
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 500,
+        diaryDay: '2026-11-23',
+        loggedAt: DateTime.utc(2026, 11, 23, 10),
+      );
+      return (await database.unsentEntries()).last.id;
+    }
+
+    test('a new own food and its entry, made offline, both arrive in one '
+        'run', () async {
+      backend.offline = true;
+      final food = await addMaamoul();
+      final id = await logFood(food);
+      await runner.run();
+      expect(backend.ownFoods, isEmpty);
+      expect(backend.entries, isEmpty);
+
+      backend.offline = false;
+      await runner.run();
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(backend.entries[id], containsPair('food_id', food.id));
+      expect(backend.entries[id], containsPair('grams', 50.0));
+      expect(await database.unsentOwnFoods(), isEmpty);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
+    test('an entry of a refused own food waits, and still counts as '
+        'waiting to sync', () async {
+      final food = await addMaamoul();
+      await logFood(food);
+      answerOwnFoods(422, refusal);
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.entryRequests, isEmpty);
+      expect(await database.watchUnsentCount().first, 1);
+    });
+
+    test("a deleted entry of a refused own food is deleted on the server: "
+        "the delete doesn't need the food", () async {
+      final food = await addMaamoul();
+      final id = await logFood(food);
+      answerOwnFoods(422, refusal);
+      await runner.run();
+
+      await database.deleteEntry(id);
+      await runner.run();
+
+      expect(backend.entryRequests.single.method, 'DELETE');
+      expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
     });
   });
 }

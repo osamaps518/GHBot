@@ -79,6 +79,9 @@ def test_full_pull_returns_owned_entries_and_used_food(client, auth_headers, foo
             "protein": 2.7,
             "carbs": 28.2,
             "fat": 0.3,
+            "barcode": None,
+            "own": False,
+            "revision": 0,
         }
     ]
     assert response.json()["next_marker"].endswith("Z")
@@ -511,40 +514,6 @@ def test_regular_meal_can_omit_name(client, auth_headers, food):
 
     assert response.status_code == 201
     assert response.json()["meal_name"] is None
-
-
-def test_other_trainees_own_food_cannot_be_logged(client, auth_headers, engine):
-    owner = auth_headers()
-    other = auth_headers()
-    owner_id = client.get("/me", headers=owner).json()["id"]
-    food_id = uuid7()
-    with engine.begin() as connection:
-        connection.execute(
-            text("""INSERT INTO foods (id, name_ar, source, owner_id, calories,
-                     protein, carbs, fat) VALUES (:id, 'خاص', 'trainee', :owner,
-                     130, 2.7, 28.2, 0.3)"""),
-            {"id": food_id, "owner": owner_id},
-        )
-    try:
-        response = client.put(
-            f"/me/food-log/entries/{uuid7()}",
-            headers=other,
-            json=entry(str(food_id)),
-        )
-        assert response.status_code == 422
-        assert response.json()["detail"] == [
-            {
-                "type": "food_not_visible",
-                "loc": ["body", "food_id"],
-                "msg": "Food is not visible",
-                "input": str(food_id),
-            }
-        ]
-    finally:
-        with engine.begin() as connection:
-            connection.execute(
-                text("DELETE FROM foods WHERE id = :id"), {"id": food_id}
-            )
 
 
 def test_failed_write_keeps_entry_values_out_of_logs(

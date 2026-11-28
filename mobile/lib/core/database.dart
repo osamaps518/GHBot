@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -28,6 +30,22 @@ AppDatabase openUserDatabase(String userId) => AppDatabase(
   ),
 );
 
+/// [food] as a `foods` row, every column set.
+FoodTableCompanion foodRow(Food food) => FoodTableCompanion.insert(
+  id: food.id,
+  nameAr: Value(food.nameAr),
+  nameEn: Value(food.nameEn),
+  caloriesPer100g: food.per100g.calories,
+  proteinPer100g: food.per100g.protein,
+  carbsPer100g: food.per100g.carbs,
+  fatPer100g: food.per100g.fat,
+  own: Value(food.own),
+  barcode: Value(food.barcode),
+  revision: Value(food.revision),
+  sentRevision: Value(food.sentRevision),
+  refused: Value(food.refused),
+);
+
 /// One user's data on the phone, in its own file (decision 25).
 @DriftDatabase(
   tables: [
@@ -42,7 +60,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
+
+  /// Sends once each time [addOwnFood] saves a food, so the sync runner can
+  /// send it soon. Storing a food the server sent doesn't: pulls store foods
+  /// on every run (decision 31).
+  Stream<void> get ownFoodSaved => _ownFoodSaved.stream;
+  final _ownFoodSaved = StreamController<void>.broadcast();
+
+  /// Closes the database as before, and [ownFoodSaved] with it.
+  @override
+  Future<void> close() {
+    unawaited(_ownFoodSaved.close());
+    return super.close();
+  }
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
@@ -52,6 +83,8 @@ class AppDatabase extends _$AppDatabase {
   /// values. SQLite can't add a column without a default, so the step copies
   /// the table with the new columns filled in. Version 5 adds the pull marker
   /// (decision 31); with none stored, the first pull brings everything.
+  /// Version 6 adds own foods (#65); foods stored before it are catalog
+  /// foods at revision 0, with nothing to send.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -93,6 +126,14 @@ class AppDatabase extends _$AppDatabase {
       },
       from4To5: (m, schema) async {
         await m.createTable(schema.pullMarker);
+      },
+      from5To6: (m, schema) async {
+        final foods = schema.foods;
+        await m.addColumn(foods, foods.own);
+        await m.addColumn(foods, foods.barcode);
+        await m.addColumn(foods, foods.revision);
+        await m.addColumn(foods, foods.sentRevision);
+        await m.addColumn(foods, foods.refused);
       },
     ),
   );
@@ -147,32 +188,83 @@ class AppDatabase extends _$AppDatabase {
         );
       });
 
-  /// Adds [food] to the phone's foods, or updates the copy stored before.
-  Future<void> storeFood(Food food) => into(foodTable).insertOnConflictUpdate(
-    FoodTableCompanion.insert(
-      id: food.id,
-      nameAr: Value(food.nameAr),
-      nameEn: Value(food.nameEn),
-      caloriesPer100g: food.per100g.calories,
-      proteinPer100g: food.per100g.protein,
-      carbsPer100g: food.per100g.carbs,
-      fatPer100g: food.per100g.fat,
-    ),
-  );
+  /// Adds [food] to the phone's foods, or updates the copy stored before,
+  /// unless that copy is an own food with a change the server hasn't
+  /// confirmed, refused or not: the trainee's change waits to be sent
+  /// (decision 31).
+  Future<void> storeFood(Food food) {
+    final row = foodRow(food);
+    return into(foodTable).insert(
+      row,
+      onConflict: DoUpdate(
+        (_) => row,
+        where: (old) => old.revision.isSmallerOrEqual(old.sentRevision),
+      ),
+    );
+  }
+
+  /// Adds the trainee's own food on the phone and returns it, at revision
+  /// 1 and waiting to be sent (decision 31). Its ID is a UUIDv7, made here.
+  /// A name not given is null. Throws an [ArgumentError] and saves nothing
+  /// when the server would refuse it (decision 38). Once saved, it sends on
+  /// [ownFoodSaved].
+  Future<Food> addOwnFood({
+    required String? nameAr,
+    required String? nameEn,
+    required Nutrients per100g,
+    required String? barcode,
+  }) async {
+    if (!passesOwnFoodChecks(
+      nameAr: nameAr,
+      nameEn: nameEn,
+      per100g: per100g,
+      barcode: barcode,
+    )) {
+      throw ArgumentError('The server would refuse this food.');
+    }
+    final food = Food(
+      id: const Uuid().v7(),
+      nameAr: nameAr,
+      nameEn: nameEn,
+      per100g: per100g,
+      own: true,
+      barcode: barcode,
+      revision: 1,
+    );
+    await storeFood(food);
+    _ownFoodSaved.add(null);
+    return food;
+  }
+
+  /// The own foods with a change the server hasn't confirmed and will be
+  /// sent, in the order they were made: their IDs are UUIDv7s.
+  Future<List<Food>> unsentOwnFoods() =>
+      (select(foodTable)
+            ..where(
+              (food) =>
+                  food.revision.isBiggerThan(food.sentRevision) &
+                  food.refused.not(),
+            )
+            ..orderBy([(food) => OrderingTerm.asc(food.id)]))
+          .get();
 
   /// The phone's foods whose Arabic or English name contains [query],
-  /// ignoring case. This is the search without a connection (decision 20).
+  /// ignoring case, the trainee's own first, as the server ranks them. This
+  /// is the search without a connection (decision 20).
   ///
   /// The names are compared in Dart: SQLite's `LIKE` ignores case only for
   /// A to Z, so "CRÉME" wouldn't find "Créme". The phone keeps only the foods
-  /// the trainee has logged, so reading them all is cheap.
+  /// the trainee has logged and their own, so reading them all is cheap.
   Future<List<Food>> searchStoredFoods(String query) async {
     final typed = query.toLowerCase();
     bool matches(String? name) =>
         name != null && name.toLowerCase().contains(typed);
-    final foods = await (select(
-      foodTable,
-    )..orderBy([(food) => OrderingTerm.asc(food.id)])).get();
+    final foods =
+        await (select(foodTable)..orderBy([
+              (food) => OrderingTerm.desc(food.own),
+              (food) => OrderingTerm.asc(food.id),
+            ]))
+            .get();
     return [
       for (final food in foods)
         if (matches(food.nameAr) || matches(food.nameEn)) food,
@@ -286,6 +378,28 @@ class AppDatabase extends _$AppDatabase {
               (row) => OrderingTerm.asc(row.id),
             ]))
           .get();
+
+  /// The [unsentEntries] that can be sent now: not those of an own food
+  /// with a change the server hasn't confirmed, refused or not, since the
+  /// server would refuse an entry of a food it doesn't have. They wait for
+  /// a later run. A deleted entry goes all the same: a delete doesn't need
+  /// its food.
+  Future<List<FoodLogEntry>> entriesToSend() {
+    final foodWaits = existsQuery(
+      select(foodTable)..where(
+        (food) =>
+            food.id.equalsExp(foodLogEntryTable.foodId) &
+            food.revision.isBiggerThan(food.sentRevision),
+      ),
+    );
+    return (select(foodLogEntryTable)
+          ..where((row) => _unsent & (row.deleted | foodWaits.not()))
+          ..orderBy([
+            (row) => OrderingTerm.asc(row.loggedAt),
+            (row) => OrderingTerm.asc(row.id),
+          ]))
+        .get();
+  }
 
   /// How many entries [unsentEntries] has. The stream sends again after
   /// every change.

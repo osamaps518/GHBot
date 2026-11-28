@@ -286,9 +286,34 @@
   "@caloriesUnit": {
     "description": "After a calorie number, as in 130 سعرة."
   },
-  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
+  "searchOffline": "تعذّر الاتصال، لذا تظهر هنا الأطعمة التي سجّلتها من قبل وأطعمتك فقط. البحث في بقية الأطعمة يحتاج إلى اتصال.",
   "@searchOffline": {
-    "description": "Search without a connection filters only the foods kept on the phone (decision 20)."
+    "description": "Search without a connection filters only the foods kept on the phone: the logged ones and the trainee's own (decision 20)."
+  },
+  "ownFoodBadge": "طعامك",
+  "@ownFoodBadge": {
+    "description": "Badge beside a food the trainee added, which only they see."
+  },
+  "newFood": "طعام جديد",
+  "@newFood": {
+    "description": "Title of the form for adding an own food."
+  },
+  "nameInArabic": "الاسم بالعربية",
+  "nameInEnglish": "الاسم بالإنجليزية",
+  "namesHint": "اكتب اسمًا واحدًا على الأقل، بالعربية أو بالإنجليزية.",
+  "@namesHint": {
+    "description": "Below the name fields; shown in the error color when both are empty."
+  },
+  "errorFoodName": "أدخل اسمًا من 80 حرفًا على الأكثر.",
+  "barcodeOptional": "الباركود (اختياري)",
+  "errorBarcode": "أدخل من 8 إلى 14 رقمًا، أو اتركه فارغًا.",
+  "valuesPer100g": "القيم لكل 100 غ",
+  "valuesHint": "انسخها من ملصق المنتج.",
+  "errorCaloriesPer100g": "أدخل من 0 إلى 900، بمنزلة عشرية واحدة على الأكثر.",
+  "errorMacroPer100g": "أدخل من 0 إلى 100، بمنزلة عشرية واحدة على الأكثر.",
+  "errorMacrosOver100g": "لا يمكن أن يزيد مجموع البروتين والكربوهيدرات والدهون على 100 غ في 100 غ من الطعام.",
+  "@errorMacrosOver100g": {
+    "description": "The server refuses an own food whose macros add up to more than 100 g per 100 g (decision 38)."
   },
   "noResultsTitle": "لم نجد «{query}»",
   "@noResultsTitle": {
@@ -299,7 +324,15 @@
       }
     }
   },
-  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية.",
+  "noResultsBody": "جرّب اسمًا آخر أو اكتبه بالإنجليزية. وإن لم يكن عندنا، فأضفه بقيمه لكل 100 غ وسجّله مباشرة.",
+  "cantFindIt": "لم تجد ما تبحث عنه؟",
+  "@cantFindIt": {
+    "description": "Below search results, before the button that adds an own food."
+  },
+  "addOwnFood": "أضف طعامك",
+  "@addOwnFood": {
+    "description": "Opens the form for a food the trainee adds, which only they see."
+  },
   "mealName": "{meal, select, breakfast{الفطور} lunch{الغداء} dinner{العشاء} other{}}",
   "@mealName": {
     "placeholders": {

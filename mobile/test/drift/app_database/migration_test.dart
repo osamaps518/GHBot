@@ -9,6 +9,7 @@ import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
+import 'generated/schema_v6.dart' as v6;
 
 const _profileV1 = v1.ProfileData(
   birthYear: 1996,
@@ -279,6 +280,68 @@ void main() {
           _customTargetsV4.toJson(),
         );
         expect(await newDb.select(newDb.pullMarker).get(), isEmpty);
+      },
+    );
+  });
+
+  test('upgrading from 5 to 6 keeps the foods as catalog foods with nothing '
+      'to send, and the entries, sent and unsent', () async {
+    const rice = v5.FoodsData(
+      id: 'rice',
+      nameAr: 'أرز أبيض مطبوخ',
+      nameEn: 'Cooked white rice',
+      caloriesPer100g: 1300,
+      proteinPer100g: 27,
+      carbsPer100g: 282,
+      fatPer100g: 3,
+    );
+    const sent = v5.FoodLogEntriesData(
+      id: 'entry-sent',
+      foodId: 'rice',
+      meal: 'lunch',
+      diaryDay: '2026-11-23',
+      grams: 1500,
+      caloriesPer100g: 1300,
+      proteinPer100g: 27,
+      carbsPer100g: 282,
+      fatPer100g: 3,
+      calories: 1950,
+      protein: 41,
+      carbs: 423,
+      fat: 5,
+      loggedAt: 1795435200,
+      revision: 1,
+      sentRevision: 1,
+      deleted: 0,
+      refused: 0,
+    );
+    final unsent = sent.copyWith(id: 'entry-unsent', revision: 2);
+    await verifier.testWithDataIntegrity(
+      oldVersion: 5,
+      newVersion: 6,
+      createOld: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.foods, rice);
+        batch.insertAll(oldDb.foodLogEntries, [sent, unsent]);
+      },
+      validateItems: (newDb) async {
+        expect((await newDb.select(newDb.foods).getSingle()).toJson(), {
+          ...rice.toJson(),
+          'own': 0,
+          'barcode': null,
+          'revision': 0,
+          'sentRevision': 0,
+          'refused': 0,
+        });
+        expect(
+          [
+            for (final entry in await newDb.select(newDb.foodLogEntries).get())
+              entry.toJson(),
+          ],
+          [sent.toJson(), unsent.toJson()],
+        );
       },
     );
   });

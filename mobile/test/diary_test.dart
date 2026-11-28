@@ -504,6 +504,34 @@ void main() {
       expect((await database.unsentEntries()).single.diaryDay, _daysAgo(1));
     });
 
+    testWidgets('a food added from search is logged at once, on the day and '
+        'in the meal search was opened for', (tester) async {
+      final database = await _pumpDiary(tester);
+      await tapArrow(tester, english.previousDay);
+      final dinner = english.mealName('dinner');
+
+      await _tap(tester, _inMeal(dinner, find.text(english.addFood)));
+      await tester.enterText(find.byType(TextField), 'Date maamoul');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text(english.addOwnFood));
+      for (final (key, typed) in [
+        ('calories', '442'),
+        ('protein', '5.6'),
+        ('carbs', '64'),
+        ('fat', '18.2'),
+      ]) {
+        await tester.enterText(find.byKey(ValueKey(key)), typed);
+      }
+      await _tap(tester, find.text(english.save));
+      await _tap(tester, find.text(english.logButton(dinner)));
+
+      expect(_inMeal(dinner, find.text('Date maamoul')), findsOne);
+      final entry = (await database.unsentEntries()).single;
+      expect([entry.diaryDay, entry.grams], [_daysAgo(1), 1000]);
+      expect((await database.unsentOwnFoods()).single.id, entry.foodId);
+    });
+
     testWidgets('tapping the day opens the date picker, which goes from the '
         'account day to today', (tester) async {
       await _pumpDiary(tester, firstDay: _daysAgo(5));

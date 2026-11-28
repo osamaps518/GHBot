@@ -154,6 +154,9 @@ def test_food_search_requires_sign_in_and_returns_rounded_food(
             "protein": 1.3,
             "carbs": 2.2,
             "fat": 3.4,
+            "barcode": None,
+            "own": False,
+            "revision": 0,
         }
     ]
 

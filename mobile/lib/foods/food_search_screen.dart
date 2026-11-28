@@ -8,6 +8,7 @@ import '../core/database.dart';
 import '../l10n/app_localizations.dart';
 import 'food.dart';
 import 'foods_api.dart';
+import 'own_food_form_screen.dart';
 
 /// What a search found for [query]. [offline] when the server couldn't be
 /// reached and [foods] come from the phone; [failed] for any other failure.
@@ -19,9 +20,12 @@ typedef _Results = ({
 });
 
 /// Finds a food to log. Before typing, it shows the recently logged foods.
-/// Online, it searches the server about 300 ms after typing stops; without
-/// a connection, it filters the foods kept on the phone. The last results
-/// stay until the next ones arrive.
+/// Online, it searches the server about 300 ms after typing stops, and adds
+/// the own foods the server doesn't have yet; without a connection, it
+/// filters the foods kept on the phone. The last results
+/// stay until the next ones arrive. Below the results, or in place of them,
+/// "Add your food" opens the form for an own food; once saved, it is the
+/// food chosen, at 100 g.
 class FoodSearchScreen extends StatefulWidget {
   const FoodSearchScreen({
     super.key,
@@ -80,7 +84,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     var failed = false;
     var foods = const <Food>[];
     try {
-      foods = await widget.foodsApi.search(query);
+      foods = _withWaitingOwnFoods(
+        await widget.foodsApi.search(query),
+        await widget.database.searchStoredFoods(query),
+      );
     } on ConnectionFailure {
       offline = true;
       foods = await widget.database.searchStoredFoods(query);
@@ -98,9 +105,41 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     );
   }
 
+  /// The server's [found] foods, after the matching [stored] own foods with a
+  /// change the server hasn't confirmed, refused or not: the server doesn't
+  /// have that change, or the food at all. The phone's copy replaces the
+  /// server's, and own foods stay first.
+  List<Food> _withWaitingOwnFoods(List<Food> found, List<Food> stored) {
+    final waiting = [
+      for (final food in stored)
+        if (food.revision > food.sentRevision) food,
+    ];
+    final waitingIds = {for (final food in waiting) food.id};
+    return [
+      ...waiting,
+      for (final food in found)
+        if (!waitingIds.contains(food.id)) food,
+    ];
+  }
+
   void _clear() {
     _text.clear();
     _onChanged('');
+  }
+
+  /// Opens the form, starting with the text typed now as the name, and
+  /// chooses the food it saved. The text is read on the tap: the results on
+  /// screen may be from an earlier text while a new search waits.
+  Future<void> _addOwnFood() async {
+    final name = _text.text.trim();
+    final food = await Navigator.push<Food>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            OwnFoodFormScreen(database: widget.database, name: name),
+      ),
+    );
+    if (food != null && mounted) widget.onChosen(food, 1000);
   }
 
   @override
@@ -129,9 +168,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           else if (results.failed)
             const _SearchFailed()
           else if (results.foods.isEmpty)
-            _NoResults(query: results.query)
-          else
+            _NoResults(query: results.query, onAdd: _addOwnFood)
+          else ...[
             _FoundFoods(foods: results.foods, onChosen: widget.onChosen),
+            _AddBelowResults(onAdd: _addOwnFood),
+          ],
         ],
       ),
     );
@@ -292,7 +333,9 @@ class _FoodList extends StatelessWidget {
   }
 }
 
-/// A food's name, a detail line, and calories in tenths.
+/// A food's name, a detail line, and calories in tenths. The trainee's own
+/// food has a badge by its name, and one the server refused is tinted, as
+/// in the diary.
 class _FoodTile extends StatelessWidget {
   const _FoodTile({
     required this.food,
@@ -311,8 +354,24 @@ class _FoodTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
-    return ListTile(
-      title: Text(food.name(Localizations.localeOf(context).languageCode)),
+    final name = Text(food.name(Localizations.localeOf(context).languageCode));
+    final tile = ListTile(
+      tileColor: food.refused ? theme.colorScheme.errorContainer : null,
+      shape: food.refused
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
+          : null,
+      contentPadding: food.refused
+          ? const EdgeInsets.symmetric(horizontal: 10)
+          : null,
+      title: food.own
+          ? Row(
+              spacing: 8,
+              children: [
+                Flexible(child: name),
+                const _OwnFoodBadge(),
+              ],
+            )
+          : name,
       subtitle: Text(detail),
       trailing: Text.rich(
         TextSpan(
@@ -328,13 +387,47 @@ class _FoodTile extends StatelessWidget {
       ),
       onTap: onTap,
     );
+    return food.refused
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: tile,
+          )
+        : tile;
   }
 }
 
+/// The "Yours" pill beside an own food's name.
+class _OwnFoodBadge extends StatelessWidget {
+  const _OwnFoodBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: theme.colorScheme.primary,
+        shape: const StadiumBorder(),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Text(
+          AppLocalizations.of(context)!.ownFoodBadge,
+          style: theme.textTheme.labelMedium!.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Says nothing matched [query], and offers to add the food.
 class _NoResults extends StatelessWidget {
-  const _NoResults({required this.query});
+  const _NoResults({required this.query, required this.onAdd});
 
   final String query;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -360,6 +453,49 @@ class _NoResults extends StatelessWidget {
             l10n.noResultsBody,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge!.copyWith(color: muted),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(top: 12),
+            child: FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: Text(l10n.addOwnFood),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Can't find what you're looking for?" and the button that adds a food,
+/// below the results.
+class _AddBelowResults extends StatelessWidget {
+  const _AddBelowResults({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 4, top: 8),
+      child: Row(
+        spacing: 8,
+        children: [
+          Expanded(
+            child: Text(
+              l10n.cantFindIt,
+              style: theme.textTheme.bodyMedium!.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add),
+            label: Text(l10n.addOwnFood),
           ),
         ],
       ),

@@ -335,7 +335,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchOffline =>
-      'Couldn\'t connect, so only foods you\'ve logged before show here. Finding other foods needs a connection.';
+      'Couldn\'t connect, so only foods you\'ve logged before and your own foods show here. Finding other foods needs a connection.';
+
+  @override
+  String get ownFoodBadge => 'Yours';
+
+  @override
+  String get newFood => 'New food';
+
+  @override
+  String get nameInArabic => 'Name in Arabic';
+
+  @override
+  String get nameInEnglish => 'Name in English';
+
+  @override
+  String get namesHint => 'Enter at least one name, in Arabic or English.';
+
+  @override
+  String get errorFoodName => 'Enter a name of up to 80 characters.';
+
+  @override
+  String get barcodeOptional => 'Barcode (optional)';
+
+  @override
+  String get errorBarcode => 'Enter 8 to 14 digits, or leave it empty.';
+
+  @override
+  String get valuesPer100g => 'Values per 100 g';
+
+  @override
+  String get valuesHint => 'Copy them from the product label.';
+
+  @override
+  String get errorCaloriesPer100g => 'Enter 0 to 900, with at most 1 decimal.';
+
+  @override
+  String get errorMacroPer100g => 'Enter 0 to 100, with at most 1 decimal.';
+
+  @override
+  String get errorMacrosOver100g =>
+      'Protein, carbs and fat can\'t add up to more than 100 g in 100 g of food.';
 
   @override
   String noResultsTitle(String query) {
@@ -343,7 +383,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noResultsBody => 'Try another name, or type it in Arabic.';
+  String get noResultsBody =>
+      'Try another name, or type it in Arabic. If we don\'t have it, add it with its values per 100 g and log it right away.';
+
+  @override
+  String get cantFindIt => 'Can\'t find what you\'re looking for?';
+
+  @override
+  String get addOwnFood => 'Add your food';
 
   @override
   String mealName(String meal) {

@@ -16,12 +16,20 @@ Own foods are private. Every trainee food read uses `visible_foods`, which
 selects catalog rows plus only that trainee's own rows. Search takes the user
 from the token (`test_search_keeps_other_trainees_food_private`,
 `test_visible_foods_include_catalog_and_only_the_users_own`).
+The server sets a new food's owner and `trainee` source from the caller, never
+from the request. A write checks ownership and revision in one database
+statement; catalog and other trainees' IDs return 409 without a change
+(`test_own_food_is_private_in_search_and_pull`,
+`test_catalog_and_other_trainees_ids_cannot_be_replaced`). A pull includes the
+caller's own foods even when no entry uses them, and never another trainee's
+(`test_own_food_is_pulled_without_an_entry_only_when_changed`,
+`test_pull_never_returns_other_trainees_own_foods`).
 
 Diary entries are private to each trainee. The owner comes from the token, and
 the ownership check and write are one database statement, so another trainee
 cannot replace or delete an entry (`test_other_trainee_cannot_replace_or_delete_entry`).
 An entry cannot refer to another trainee's own food
-(`test_other_trainees_own_food_cannot_be_logged`).
+(`test_entry_cannot_use_another_trainees_new_food`).
 The diary pull returns only the caller's entries and their visible used foods,
 including tombstones (`test_pull_never_returns_other_trainees_own_foods`,
 `test_pull_returns_deleted_entry_and_excludes_other_trainee`).

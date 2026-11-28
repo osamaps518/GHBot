@@ -1052,6 +1052,69 @@ class $FoodTableTable extends FoodTable with TableInfo<$FoodTableTable, Food> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownMeta = const VerificationMeta('own');
+  @override
+  late final GeneratedColumn<bool> own = GeneratedColumn<bool>(
+    'own',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("own" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _barcodeMeta = const VerificationMeta(
+    'barcode',
+  );
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+    'barcode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sentRevisionMeta = const VerificationMeta(
+    'sentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> sentRevision = GeneratedColumn<int>(
+    'sent_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _refusedMeta = const VerificationMeta(
+    'refused',
+  );
+  @override
+  late final GeneratedColumn<bool> refused = GeneratedColumn<bool>(
+    'refused',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("refused" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1061,6 +1124,11 @@ class $FoodTableTable extends FoodTable with TableInfo<$FoodTableTable, Food> {
     proteinPer100g,
     carbsPer100g,
     fatPer100g,
+    own,
+    barcode,
+    revision,
+    sentRevision,
+    refused,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1135,6 +1203,39 @@ class $FoodTableTable extends FoodTable with TableInfo<$FoodTableTable, Food> {
     } else if (isInserting) {
       context.missing(_fatPer100gMeta);
     }
+    if (data.containsKey('own')) {
+      context.handle(
+        _ownMeta,
+        own.isAcceptableOrUnknown(data['own']!, _ownMeta),
+      );
+    }
+    if (data.containsKey('barcode')) {
+      context.handle(
+        _barcodeMeta,
+        barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
+      );
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('sent_revision')) {
+      context.handle(
+        _sentRevisionMeta,
+        sentRevision.isAcceptableOrUnknown(
+          data['sent_revision']!,
+          _sentRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refused')) {
+      context.handle(
+        _refusedMeta,
+        refused.isAcceptableOrUnknown(data['refused']!, _refusedMeta),
+      );
+    }
     return context;
   }
 
@@ -1172,6 +1273,26 @@ class $FoodTableTable extends FoodTable with TableInfo<$FoodTableTable, Food> {
         DriftSqlType.int,
         data['${effectivePrefix}fat_per_100g'],
       )!,
+      own: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}own'],
+      )!,
+      barcode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barcode'],
+      ),
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      sentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sent_revision'],
+      )!,
+      refused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}refused'],
+      )!,
     );
   }
 
@@ -1189,6 +1310,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
   final Value<int> proteinPer100g;
   final Value<int> carbsPer100g;
   final Value<int> fatPer100g;
+  final Value<bool> own;
+  final Value<String?> barcode;
+  final Value<int> revision;
+  final Value<int> sentRevision;
+  final Value<bool> refused;
   final Value<int> rowid;
   const FoodTableCompanion({
     this.id = const Value.absent(),
@@ -1198,6 +1324,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.own = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.sentRevision = const Value.absent(),
+    this.refused = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodTableCompanion.insert({
@@ -1208,6 +1339,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
     required int proteinPer100g,
     required int carbsPer100g,
     required int fatPer100g,
+    this.own = const Value.absent(),
+    this.barcode = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.sentRevision = const Value.absent(),
+    this.refused = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        caloriesPer100g = Value(caloriesPer100g),
@@ -1222,6 +1358,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
     Expression<int>? proteinPer100g,
     Expression<int>? carbsPer100g,
     Expression<int>? fatPer100g,
+    Expression<bool>? own,
+    Expression<String>? barcode,
+    Expression<int>? revision,
+    Expression<int>? sentRevision,
+    Expression<bool>? refused,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1232,6 +1373,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
       if (proteinPer100g != null) 'protein_per_100g': proteinPer100g,
       if (carbsPer100g != null) 'carbs_per_100g': carbsPer100g,
       if (fatPer100g != null) 'fat_per_100g': fatPer100g,
+      if (own != null) 'own': own,
+      if (barcode != null) 'barcode': barcode,
+      if (revision != null) 'revision': revision,
+      if (sentRevision != null) 'sent_revision': sentRevision,
+      if (refused != null) 'refused': refused,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1244,6 +1390,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
     Value<int>? proteinPer100g,
     Value<int>? carbsPer100g,
     Value<int>? fatPer100g,
+    Value<bool>? own,
+    Value<String?>? barcode,
+    Value<int>? revision,
+    Value<int>? sentRevision,
+    Value<bool>? refused,
     Value<int>? rowid,
   }) {
     return FoodTableCompanion(
@@ -1254,6 +1405,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      own: own ?? this.own,
+      barcode: barcode ?? this.barcode,
+      revision: revision ?? this.revision,
+      sentRevision: sentRevision ?? this.sentRevision,
+      refused: refused ?? this.refused,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1282,6 +1438,21 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
     if (fatPer100g.present) {
       map['fat_per_100g'] = Variable<int>(fatPer100g.value);
     }
+    if (own.present) {
+      map['own'] = Variable<bool>(own.value);
+    }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (sentRevision.present) {
+      map['sent_revision'] = Variable<int>(sentRevision.value);
+    }
+    if (refused.present) {
+      map['refused'] = Variable<bool>(refused.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1298,6 +1469,11 @@ class FoodTableCompanion extends UpdateCompanion<Food> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('own: $own, ')
+          ..write('barcode: $barcode, ')
+          ..write('revision: $revision, ')
+          ..write('sentRevision: $sentRevision, ')
+          ..write('refused: $refused, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2925,6 +3101,11 @@ typedef $$FoodTableTableCreateCompanionBuilder = FoodTableCompanion Function({
   required int proteinPer100g,
   required int carbsPer100g,
   required int fatPer100g,
+  Value<bool> own,
+  Value<String?> barcode,
+  Value<int> revision,
+  Value<int> sentRevision,
+  Value<bool> refused,
   Value<int> rowid,
 });
 typedef $$FoodTableTableUpdateCompanionBuilder = FoodTableCompanion Function({
@@ -2935,6 +3116,11 @@ typedef $$FoodTableTableUpdateCompanionBuilder = FoodTableCompanion Function({
   Value<int> proteinPer100g,
   Value<int> carbsPer100g,
   Value<int> fatPer100g,
+  Value<bool> own,
+  Value<String?> barcode,
+  Value<int> revision,
+  Value<int> sentRevision,
+  Value<bool> refused,
   Value<int> rowid,
 });
 
@@ -2979,6 +3165,31 @@ class $$FoodTableTableFilterComposer
 
   ColumnFilters<int> get fatPer100g => $composableBuilder(
     column: $table.fatPer100g,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get own => $composableBuilder(
+    column: $table.own,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get refused => $composableBuilder(
+    column: $table.refused,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3026,6 +3237,31 @@ class $$FoodTableTableOrderingComposer
     column: $table.fatPer100g,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get own => $composableBuilder(
+    column: $table.own,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get refused => $composableBuilder(
+    column: $table.refused,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodTableTableAnnotationComposer
@@ -3065,6 +3301,23 @@ class $$FoodTableTableAnnotationComposer
     column: $table.fatPer100g,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get own =>
+      $composableBuilder(column: $table.own, builder: (column) => column);
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get sentRevision => $composableBuilder(
+    column: $table.sentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get refused =>
+      $composableBuilder(column: $table.refused, builder: (column) => column);
 }
 
 class $$FoodTableTableTableManager
@@ -3102,6 +3355,11 @@ class $$FoodTableTableTableManager
                 Value<int> proteinPer100g = const Value.absent(),
                 Value<int> carbsPer100g = const Value.absent(),
                 Value<int> fatPer100g = const Value.absent(),
+                Value<bool> own = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> sentRevision = const Value.absent(),
+                Value<bool> refused = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodTableCompanion(
                 id: id,
@@ -3111,6 +3369,11 @@ class $$FoodTableTableTableManager
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                own: own,
+                barcode: barcode,
+                revision: revision,
+                sentRevision: sentRevision,
+                refused: refused,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3122,6 +3385,11 @@ class $$FoodTableTableTableManager
                 required int proteinPer100g,
                 required int carbsPer100g,
                 required int fatPer100g,
+                Value<bool> own = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> sentRevision = const Value.absent(),
+                Value<bool> refused = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodTableCompanion.insert(
                 id: id,
@@ -3131,6 +3399,11 @@ class $$FoodTableTableTableManager
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                own: own,
+                barcode: barcode,
+                revision: revision,
+                sentRevision: sentRevision,
+                refused: refused,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

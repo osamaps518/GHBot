@@ -5,11 +5,13 @@ import 'package:flutter/widgets.dart';
 
 import '../auth/auth_session.dart';
 import '../food_log/food_log_api.dart';
+import '../foods/foods_api.dart';
 import 'api_failure.dart';
 import 'database.dart';
 
-/// Sends one user's unsent diary entries from their database to the server,
-/// each with its own call, then brings down what changed there (decision 31).
+/// Sends one user's unsent own foods and diary entries from their database
+/// to the server, each with its own call, then brings down what changed
+/// there (decision 31).
 class SyncRunner {
   /// Callers pass `session:` and `database:`; private named parameters keep
   /// the fields private.
@@ -17,13 +19,15 @@ class SyncRunner {
     required this._session,
     required this.userId,
     required this._database,
-  }) : _foodLogApi = FoodLogApi(_session);
+  }) : _foodsApi = FoodsApi(_session),
+       _foodLogApi = FoodLogApi(_session);
 
   final AuthSession _session;
 
   /// The user whose database this is.
   final String userId;
   final AppDatabase _database;
+  final FoodsApi _foodsApi;
   final FoodLogApi _foodLogApi;
 
   /// The run in progress, if any.
@@ -44,27 +48,33 @@ class SyncRunner {
   var _closed = false;
 
   StreamSubscription<void>? _localChanges;
+  StreamSubscription<void>? _ownFoodSaves;
   Timer? _afterChange;
   AppLifecycleListener? _lifecycle;
 
   /// Runs now, then whenever the app returns to the foreground, and 2 s
-  /// after the last local change to the diary, its own writes included,
-  /// until [close]. There is no background job: the app runs it only while
-  /// open.
+  /// after the last local change to the diary, its own writes included, or
+  /// after an own food is saved on the phone, until [close]. Other writes to
+  /// foods don't count: pulls store foods on every run (decision 31). There
+  /// is no background job: the app runs it only while open.
   void start() {
     _localChanges = _database
         .tableUpdates(TableUpdateQuery.onTable(_database.foodLogEntryTable))
-        .listen((_) {
-          _afterChange?.cancel();
-          _afterChange = Timer(const Duration(seconds: 2), run);
-        });
+        .listen((_) => _runSoon());
+    _ownFoodSaves = _database.ownFoodSaved.listen((_) => _runSoon());
     _lifecycle = AppLifecycleListener(onResume: run);
     run();
   }
 
-  /// Sends the unsent entries, then pulls, one run at a time. Asked for
-  /// during a run, it makes one more run after that one, however often it
-  /// was asked. The future completes when no run is left.
+  /// Runs 2 s after the last call, so a burst of changes makes one run.
+  void _runSoon() {
+    _afterChange?.cancel();
+    _afterChange = Timer(const Duration(seconds: 2), run);
+  }
+
+  /// Sends the unsent own foods and entries, then pulls, one run at a time.
+  /// Asked for during a run, it makes one more run after that one, however
+  /// often it was asked. The future completes when no run is left.
   Future<void> run() {
     if (_closed) return Future.value();
     if (_running case final running?) {
@@ -82,6 +92,7 @@ class SyncRunner {
     _afterChange?.cancel();
     _lifecycle?.dispose();
     unawaited(_localChanges?.cancel());
+    unawaited(_ownFoodSaves?.cancel());
     return _running ?? Future.value();
   }
 
@@ -96,14 +107,21 @@ class SyncRunner {
     }
   }
 
-  /// Sends each unsent entry in turn, then pulls. A failed call stops the
-  /// run, and the retry timer starts: after a failed send, the pull waits
-  /// for the next run. Another user's sign-in stops it too: this user's
-  /// entries are never sent or pulled with it.
+  /// Sends each unsent own food in turn, then each unsent entry, then
+  /// pulls. Foods go first, so a new own food's entries go in the same run;
+  /// the entries of an own food still unsent or refused wait
+  /// ([AppDatabase.entriesToSend]). A failed call stops the run, and the
+  /// retry timer starts: after a failed send, the pull waits for the next
+  /// run. Another user's sign-in stops it too: this user's rows are never
+  /// sent or pulled with it.
   Future<void> _runOnce() async {
     _retry?.cancel();
     try {
-      for (final entry in await _database.unsentEntries()) {
+      for (final food in await _database.unsentOwnFoods()) {
+        if (_closed || _session.userId != userId) return;
+        await _foodsApi.send(_database, food);
+      }
+      for (final entry in await _database.entriesToSend()) {
         if (_closed || _session.userId != userId) return;
         await _foodLogApi.send(_database, entry);
       }
