@@ -83,6 +83,34 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
   foregroundColor: theme.colorScheme.onSurface,
 );
 
+/// The round arrows beside the diary's day, on the card color. A disabled
+/// one has no background and fades.
+ButtonStyle dayArrowStyle(ThemeData theme) => IconButton.styleFrom(
+  fixedSize: const Size(44, 44),
+  backgroundColor: theme.colorScheme.surfaceContainer,
+  foregroundColor: theme.colorScheme.onSurface,
+  disabledBackgroundColor: Colors.transparent,
+  disabledForegroundColor: theme.colorScheme.outline.withValues(alpha: 0.5),
+);
+
+/// Back to today on a past day: a pill on the track color.
+ButtonStyle backToTodayStyle(ThemeData theme) => TextButton.styleFrom(
+  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+  foregroundColor: theme.colorScheme.onSurface,
+  minimumSize: const Size(0, 40),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+);
+
+/// The entry screen's day: a field-shaped button like the grams field, its
+/// text at the start.
+ButtonStyle dayFieldStyle(ThemeData theme) => OutlinedButton.styleFrom(
+  backgroundColor: theme.colorScheme.surfaceContainer,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  padding: const EdgeInsets.symmetric(horizontal: 14),
+  alignment: AlignmentDirectional.centerStart,
+  textStyle: theme.textTheme.bodyLarge,
+);
+
 /// A text button on the daily calories card: Edit targets, in the card's
 /// text color.
 ButtonStyle heroLinkStyle(TargetsColors colors) => TextButton.styleFrom(
@@ -106,8 +134,9 @@ ButtonStyle deleteButtonStyle(ThemeData theme) =>
 /// - `displayLarge` is the daily calories number on the targets screen.
 /// - Text buttons (Add food, Targets, Cancel) take the text color, not the
 ///   orange, in dark mode too.
-/// - List tiles (foods and diary entries) line up with their cards' 18 px
-///   padding.
+/// - List tiles (foods, diary entries and the move sheet's days) line up
+///   with their cards' 18 px padding. The chosen one (the entry's day in
+///   the move sheet) sits on the track color, in the text color.
 /// - Segmented buttons are the gender and goal pickers: a pill-shaped track,
 ///   the chosen option filled.
 /// - Progress indicators are the macro bars on the targets screen. Each bar's
@@ -121,7 +150,8 @@ ButtonStyle deleteButtonStyle(ThemeData theme) =>
 ///   `secondary` chip settings.
 /// - Bottom sheets (naming an extra meal) sit on the card color, with a
 ///   drag handle. Dialogs (deleting an entry) sit on the card color too,
-///   with the title at 20 px like app bars and the body muted.
+///   with the title at 20 px like app bars and the body muted. So does the
+///   date picker, which otherwise takes a tint from the seed color.
 /// - The snackbar is the "no connection" message. Its colors already come
 ///   from the inverse roles in the color scheme.
 ThemeData _theme(ColorScheme colors, TargetsColors targets) {
@@ -200,8 +230,10 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       linearTrackColor: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(999),
     ),
-    listTileTheme: const ListTileThemeData(
-      contentPadding: EdgeInsets.symmetric(horizontal: 18),
+    listTileTheme: ListTileThemeData(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+      selectedColor: colors.onSurface,
+      selectedTileColor: colors.surfaceContainerHighest,
     ),
     expansionTileTheme: const ExpansionTileThemeData(
       shape: Border(),
@@ -230,6 +262,10 @@ ThemeData _theme(ColorScheme colors, TargetsColors targets) {
       backgroundColor: colors.surfaceContainer,
       showDragHandle: true,
       dragHandleColor: colors.outline,
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: colors.surfaceContainer,
+      dividerColor: colors.surfaceContainerHighest,
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: colors.surfaceContainer,

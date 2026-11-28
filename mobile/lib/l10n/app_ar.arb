@@ -343,6 +343,22 @@
     "description": "The server's grams rules: greater than 0, at most 5000, at most 1 decimal."
   },
   "today": "اليوم",
+  "yesterday": "أمس",
+  "@yesterday": {
+    "description": "The diary's title on the day before today, and its name in the move sheet."
+  },
+  "previousDay": "اليوم السابق",
+  "@previousDay": {
+    "description": "Label of the diary's arrow that goes back one day."
+  },
+  "nextDay": "اليوم التالي",
+  "@nextDay": {
+    "description": "Label of the diary's arrow that goes forward one day."
+  },
+  "backToToday": "العودة إلى اليوم",
+  "@backToToday": {
+    "description": "Under the diary's title on a past day; shows today."
+  },
   "weekdayName": "{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}",
   "@weekdayName": {
     "placeholders": {
@@ -354,7 +370,7 @@
   },
   "diaryDate": "{weekday}، {day} {month}",
   "@diaryDate": {
-    "description": "The diary day under Today, such as الاثنين، 23 تشرين الثاني.",
+    "description": "A diary day, such as الاثنين، 23 تشرين الثاني: under Today or Yesterday, and alone as the title of an older day.",
     "placeholders": {
       "weekday": {
         "type": "String",
@@ -480,5 +496,27 @@
   "entryRefusedAlert": "لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.",
   "@entryRefusedAlert": {
     "description": "At the top of the entry screen for a refused entry."
+  },
+  "entryDate": "التاريخ",
+  "@entryDate": {
+    "description": "Label of the entry screen's day row, which opens the move sheet."
+  },
+  "moveToAnotherDay": "نقل إلى يوم آخر",
+  "@moveToAnotherDay": {
+    "description": "Title of the sheet that moves an entry to another day."
+  },
+  "moveStaysInMeal": "يبقى في {meal} في اليوم الذي تختاره.",
+  "@moveStaysInMeal": {
+    "description": "Under the move sheet's title: a moved entry keeps its meal.",
+    "placeholders": {
+      "meal": {
+        "type": "String",
+        "description": "The entry's meal, or an extra meal's name."
+      }
+    }
+  },
+  "otherDate": "تاريخ آخر…",
+  "@otherDate": {
+    "description": "Last row of the move sheet; opens the date picker."
   }
 }

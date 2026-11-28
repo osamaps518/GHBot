@@ -100,8 +100,8 @@ void main() {
     },
   );
 
-  testWidgets('only the name and ID are stored and tokens stay in backend '
-      'headers', (tester) async {
+  testWidgets('only the name, ID and account time are stored and tokens stay '
+      'in backend headers', (tester) async {
     final backend = FakeBackend();
     await pumpApp(tester, backend);
     await _type(tester, find.byType(TextField), 'alice');
@@ -112,7 +112,12 @@ void main() {
     expect(await SharedPreferencesAsync().getKeys(), {
       'dev_subject',
       'user_id',
+      'user_created_at',
     });
+    expect(
+      await SharedPreferencesAsync().getString('user_created_at'),
+      accountCreatedAt,
+    );
     for (final request in backend.requests) {
       expect(request.url.host, 'backend.test');
       expect(request.url.toString(), isNot(contains('token-alice-1')));
@@ -449,21 +454,34 @@ void main() {
     expect(find.text(english.signInTitle), findsNothing);
   });
 
-  testWidgets('a name stored without an ID gets the ID at the next start '
-      'with a connection', (tester) async {
-    final backend = FakeBackend()
-      ..profile = savedProfile()
-      ..offline = true;
+  for (final (missing, storedId, storedCreatedAt) in [
+    ('an ID', false, false),
+    ('the account time', true, false),
+  ]) {
+    testWidgets('a name stored without $missing gets the ID and account time '
+        'at the next start with a connection', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..offline = true;
 
-    await pumpApp(tester, backend, storedName: 'alice', storedId: false);
+      await pumpApp(
+        tester,
+        backend,
+        storedName: 'alice',
+        storedId: storedId,
+        storedCreatedAt: storedCreatedAt,
+      );
 
-    expect(find.text(english.errorConnection), findsOneWidget);
-    backend.offline = false;
-    await _tapText(tester, english.retry);
+      expect(find.text(english.errorConnection), findsOneWidget);
+      backend.offline = false;
+      await _tapText(tester, english.retry);
 
-    expect(find.text('2210'), findsOneWidget);
-    expect(await SharedPreferencesAsync().getString('user_id'), 'id-alice');
-  });
+      expect(find.text('2210'), findsOneWidget);
+      final preferences = SharedPreferencesAsync();
+      expect(await preferences.getString('user_id'), 'id-alice');
+      expect(await preferences.getString('user_created_at'), accountCreatedAt);
+    });
+  }
 
   testWidgets('TLS handshake failure shows the connection error', (
     tester,
@@ -590,6 +608,7 @@ void main() {
       expect(await SharedPreferencesAsync().getKeys(), {
         'dev_subject',
         'user_id',
+        'user_created_at',
         'age_warning_seen_id-alice',
       });
     });

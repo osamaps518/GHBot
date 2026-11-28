@@ -86,14 +86,16 @@ class AppFlow extends ChangeNotifier {
   /// Opens the user's database and shows what it holds, then refreshes it in
   /// the background (decision 25). A failed background refresh keeps the
   /// stored data and shows nothing. With nothing stored, it waits for the
-  /// server instead. A name stored before IDs were gets its ID from the
-  /// server first; without a connection, that fails and the error screen
-  /// shows, with Retry.
+  /// server instead. A name stored before IDs or account creation times were
+  /// gets both from the server first; without a connection, that fails and
+  /// the error screen shows, with Retry.
   Future<void> load() async {
     stage = AppStage.loading;
     notifyListeners();
     try {
-      if (_session.userId == null) await _session.fetchUserId();
+      if (_session.userId == null || _session.createdAt == null) {
+        await _session.fetchUser();
+      }
       if (_disposed) return;
       final database = _database ??= _openDatabase(_session.userId!);
       _syncRunner ??= SyncRunner(

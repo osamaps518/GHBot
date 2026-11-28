@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/me")
 async def me(user: CurrentUser) -> UserResponse:
-    return UserResponse(id=user.id)
+    return UserResponse(id=user.id, created_at=user.created_at)
 
 
 def create_dev_router(provider: DevAuthProvider) -> APIRouter:

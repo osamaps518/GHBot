@@ -614,13 +614,37 @@ abstract class AppLocalizations {
   /// **'اليوم'**
   String get today;
 
+  /// The diary's title on the day before today, and its name in the move sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمس'**
+  String get yesterday;
+
+  /// Label of the diary's arrow that goes back one day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم السابق'**
+  String get previousDay;
+
+  /// Label of the diary's arrow that goes forward one day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم التالي'**
+  String get nextDay;
+
+  /// Under the diary's title on a past day; shows today.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى اليوم'**
+  String get backToToday;
+
   /// No description provided for @weekdayName.
   ///
   /// In ar, this message translates to:
   /// **'{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}'**
   String weekdayName(String weekday);
 
-  /// The diary day under Today, such as الاثنين، 23 تشرين الثاني.
+  /// A diary day, such as الاثنين، 23 تشرين الثاني: under Today or Yesterday, and alone as the title of an older day.
   ///
   /// In ar, this message translates to:
   /// **'{weekday}، {day} {month}'**
@@ -751,6 +775,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.'**
   String get entryRefusedAlert;
+
+  /// Label of the entry screen's day row, which opens the move sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get entryDate;
+
+  /// Title of the sheet that moves an entry to another day.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل إلى يوم آخر'**
+  String get moveToAnotherDay;
+
+  /// Under the move sheet's title: a moved entry keeps its meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبقى في {meal} في اليوم الذي تختاره.'**
+  String moveStaysInMeal(String meal);
+
+  /// Last row of the move sheet; opens the date picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ آخر…'**
+  String get otherDate;
 }
 
 class _AppLocalizationsDelegate

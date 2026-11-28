@@ -386,6 +386,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get today => 'Today';
 
   @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get previousDay => 'Previous day';
+
+  @override
+  String get nextDay => 'Next day';
+
+  @override
+  String get backToToday => 'Back to today';
+
+  @override
   String weekdayName(String weekday) {
     String _temp0 = intl.Intl.selectLogic(weekday, {
       '1': 'Monday',
@@ -496,4 +508,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get entryRefusedAlert =>
       'The server didn\'t accept this entry, so it\'s saved only on your phone. Change it or delete it.';
+
+  @override
+  String get entryDate => 'Date';
+
+  @override
+  String get moveToAnotherDay => 'Move to another day';
+
+  @override
+  String moveStaysInMeal(String meal) {
+    return 'It stays in $meal on the day you choose.';
+  }
+
+  @override
+  String get otherDate => 'Another date…';
 }

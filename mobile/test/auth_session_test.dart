@@ -28,7 +28,10 @@ void main() {
         return http.Response('{"access_token":"new-token"}', 200);
       }
       expect(request.headers['authorization'], 'Bearer new-token');
-      return http.Response('{"ok":true,"id":"id-new"}', 200);
+      return http.Response(
+        '{"ok":true,"id":"id-new","created_at":"2026-01-05T09:30:00Z"}',
+        200,
+      );
     });
     final session = AuthSession(
       ApiClient(client: client, baseUrl: 'https://backend.test'),
@@ -69,7 +72,11 @@ void main() {
         case '/me':
           final bob = authorization!.contains('bob');
           if (bob) await bobId.future;
-          return http.Response('{"id":"id-${bob ? 'bob' : 'alice'}"}', 200);
+          return http.Response(
+            '{"id":"id-${bob ? 'bob' : 'alice'}",'
+            '"created_at":"2026-01-05T09:30:00Z"}',
+            200,
+          );
       }
       putTokens.add(authorization);
       if (putTokens.length > 1) return http.Response('{}', 200);

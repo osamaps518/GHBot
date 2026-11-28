@@ -815,12 +815,14 @@ them and does not calculate its own (decision 31).
 
 ## 34. The phone decides the diary day
 
-**Status:** Accepted, 2026-11-24 (#59).
+**Status:** Accepted, 2026-11-24 (#59). Amended 2026-11-28 (#64): past days.
 
-An entry's diary day comes from the phone's clock and time zone when it is
-logged, and is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00, so
-a snack at 1:30 still belongs to the evening before. When it is logged is stored
-separately, in UTC.
+An entry's diary day is the day the diary shows when it is logged: today, from
+the phone's clock and time zone, unless the trainee went back to an earlier
+day. It is stored as a plain `YYYY-MM-DD` date. The day starts at 4:00, so a
+snack at 1:30 still belongs to the evening before. When it is logged is stored
+separately, in UTC, and is the clock's time even on a past day: it says when
+the trainee logged it, and the diary day already says which day it belongs to.
 
 - The server doesn't know the phone's time zone.
 - An entry keeps its day: travel, or a later change to the day start, doesn't
@@ -828,6 +830,13 @@ separately, in UTC.
 - A diary day is a date, not a point in time, so it isn't stored as one.
 
 There is no setting for the day start yet.
+
+**Past days (#64).** The diary goes back to the account's first diary day
+in the phone's time zone. Installs from before #64 need one online start
+to learn that boundary; later starts can use the stored value offline.
+
+Moving an entry changes only its diary day, so it is sent like any other
+change (decision 31). It keeps its meal, an extra meal's name too.
 
 ---
 

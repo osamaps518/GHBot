@@ -86,12 +86,20 @@ def test_lone_surrogate_in_token_subject_returns_422(client):
     assert response.status_code == 422
 
 
-def test_valid_token_returns_our_user_id(client, auth_headers):
-    response = client.get("/me", headers=auth_headers())
+def test_valid_token_returns_our_user_id_and_when_the_account_was_created(
+    client, auth_headers
+):
+    headers = auth_headers()
+    before = datetime.now(UTC)
+    response = client.get("/me", headers=headers)
 
     assert response.status_code == 200
-    assert set(response.json()) == {"id"}
+    assert set(response.json()) == {"id", "created_at"}
     assert UUID(response.json()["id"]).version == 7
+    created_at = datetime.fromisoformat(response.json()["created_at"])
+    assert created_at.utcoffset() is not None
+    assert abs((created_at - before).total_seconds()) < 5
+    assert client.get("/me", headers=headers).json() == response.json()
 
 
 @pytest.mark.parametrize(

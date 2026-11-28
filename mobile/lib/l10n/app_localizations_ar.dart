@@ -386,6 +386,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get today => 'اليوم';
 
   @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get previousDay => 'اليوم السابق';
+
+  @override
+  String get nextDay => 'اليوم التالي';
+
+  @override
+  String get backToToday => 'العودة إلى اليوم';
+
+  @override
   String weekdayName(String weekday) {
     String _temp0 = intl.Intl.selectLogic(weekday, {
       '1': 'الاثنين',
@@ -498,4 +510,18 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get entryRefusedAlert =>
       'لم يقبل الخادم هذا الإدخال، فهو محفوظ على هاتفك فقط. عدّله أو احذفه.';
+
+  @override
+  String get entryDate => 'التاريخ';
+
+  @override
+  String get moveToAnotherDay => 'نقل إلى يوم آخر';
+
+  @override
+  String moveStaysInMeal(String meal) {
+    return 'يبقى في $meal في اليوم الذي تختاره.';
+  }
+
+  @override
+  String get otherDate => 'تاريخ آخر…';
 }

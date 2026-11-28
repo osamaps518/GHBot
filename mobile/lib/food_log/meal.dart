@@ -16,6 +16,15 @@ String diaryDateText(AppLocalizations l10n, String day) {
   );
 }
 
+/// "Today" or "Yesterday" when [day] is [today] or the day before it, or
+/// null for an older day. Both are `YYYY-MM-DD`.
+String? nearDayName(AppLocalizations l10n, String day, String today) =>
+    day == today
+    ? l10n.today
+    : day == addDays(today, -1)
+    ? l10n.yesterday
+    : null;
+
 /// A meal on a day: breakfast, lunch, dinner, or an extra meal with its
 /// name. Two extra meals with the same name on the same day are one meal.
 class DiaryMeal {

@@ -109,6 +109,7 @@ void main() {
         food: tooRich,
         meal: const DiaryMeal(Meal.lunch),
         grams: 1000,
+        diaryDay: '2026-11-23',
         loggedAt: DateTime.utc(2026, 11, 23, 12),
       ),
       throwsArgumentError,
@@ -129,6 +130,7 @@ void main() {
       food: rice,
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime(2026, 11, 23, 12),
     );
     await database.storeFood(
@@ -163,6 +165,7 @@ void main() {
       ),
       meal: const DiaryMeal(Meal.lunch),
       grams: 1500,
+      diaryDay: '2026-11-23',
       loggedAt: DateTime(2026, 11, 23, 12),
     );
     final logged = (await database.watchDiaryDay('2026-11-23').first).single;
@@ -171,5 +174,60 @@ void main() {
 
     expect(await database.watchDiaryDay('2026-11-23').first, isEmpty);
     expect(await database.watchRecentFoods().first, isEmpty);
+  });
+
+  test("a moved entry leaves the old day's totals and joins the new day's, "
+      'in the same meal', () async {
+    await database.logEntry(
+      food: const Food(
+        id: 'rice',
+        nameAr: null,
+        nameEn: 'Cooked white rice',
+        per100g: Nutrients(calories: 1300, protein: 27, carbs: 282, fat: 3),
+      ),
+      meal: const DiaryMeal(Meal.lunch),
+      grams: 1500,
+      diaryDay: '2026-11-23',
+      loggedAt: DateTime(2026, 11, 23, 12),
+    );
+    await database.logEntry(
+      food: const Food(
+        id: 'oil',
+        nameAr: null,
+        nameEn: 'Olive oil',
+        per100g: Nutrients(calories: 8840, protein: 0, carbs: 0, fat: 1000),
+      ),
+      meal: const DiaryMeal(Meal.extra, 'Pre-workout'),
+      grams: 123,
+      diaryDay: '2026-11-22',
+      loggedAt: DateTime(2026, 11, 22, 12),
+    );
+    Future<List<int>> dayTotals(String day) async {
+      final entries = await database.watchDiaryDay(day).first;
+      final totals = Nutrients.sum(
+        entries.map((logged) => logged.entry.totals),
+      );
+      return [totals.calories, totals.protein, totals.carbs, totals.fat];
+    }
+
+    final oil = (await database.watchDiaryDay('2026-11-22').first).single;
+    await database.moveEntry(oil.entry.id, '2026-11-23');
+
+    expect(await dayTotals('2026-11-22'), [0, 0, 0, 0]);
+    expect(await dayTotals('2026-11-23'), [3037, 41, 423, 128]);
+    final moved = (await database.watchDiaryDay('2026-11-23').first)
+        .singleWhere((logged) => logged.entry.id == oil.entry.id)
+        .entry;
+    expect(
+      [moved.meal, moved.mealName, moved.grams, moved.revision],
+      [Meal.extra, 'Pre-workout', 123, 2],
+    );
+
+    await database.moveEntry(oil.entry.id, '2026-11-23');
+
+    final again = (await database.unsentEntries()).singleWhere(
+      (entry) => entry.id == oil.entry.id,
+    );
+    expect(again.revision, 2);
   });
 }
