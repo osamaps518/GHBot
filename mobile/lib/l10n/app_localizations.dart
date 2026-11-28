@@ -614,13 +614,37 @@ abstract class AppLocalizations {
   /// **'اليوم'**
   String get today;
 
+  /// The diary's title on the day before today, and its name in the move sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمس'**
+  String get yesterday;
+
+  /// Label of the diary's arrow that goes back one day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم السابق'**
+  String get previousDay;
+
+  /// Label of the diary's arrow that goes forward one day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم التالي'**
+  String get nextDay;
+
+  /// Under the diary's title on a past day; shows today.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى اليوم'**
+  String get backToToday;
+
   /// No description provided for @weekdayName.
   ///
   /// In ar, this message translates to:
   /// **'{weekday, select, 1{الاثنين} 2{الثلاثاء} 3{الأربعاء} 4{الخميس} 5{الجمعة} 6{السبت} 7{الأحد} other{}}'**
   String weekdayName(String weekday);
 
-  /// The diary day under Today, such as الاثنين، 23 تشرين الثاني.
+  /// A diary day, such as الاثنين، 23 تشرين الثاني: under Today or Yesterday, and alone as the title of an older day.
   ///
   /// In ar, this message translates to:
   /// **'{weekday}، {day} {month}'**

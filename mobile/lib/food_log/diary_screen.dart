@@ -15,21 +15,28 @@ import 'entry_edit_screen.dart';
 import 'extra_meal_sheet.dart';
 import 'meal.dart';
 
-/// The home screen: today's entries under their meals, and the day's
-/// calories and macros next to the targets. It reads only from the phone's
-/// database and updates whenever an entry is saved (decision 32).
+/// The home screen: one day's entries under their meals, and the day's
+/// calories and macros next to the current targets. It opens on today; the
+/// arrows and the date picker go to any day from [firstDay] to today. It
+/// reads only from the phone's database and updates whenever an entry is
+/// saved (decision 32).
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({
     super.key,
     required this.database,
     required this.foodsApi,
     required this.targets,
+    required this.firstDay,
     required this.onOpenTargets,
   });
 
   final AppDatabase database;
   final FoodsApi foodsApi;
   final Targets targets;
+
+  /// The diary day the account was created on, `YYYY-MM-DD`: the earliest
+  /// the diary goes back to.
+  final String firstDay;
   final VoidCallback onOpenTargets;
 
   @override
@@ -37,23 +44,29 @@ class DiaryScreen extends StatefulWidget {
 }
 
 class _DiaryScreenState extends State<DiaryScreen> {
+  late String _today;
+
+  /// The day shown, `YYYY-MM-DD`.
   late String _day;
   late Stream<List<LoggedFood>> _entries;
 
   /// How many entries, on any day, wait to be sent.
   late final _unsentCount = widget.database.watchUnsentCount();
 
-  /// Extra meals named on this screen today. They show until the screen
-  /// closes; one stays on the day only through its entries.
+  /// Extra meals named on this screen for the day shown. They show until
+  /// the day changes or the screen closes; one stays on the day only
+  /// through its entries.
   final _newMealNames = <String>[];
 
-  /// Moves the diary to the next day when it starts, if the app is open then.
+  /// Starts the next day when it comes, if the app is open then.
   Timer? _nextDay;
 
   @override
   void initState() {
     super.initState();
-    _showToday();
+    _today = diaryDayOf(DateTime.now());
+    _show(_today);
+    _waitForNextDay();
   }
 
   @override
@@ -62,15 +75,49 @@ class _DiaryScreenState extends State<DiaryScreen> {
     super.dispose();
   }
 
-  void _showToday() {
-    final now = DateTime.now();
-    _day = diaryDayOf(now);
+  /// The earliest day to go back to: the account's day, or today if a
+  /// wrong clock puts that after today.
+  String get _firstDay =>
+      widget.firstDay.compareTo(_today) < 0 ? widget.firstDay : _today;
+
+  void _show(String day) {
+    _day = day;
     _newMealNames.clear();
-    _entries = widget.database.watchDiaryDay(_day);
-    _nextDay = Timer(
-      nextDayStart(now).difference(now),
-      () => setState(_showToday),
+    _entries = widget.database.watchDiaryDay(day);
+  }
+
+  /// When the next day starts, the diary moves to it if it showed today,
+  /// and stays on a past day.
+  void _waitForNextDay() {
+    final now = DateTime.now();
+    _nextDay = Timer(nextDayStart(now).difference(now), () {
+      setState(() {
+        final showedToday = _day == _today;
+        _today = diaryDayOf(DateTime.now());
+        if (showedToday) _show(_today);
+      });
+      _waitForNextDay();
+    });
+  }
+
+  /// Shows [day], unless it is shown already.
+  void _go(String day) {
+    if (day != _day) setState(() => _show(day));
+  }
+
+  /// Opens the date picker on the day shown, from [_firstDay] to today, and
+  /// shows the day chosen. The picker marks the diary's today, which before
+  /// 4:00 is the calendar's yesterday.
+  Future<void> _pickDay() async {
+    final today = DateTime.parse(_today);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.parse(_day),
+      firstDate: DateTime.parse(_firstDay),
+      lastDate: today,
+      currentDate: today,
     );
+    if (picked != null && mounted) _go(dayOfDate(picked));
   }
 
   /// Opens search for [meal], then the amount step for the chosen food.
@@ -151,7 +198,29 @@ class _DiaryScreenState extends State<DiaryScreen> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
               children: [
-                _DayHeader(day: _day),
+                _DayHeader(
+                  day: _day,
+                  today: _today,
+                  onPrevious: _day.compareTo(_firstDay) <= 0
+                      ? null
+                      : () => _go(addDays(_day, -1)),
+                  onNext: _day.compareTo(_today) >= 0
+                      ? null
+                      : () => _go(addDays(_day, 1)),
+                  onPick: _pickDay,
+                ),
+                if (_day != _today)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Center(
+                      child: TextButton.icon(
+                        style: backToTodayStyle(Theme.of(context)),
+                        onPressed: () => _go(_today),
+                        icon: const Icon(Icons.calendar_today_outlined),
+                        label: Text(l10n.backToToday),
+                      ),
+                    ),
+                  ),
                 _WaitingNote(count: _unsentCount),
                 if (refused > 0)
                   _Note(
@@ -191,25 +260,64 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 }
 
-/// "Today" and the date, such as "Monday, November 23".
+/// The day shown between the previous and next arrows: "Today" or
+/// "Yesterday" over the date, such as "Monday, November 23", or the date
+/// alone for an older day. Tapping the day opens the date picker. An arrow
+/// without its callback is disabled.
 class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.day});
+  const _DayHeader({
+    required this.day,
+    required this.today,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onPick,
+  });
 
   /// `YYYY-MM-DD`.
   final String day;
+  final String today;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+  final VoidCallback onPick;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    return Column(
+    final name = nearDayName(l10n, day, today);
+    final date = diaryDateText(l10n, day);
+    return Row(
+      spacing: 8,
       children: [
-        Text(l10n.today, style: theme.appBarTheme.titleTextStyle),
-        Text(
-          diaryDateText(l10n, day),
-          style: theme.textTheme.bodySmall!.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        IconButton(
+          tooltip: l10n.previousDay,
+          style: dayArrowStyle(theme),
+          onPressed: onPrevious,
+          icon: const Icon(Icons.chevron_left),
+        ),
+        Expanded(
+          child: InkWell(
+            onTap: onPick,
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              children: [
+                Text(name ?? date, style: theme.appBarTheme.titleTextStyle),
+                if (name != null)
+                  Text(
+                    date,
+                    style: theme.textTheme.bodySmall!.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
           ),
+        ),
+        IconButton(
+          tooltip: l10n.nextDay,
+          style: dayArrowStyle(theme),
+          onPressed: onNext,
+          icon: const Icon(Icons.chevron_right),
         ),
       ],
     );

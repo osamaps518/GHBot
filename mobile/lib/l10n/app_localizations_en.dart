@@ -386,6 +386,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get today => 'Today';
 
   @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get previousDay => 'Previous day';
+
+  @override
+  String get nextDay => 'Next day';
+
+  @override
+  String get backToToday => 'Back to today';
+
+  @override
   String weekdayName(String weekday) {
     String _temp0 = intl.Intl.selectLogic(weekday, {
       '1': 'Monday',

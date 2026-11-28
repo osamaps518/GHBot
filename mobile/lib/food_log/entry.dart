@@ -14,7 +14,22 @@ String diaryDayOf(DateTime localTime) {
   final day = localTime.hour < dayStartHour
       ? DateTime.utc(localTime.year, localTime.month, localTime.day - 1)
       : DateTime.utc(localTime.year, localTime.month, localTime.day);
-  return day.toIso8601String().substring(0, 10);
+  return dayOfDate(day);
+}
+
+/// The calendar day of [date], as `YYYY-MM-DD`, such as a day chosen in
+/// the date picker.
+String dayOfDate(DateTime date) => DateTime.utc(
+  date.year,
+  date.month,
+  date.day,
+).toIso8601String().substring(0, 10);
+
+/// [day] (`YYYY-MM-DD`) moved by [days] on the calendar, back when
+/// negative.
+String addDays(String day, int days) {
+  final date = DateTime.parse(day);
+  return dayOfDate(DateTime.utc(date.year, date.month, date.day + days));
 }
 
 /// When the diary day after the one at [localTime] starts.

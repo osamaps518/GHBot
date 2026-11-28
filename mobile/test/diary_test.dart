@@ -24,12 +24,21 @@ import 'fake_backend.dart';
 
 final english = lookupAppLocalizations(const Locale('en'));
 
-/// Opens the diary for a signed-in user with [exampleTargets], on a new
-/// in-memory database unless [database] is given. Given one, it closes the
-/// open diary first, as when the app restarts.
+/// Today's diary day, and the day [days] before it.
+String _today() => diaryDayOf(DateTime.now());
+String _daysAgo(int days) => addDays(_today(), -days);
+
+/// A day as the diary writes it, such as "Monday, November 23".
+String _dateText(String day) => diaryDateText(english, day);
+
+/// Opens the diary for a signed-in user with [exampleTargets], whose account
+/// was created on [firstDay] (30 days ago unless given), on a new in-memory
+/// database unless [database] is given. Given one, it closes the open diary
+/// first, as when the app restarts.
 Future<AppDatabase> _pumpDiary(
   WidgetTester tester, {
   AppDatabase? database,
+  String? firstDay,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
@@ -60,6 +69,7 @@ Future<AppDatabase> _pumpDiary(
         database: database,
         foodsApi: FoodsApi(session),
         targets: Targets.fromJson(exampleTargets),
+        firstDay: firstDay ?? _daysAgo(30),
         onOpenTargets: () {},
       ),
     ),
@@ -88,7 +98,7 @@ Future<void> _sync(AppDatabase database, FakeBackend backend) async {
 
 /// Scrolls the diary, which builds only what is on screen, to [finder].
 /// `ensureVisible` covers a widget built just past the screen's edge.
-Future<void> _tap(WidgetTester tester, Finder finder) async {
+Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(
     finder,
     200,
@@ -96,6 +106,17 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   );
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
+}
+
+/// Scrolls the diary back to its day and totals.
+Future<void> _scrollToTop(WidgetTester tester) async {
+  await tester.drag(find.byType(Scrollable).first, const Offset(0, 3000));
+  await tester.pumpAndSettle();
+}
+
+/// Scrolls the diary to [finder] and taps it.
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await _scrollTo(tester, finder);
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -124,6 +145,7 @@ void main() {
     expect(find.text(english.eatenOfTarget('304', '2210')), findsOneWidget);
     expect(find.text(english.macroOfTarget('176')), findsOneWidget);
     final lunch = english.mealName('lunch');
+    await _scrollTo(tester, find.text('12.3 ${english.gramsUnit}'));
     expect(_inMeal(lunch, find.text('304 ${english.caloriesUnit}')), findsOne);
     expect(_inMeal(lunch, find.text('Cooked white rice')), findsOne);
     expect(_inMeal(lunch, find.text('12.3 ${english.gramsUnit}')), findsOne);
@@ -231,13 +253,16 @@ void main() {
     );
 
     expect(find.text(english.waitingToSync(2)), findsOneWidget);
+    await _scrollTo(tester, find.text('Olive oil'));
     expect(waitingMarks, findsNWidgets(2));
 
     await _sync(database, FakeBackend());
     await tester.pumpAndSettle();
 
-    expect(find.text(english.waitingToSync(2)), findsNothing);
     expect(waitingMarks, findsNothing);
+    await _scrollToTop(tester);
+    expect(find.text(english.waitingToSync(2)), findsNothing);
+    expect(find.text(english.today), findsOneWidget);
   });
 
   testWidgets('a refused entry is tinted and says so; tapping it explains '
@@ -272,6 +297,129 @@ void main() {
     await _tap(tester, find.text('Cooked white rice'));
     expect(find.text(english.entryRefusedAlert), findsOneWidget);
     expect(find.text(english.delete), findsOneWidget);
+  });
+
+  group('past days', () {
+    /// Logs [grams] (in tenths) of [json] into lunch on [day].
+    Future<void> logLunch(
+      AppDatabase database,
+      Map<String, Object?> json,
+      int grams,
+      String day,
+    ) => database.logEntry(
+      food: Food.fromJson(json),
+      meal: const DiaryMeal(Meal.lunch),
+      grams: grams,
+      diaryDay: day,
+      loggedAt: DateTime.now(),
+    );
+
+    bool enabled(WidgetTester tester, String arrow) =>
+        tester
+            .widget<IconButton>(
+              find.ancestor(
+                of: find.byTooltip(arrow),
+                matching: find.byType(IconButton),
+              ),
+            )
+            .onPressed !=
+        null;
+
+    Future<void> tapArrow(WidgetTester tester, String arrow) async {
+      await tester.tap(find.byTooltip(arrow));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the arrows go a day back and forward, between the account '
+        'day and today, and each day shows its own entries and totals', (
+      tester,
+    ) async {
+      final database = await _pumpDiary(tester, firstDay: _daysAgo(2));
+      await logLunch(database, riceJson, 1500, _today());
+      await logLunch(database, oilJson, 123, _daysAgo(1));
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.today), findsOneWidget);
+      expect(find.text(english.backToToday), findsNothing);
+      expect(enabled(tester, english.nextDay), isFalse);
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+
+      await tapArrow(tester, english.previousDay);
+      expect(find.text(english.yesterday), findsOneWidget);
+      expect(find.text(_dateText(_daysAgo(1))), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('109', '2210')), findsOneWidget);
+      expect(find.text(english.macroOfTarget('176')), findsOneWidget);
+      expect(enabled(tester, english.nextDay), isTrue);
+      await _scrollTo(tester, find.text('Olive oil'));
+      expect(find.text('Cooked white rice'), findsNothing);
+      await _scrollToTop(tester);
+
+      await tapArrow(tester, english.previousDay);
+      // An older day shows its date as the title, with no second line.
+      expect(find.text(_dateText(_daysAgo(2))), findsOneWidget);
+      expect(find.text(english.yesterday), findsNothing);
+      expect(find.text(english.today), findsNothing);
+      expect(find.text(english.eatenOfTarget('0', '2210')), findsOneWidget);
+      expect(enabled(tester, english.previousDay), isFalse);
+
+      await tapArrow(tester, english.nextDay);
+      expect(find.text(english.yesterday), findsOneWidget);
+
+      await tester.tap(find.text(english.backToToday));
+      await tester.pumpAndSettle();
+      expect(find.text(english.today), findsOneWidget);
+      expect(find.text(english.backToToday), findsNothing);
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+    });
+
+    testWidgets('food logged on a past day goes on that day', (tester) async {
+      final database = await _pumpDiary(tester);
+      await tapArrow(tester, english.previousDay);
+      final dinner = english.mealName('dinner');
+
+      await _tap(tester, _inMeal(dinner, find.text(english.addFood)));
+      await tester.enterText(find.byType(TextField), 'rice');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('Cooked white rice'));
+      await _tap(tester, find.text(english.logButton(dinner)));
+
+      expect(_inMeal(dinner, find.text('Cooked white rice')), findsOne);
+      expect((await database.unsentEntries()).single.diaryDay, _daysAgo(1));
+    });
+
+    testWidgets('tapping the day opens the date picker, which goes from the '
+        'account day to today', (tester) async {
+      await _pumpDiary(tester, firstDay: _daysAgo(5));
+      final material = MaterialLocalizations.of(
+        tester.element(find.byType(DiaryScreen)),
+      );
+      Future<void> typeDate(String day) async {
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(TextField),
+          ),
+          material.formatCompactDate(DateTime.parse(day)),
+        );
+        await tester.tap(find.text(material.okButtonLabel));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.text(english.today));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      for (final outside in [_daysAgo(6), addDays(_today(), 1)]) {
+        await typeDate(outside);
+        expect(find.text(material.dateOutOfRangeLabel), findsOneWidget);
+      }
+      await typeDate(_daysAgo(5));
+
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text(_dateText(_daysAgo(5))), findsOneWidget);
+      expect(enabled(tester, english.previousDay), isFalse);
+    });
   });
 
   group('changing an entry', () {

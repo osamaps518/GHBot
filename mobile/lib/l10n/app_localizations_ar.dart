@@ -386,6 +386,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get today => 'اليوم';
 
   @override
+  String get yesterday => 'أمس';
+
+  @override
+  String get previousDay => 'اليوم السابق';
+
+  @override
+  String get nextDay => 'اليوم التالي';
+
+  @override
+  String get backToToday => 'العودة إلى اليوم';
+
+  @override
   String weekdayName(String weekday) {
     String _temp0 = intl.Intl.selectLogic(weekday, {
       '1': 'الاثنين',

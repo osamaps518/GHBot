@@ -83,6 +83,24 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
   foregroundColor: theme.colorScheme.onSurface,
 );
 
+/// The round arrows beside the diary's day, on the card color. A disabled
+/// one has no background and fades.
+ButtonStyle dayArrowStyle(ThemeData theme) => IconButton.styleFrom(
+  fixedSize: const Size(44, 44),
+  backgroundColor: theme.colorScheme.surfaceContainer,
+  foregroundColor: theme.colorScheme.onSurface,
+  disabledBackgroundColor: Colors.transparent,
+  disabledForegroundColor: theme.colorScheme.outline.withValues(alpha: 0.5),
+);
+
+/// Back to today on a past day: a pill on the track color.
+ButtonStyle backToTodayStyle(ThemeData theme) => TextButton.styleFrom(
+  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+  foregroundColor: theme.colorScheme.onSurface,
+  minimumSize: const Size(0, 40),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+);
+
 /// A text button on the daily calories card: Edit targets, in the card's
 /// text color.
 ButtonStyle heroLinkStyle(TargetsColors colors) => TextButton.styleFrom(

@@ -10,6 +10,7 @@ import 'core/database.dart';
 import 'core/error_views.dart';
 import 'core/theme.dart';
 import 'food_log/diary_screen.dart';
+import 'food_log/entry.dart';
 import 'foods/foods_api.dart';
 import 'l10n/app_localizations.dart';
 import 'profiles/profile_form_screen.dart';
@@ -176,6 +177,7 @@ class _GhbotAppState extends State<GhbotApp> {
       database: _flow.database,
       foodsApi: _foodsApi,
       targets: _flow.targets!,
+      firstDay: diaryDayOf(_session.createdAt!.toLocal()),
       onOpenTargets: _openTargets,
     ),
     AppStage.failed => ErrorScreen(
