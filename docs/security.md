@@ -26,12 +26,18 @@ The diary pull returns only the caller's entries and their visible used foods,
 including tombstones (`test_pull_never_returns_other_trainees_own_foods`,
 `test_pull_returns_deleted_entry_and_excludes_other_trainee`).
 
-## Health data stays out of logs
+Custom targets and their history are read and written for the user from the
+token, so another trainee can't read, change or reset them
+(`test_custom_targets_are_private_and_survive_profile_changes`).
+
+## The calorie minimum
 
 The calorie minimum has one copy on the server. The backend uses it when saving
 custom targets and when reading older custom targets, so the phone cannot
 bypass the floor (`test_each_profile_sex_enforces_its_minimum_on_save`,
 `test_read_raises_older_custom_targets_to_minimum`).
+
+## Health data stays out of logs
 
 Profiles hold health data. The database engine hides bound parameters in its errors and logs, so a failed insert doesn't log the values (`test_failed_profile_insert_does_not_log_health_values`). Bad input gets a 422 instead of a 500: ranges and the age limit are checked before saving, and NaN, Infinity and lone surrogates come back as text in the 422 (`test_non_finite_number_gives_422`, `test_lone_surrogate_in_token_subject_returns_422`).
 

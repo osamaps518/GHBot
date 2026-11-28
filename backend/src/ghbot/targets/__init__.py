@@ -10,8 +10,9 @@ For other modules:
 
 For wiring the app (main.py):
     router:
-        GET /me/targets: the signed-in user's targets from their saved profile,
-            or 404 if they have none.
+        GET /me/targets: the signed-in user's targets in effect (custom or
+            recommended) plus the recommended ones, or 404 if they have no
+            saved profile.
         PUT /me/targets/custom: save custom values and return effective targets.
         DELETE /me/targets/custom: reset to recommended targets.
 """
