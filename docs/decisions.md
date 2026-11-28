@@ -476,7 +476,7 @@ synced together, and units are not queried on their own.
 
 Curated catalog foods live in CSV files in the repo, one per source. Changes go
 through pull requests so health numbers are reviewed. A command loads the files,
-not a migration: it validates all rows before writing and is safe to rerun.
+not a migration, and is safe to rerun.
 There is no scheduled refetch. Removed CSV rows remain in the table.
 
 ---

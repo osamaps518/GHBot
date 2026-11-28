@@ -119,6 +119,12 @@ def read_rows(folder: Path) -> list[dict[str, object]]:
 
 
 async def load(folder: Path = DEFAULT_FOLDER) -> None:
+    """Load the CSV files in `folder` into the foods table.
+
+    Every row of every file is checked before anything is written. A food
+    already loaded is found by its source and source ID and updated, so
+    rerunning changes nothing. Rows removed from a CSV stay in the table.
+    """
     rows = read_rows(folder)
     if not rows:
         return
