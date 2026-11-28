@@ -221,4 +221,5 @@ def test_each_profile_sex_enforces_its_minimum_on_save(
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "below_minimum"
+    assert response.json()["detail"][0]["ctx"] == {"minimum": floor}
     assert client.get("/me/targets", headers=headers).json()["custom"] is False

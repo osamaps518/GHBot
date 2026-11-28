@@ -10,6 +10,7 @@ from ghbot.profiles import SavedProfile, utc_today
 from ghbot.targets.application import (
     Targets,
     calculate_targets,
+    calorie_minimum,
     read_custom,
     reset_custom,
     save_custom,
@@ -47,6 +48,7 @@ async def put_custom_targets(
                     "loc": ("body", "calories"),
                     "msg": "Calories are below the minimum",
                     "input": body.calories,
+                    "ctx": {"minimum": calorie_minimum(profile.sex)},
                 }
             ]
         ) from None
