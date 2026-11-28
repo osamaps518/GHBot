@@ -206,24 +206,56 @@ void main() {
     expect(_hasBadge('Yogurt'), isFalse);
   });
 
-  testWidgets('a refused own food is tinted', (tester) async {
-    final backend = FakeBackend()
-      ..intercept = (request) => request.url.path.startsWith('/me/foods/')
-          ? http.Response('{"detail": [{"type": "value_error"}]}', 422)
-          : null;
+  /// Whether the tile of [name] has the error tint.
+  bool tinted(WidgetTester tester, String name) =>
+      tester.widget<ListTile>(_tile(name)).tileColor ==
+      lightTheme.colorScheme.errorContainer;
+
+  for (final offline in [false, true]) {
+    testWidgets('${offline ? 'offline' : 'online'}, a refused own food shows '
+        'first, tinted', (tester) async {
+      final backend = FakeBackend()
+        ..foods = [_yogurtJson]
+        ..intercept = (request) => request.url.path.startsWith('/me/foods/')
+            ? http.Response('{"detail": [{"type": "value_error"}]}', 422)
+            : null;
+      final (database, _, foodsApi) = await _pumpSearch(tester, backend);
+      await database.storeFood(Food.fromJson(_yogurtJson));
+      await foodsApi.send(database, await _addYogurt(database));
+      backend.offline = offline;
+
+      await _search(tester, 'yogurt');
+
+      expect(
+        find.text(english.searchOffline),
+        offline ? findsOne : findsNothing,
+      );
+      expect(
+        tester.getTopLeft(_tile('Home yogurt')).dy,
+        lessThan(tester.getTopLeft(_tile('Yogurt')).dy),
+      );
+      expect(tinted(tester, 'Home yogurt'), isTrue);
+      expect(tinted(tester, 'Yogurt'), isFalse);
+    });
+  }
+
+  testWidgets("online, a refused change of a food the server has shows once, "
+      "as the phone's copy, tinted", (tester) async {
+    final backend = FakeBackend();
     final (database, _, foodsApi) = await _pumpSearch(tester, backend);
-    await database.storeFood(Food.fromJson(_yogurtJson));
-    await foodsApi.send(database, await _addYogurt(database));
-    backend.offline = true;
+    final yogurt = await _addYogurt(database);
+    await foodsApi.send(database, yogurt);
+    // #66 will change own foods; until then the test writes the change.
+    await database.customStatement(
+      "UPDATE foods SET name_en = 'Home yogurt, thick', revision = 2, "
+      'refused = 1',
+    );
 
     await _search(tester, 'yogurt');
 
-    final errorTint = lightTheme.colorScheme.errorContainer;
-    expect(tester.widget<ListTile>(_tile('Home yogurt')).tileColor, errorTint);
-    expect(
-      tester.widget<ListTile>(_tile('Yogurt')).tileColor,
-      isNot(errorTint),
-    );
+    expect(_tile('Home yogurt, thick'), findsOne);
+    expect(find.text('Home yogurt'), findsNothing);
+    expect(tinted(tester, 'Home yogurt, thick'), isTrue);
   });
 
   group('adding a food', () {

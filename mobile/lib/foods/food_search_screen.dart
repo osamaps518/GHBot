@@ -20,8 +20,9 @@ typedef _Results = ({
 });
 
 /// Finds a food to log. Before typing, it shows the recently logged foods.
-/// Online, it searches the server about 300 ms after typing stops; without
-/// a connection, it filters the foods kept on the phone. The last results
+/// Online, it searches the server about 300 ms after typing stops, and adds
+/// the own foods the server doesn't have yet; without a connection, it
+/// filters the foods kept on the phone. The last results
 /// stay until the next ones arrive. Below the results, or in place of them,
 /// "Add your food" opens the form for an own food; once saved, it is the
 /// food chosen, at 100 g.
@@ -83,7 +84,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     var failed = false;
     var foods = const <Food>[];
     try {
-      foods = await widget.foodsApi.search(query);
+      foods = _withWaitingOwnFoods(
+        await widget.foodsApi.search(query),
+        await widget.database.searchStoredFoods(query),
+      );
     } on ConnectionFailure {
       offline = true;
       foods = await widget.database.searchStoredFoods(query);
@@ -99,6 +103,23 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         failed: failed,
       ),
     );
+  }
+
+  /// The server's [found] foods, after the matching [stored] own foods with a
+  /// change the server hasn't confirmed, refused or not: the server doesn't
+  /// have that change, or the food at all. The phone's copy replaces the
+  /// server's, and own foods stay first.
+  List<Food> _withWaitingOwnFoods(List<Food> found, List<Food> stored) {
+    final waiting = [
+      for (final food in stored)
+        if (food.revision > food.sentRevision) food,
+    ];
+    final waitingIds = {for (final food in waiting) food.id};
+    return [
+      ...waiting,
+      for (final food in found)
+        if (!waitingIds.contains(food.id)) food,
+    ];
   }
 
   void _clear() {
