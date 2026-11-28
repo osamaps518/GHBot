@@ -229,6 +229,26 @@ def test_profile_change_preserves_custom_row_and_applies_new_minimum(
     )
 
 
+def test_raised_calories_with_unchanged_macros_are_not_macros_adjusted(
+    app, client, auth_headers
+):
+    app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
+    headers = auth_headers()
+    assert save_profile(client, headers).status_code == 201
+    values = {"calories": 1450, "protein_g": 100, "fat_g": 50, "carbs_g": 163}
+    assert (
+        client.put("/me/targets/custom", headers=headers, json=values).status_code
+        == 200
+    )
+
+    assert save_profile(client, headers, sex="male").status_code == 200
+    adjusted = client.get("/me/targets", headers=headers).json()
+
+    assert {key: adjusted[key] for key in values} == {**values, "calories": 1500}
+    assert adjusted["at_minimum"] is True
+    assert adjusted["macros_adjusted"] is False
+
+
 @pytest.mark.parametrize("sex, floor", [("female", 1200), ("male", 1500)])
 def test_each_profile_sex_enforces_its_minimum_on_save(
     app, client, auth_headers, sex, floor

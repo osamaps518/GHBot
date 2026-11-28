@@ -3,7 +3,7 @@ from typing import TypedDict
 from pydantic import BaseModel, Field
 
 from ghbot.profiles import ProfileSnapshot
-from ghbot.targets.application import Targets, adjusted_custom
+from ghbot.targets.application import Targets, adjusted_custom, calculate_targets
 from ghbot.targets.models import CustomTargets
 
 
@@ -28,28 +28,29 @@ class TargetsResponse(Targets):
 
 
 def response_for(
-    recommended: Targets,
-    custom: CustomTargets | None = None,
-    profile: ProfileSnapshot | None = None,
+    profile: ProfileSnapshot, custom: CustomTargets | None = None
 ) -> TargetsResponse:
-    effective = adjusted_custom(profile, custom) if profile and custom else None
-    floor_applied = (
-        custom is not None
-        and effective is not None
-        and effective["calories"] != custom.calories
-    )
+    recommended = calculate_targets(profile)
+    effective = adjusted_custom(profile, custom) if custom else None
+    in_effect = effective or recommended
+    raised = custom is not None and in_effect["calories"] != custom.calories
+    macros_adjusted = custom is not None and (
+        in_effect["protein_g"],
+        in_effect["fat_g"],
+        in_effect["carbs_g"],
+    ) != (custom.protein_g, custom.fat_g, custom.carbs_g)
     return {
-        "calories": effective["calories"] if effective else recommended["calories"],
-        "protein_g": effective["protein_g"] if effective else recommended["protein_g"],
-        "fat_g": effective["fat_g"] if effective else recommended["fat_g"],
-        "carbs_g": effective["carbs_g"] if effective else recommended["carbs_g"],
+        "calories": in_effect["calories"],
+        "protein_g": in_effect["protein_g"],
+        "fat_g": in_effect["fat_g"],
+        "carbs_g": in_effect["carbs_g"],
         "maintenance_calories": recommended["maintenance_calories"],
-        "at_minimum": recommended["at_minimum"] if custom is None else floor_applied,
+        "at_minimum": recommended["at_minimum"] if custom is None else raised,
         "above_tested_age": recommended["above_tested_age"],
         "goal": recommended["goal"],
         "goal_adjustment_percent": recommended["goal_adjustment_percent"],
         "custom": custom is not None,
-        "macros_adjusted": floor_applied,
+        "macros_adjusted": macros_adjusted,
         "recommended": {
             "calories": recommended["calories"],
             "protein_g": recommended["protein_g"],

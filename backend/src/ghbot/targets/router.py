@@ -8,8 +8,6 @@ from ghbot.auth import CurrentUser
 from ghbot.database import SessionDependency
 from ghbot.profiles import SavedProfile, utc_today
 from ghbot.targets.application import (
-    Targets,
-    calculate_targets,
     calorie_minimum,
     read_custom,
     reset_custom,
@@ -25,9 +23,7 @@ router = APIRouter(prefix="/me/targets")
 async def get_targets(
     profile: SavedProfile, user: CurrentUser, session: SessionDependency
 ) -> TargetsResponse:
-    recommended: Targets = calculate_targets(profile)
-    custom = await read_custom(session, user.id)
-    return response_for(recommended, custom, profile)
+    return response_for(profile, await read_custom(session, user.id))
 
 
 @router.put("/custom")
@@ -63,7 +59,7 @@ async def put_custom_targets(
                 }
             ]
         ) from None
-    return response_for(calculate_targets(profile), custom, profile)
+    return response_for(profile, custom)
 
 
 @router.delete("/custom")
@@ -74,4 +70,4 @@ async def delete_custom_targets(
     today: Annotated[date, Depends(utc_today)],
 ) -> TargetsResponse:
     await reset_custom(session, user.id, profile, today)
-    return response_for(calculate_targets(profile))
+    return response_for(profile)
