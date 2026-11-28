@@ -107,7 +107,7 @@ Not needed for the first version (basic CRUD). We decide when we build the coach
 - **Ruff** for lint and formatting, **mypy** (strict) for types, **pytest** with coverage.
 - Python 3.14 and PostgreSQL 18, the same versions locally and in CI.
 
-**Async database access**, chosen over plain (sync) SQLAlchemy, so a request waiting on the database doesn't hold up a thread. The trade-off: async SQLAlchemy can't load related data behind the scenes, so queries must load what they need explicitly.
+**Async database access**, chosen over plain (sync) SQLAlchemy, so a request waiting on the database doesn't hold up a thread. The trade-off: async SQLAlchemy can't load related data behind the scenes, so queries must load what they need explicitly. For the same reason, sessions keep their objects' fields after a commit instead of expiring them: an expired field would be loaded again when read, implicit I/O during ordinary attribute access that an async session must avoid.
 
 **Rules**
 - One database session per request. It never commits by itself: code that writes data commits explicitly.

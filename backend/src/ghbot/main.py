@@ -29,9 +29,8 @@ def create_app() -> FastAPI:
         """Open the database engine for the app's lifetime.
 
         The engine connects lazily, so the app starts even if Postgres is down.
-        Sessions keep their fields after commit (expire_on_commit=False);
-        otherwise reading a field would trigger a hidden query, which async
-        SQLAlchemy can't do.
+        Sessions keep their fields after commit (`expire_on_commit=False`;
+        decision 8).
         """
         engine = create_async_engine(
             settings.database_url.get_secret_value(), hide_parameters=True
