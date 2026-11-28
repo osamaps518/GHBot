@@ -185,6 +185,49 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Adds the trainee's own food on the phone and returns it, at revision
+  /// 1 and waiting to be sent (decision 31). Its ID is a UUIDv7, made here.
+  /// A name not given is null. Throws an [ArgumentError] and saves nothing
+  /// when the server would refuse it (decision 38).
+  Future<Food> addOwnFood({
+    required String? nameAr,
+    required String? nameEn,
+    required Nutrients per100g,
+    required String? barcode,
+  }) async {
+    if (!passesOwnFoodChecks(
+      nameAr: nameAr,
+      nameEn: nameEn,
+      per100g: per100g,
+      barcode: barcode,
+    )) {
+      throw ArgumentError('The server would refuse this food.');
+    }
+    final food = Food(
+      id: const Uuid().v7(),
+      nameAr: nameAr,
+      nameEn: nameEn,
+      per100g: per100g,
+      own: true,
+      barcode: barcode,
+      revision: 1,
+    );
+    await storeFood(food);
+    return food;
+  }
+
+  /// The own foods with a change the server hasn't confirmed and will be
+  /// sent, in the order they were made: their IDs are UUIDv7s.
+  Future<List<Food>> unsentOwnFoods() =>
+      (select(foodTable)
+            ..where(
+              (food) =>
+                  food.revision.isBiggerThan(food.sentRevision) &
+                  food.refused.not(),
+            )
+            ..orderBy([(food) => OrderingTerm.asc(food.id)]))
+          .get();
+
   /// The phone's foods whose Arabic or English name contains [query],
   /// ignoring case. This is the search without a connection (decision 20).
   ///

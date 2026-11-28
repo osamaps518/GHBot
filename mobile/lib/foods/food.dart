@@ -1,3 +1,5 @@
+import '../core/typed_number.dart';
+
 /// Calories, protein, carbs and fat, each a whole number of tenths: 1234 is
 /// 123.4 (decision 30).
 class Nutrients {
@@ -33,6 +35,57 @@ int roundTenths(int tenths) => (tenths + 5) ~/ 10;
 /// [tenths] with its decimal only when it has one: 375 is "37.5", 600 "60".
 String formatTenths(int tenths) =>
     tenths % 10 == 0 ? '${tenths ~/ 10}' : '${tenths ~/ 10}.${tenths % 10}';
+
+/// A typed value per 100 g in tenths, or null unless it is from 0 to [max]
+/// tenths with at most 1 decimal.
+int? parsePer100g(String typed, int max) {
+  final match = RegExp(r'^(\d{1,4})(?:\.(\d)?0*)?$')
+      .firstMatch(westernNumberText(typed));
+  if (match == null) return null;
+  final tenths = int.parse(match[1]!) * 10 + int.parse(match[2] ?? '0');
+  return tenths <= max ? tenths : null;
+}
+
+/// The most calories per 100 g, and the most of each macro and of the
+/// three together, in tenths (decision 38).
+const maxCaloriesPer100g = 9000;
+const maxMacroPer100g = 1000;
+
+/// Whether the server would accept an own food with these values (decision
+/// 38): at least one name; each name given 1 to 80 characters, counted as
+/// the server counts them (code points), not only spaces, with no NUL;
+/// calories 0–900 and each macro 0–100 g per 100 g, the macros at most
+/// 100 g together; a barcode of 8 to 14 digits, or none. Values are in
+/// tenths. The phone checks before every save.
+bool passesOwnFoodChecks({
+  required String? nameAr,
+  required String? nameEn,
+  required Nutrients per100g,
+  required String? barcode,
+}) {
+  bool inRange(int value, int max) => value >= 0 && value <= max;
+  return (nameAr != null || nameEn != null) &&
+      _nameFits(nameAr) &&
+      _nameFits(nameEn) &&
+      inRange(per100g.calories, maxCaloriesPer100g) &&
+      inRange(per100g.protein, maxMacroPer100g) &&
+      inRange(per100g.carbs, maxMacroPer100g) &&
+      inRange(per100g.fat, maxMacroPer100g) &&
+      per100g.protein + per100g.carbs + per100g.fat <= maxMacroPer100g &&
+      (barcode == null || RegExp(r'^[0-9]{8,14}$').hasMatch(barcode));
+}
+
+/// Whether [name] is none, or one the server takes.
+bool _nameFits(String? name) =>
+    name == null ||
+    (name.runes.length <= 80 &&
+        !_blank.hasMatch(name) &&
+        !name.contains('\u0000'));
+
+/// Empty, or only characters that are spaces to Dart or to the server's
+/// Python (`str.isspace`), so the phone never takes a name the server
+/// calls blank.
+final _blank = RegExp(r'^[\s\x1c-\x1f\x85]*$');
 
 /// A food kept on the phone or found by search: a catalog food, or one of
 /// the trainee's own.
