@@ -234,10 +234,8 @@ agreed formulas and worked examples are in [#8](https://github.com/osamaps518/GH
 **Status:** Accepted, 2026-10-31 (#40). Amended 2026-11-24 (#59): dark mode's orange and error colors.
 
 The app uses option D4, charcoal and tangerine, in light and dark, following the
-phone's setting. The theme lives in `mobile/lib/core/theme.dart`; screens take colors
-and text styles from it instead of hardcoding them. Colors Material has no role
-for (the daily calories card and the three macros) are in a `TargetsColors`
-theme extension.
+phone's setting. Screens take colors and text styles from the theme instead of
+hardcoding them.
 
 Dark mode uses a deeper orange, #D9661A, and the error color #FFB4AB with
 charcoal on it, as chosen in the #51 mockups. Light mode keeps tangerine
