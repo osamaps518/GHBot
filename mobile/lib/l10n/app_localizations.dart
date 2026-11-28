@@ -380,6 +380,24 @@ abstract class AppLocalizations {
   /// **'حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن {calories} سعرة.'**
   String customTargetsNote(String calories);
 
+  /// No description provided for @backToRecommended.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى الموصى بها'**
+  String get backToRecommended;
+
+  /// No description provided for @resetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى الأهداف الموصى بها؟'**
+  String get resetTitle;
+
+  /// Asks before removing custom targets. The values are the recommended targets, in Western digits.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى {calories} سعرة: بروتين {protein} غ، كربوهيدرات {carbs} غ، دهون {fat} غ.'**
+  String resetBody(String calories, String protein, String carbs, String fat);
+
   /// Shown when the server raised custom calories to the minimum and adjusted the macros.
   ///
   /// In ar, this message translates to:

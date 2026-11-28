@@ -18,4 +18,9 @@ class TargetsApi {
         'fat_g': values.fatG,
         'carbs_g': values.carbsG,
       }, Targets.fromJson);
+
+  /// Removes custom targets and gives the recommended ones. Resetting twice
+  /// is harmless: the server changes nothing the second time.
+  Future<Targets> resetCustom() =>
+      _session.delete('/me/targets/custom', Targets.fromJson);
 }

@@ -117,6 +117,7 @@ class _GhbotAppState extends State<GhbotApp> {
                     targets: shown,
                     onEdit: _edit,
                     onEditTargets: _editTargets,
+                    onReset: _flow.resetCustomTargets,
                   );
           },
         ),

@@ -139,6 +139,26 @@
       }
     }
   },
+  "backToRecommended": "العودة إلى الموصى بها",
+  "resetTitle": "العودة إلى الأهداف الموصى بها؟",
+  "resetBody": "ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى {calories} سعرة: بروتين {protein} غ، كربوهيدرات {carbs} غ، دهون {fat} غ.",
+  "@resetBody": {
+    "description": "Asks before removing custom targets. The values are the recommended targets, in Western digits.",
+    "placeholders": {
+      "calories": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      },
+      "carbs": {
+        "type": "String"
+      },
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
   "macrosAdjustedNote": "سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
   "@macrosAdjustedNote": {
     "description": "Shown when the server raised custom calories to the minimum and adjusted the macros."

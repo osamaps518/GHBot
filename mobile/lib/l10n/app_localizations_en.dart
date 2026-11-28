@@ -219,6 +219,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get backToRecommended => 'Back to recommended';
+
+  @override
+  String get resetTitle => 'Go back to your recommended targets?';
+
+  @override
+  String resetBody(String calories, String protein, String carbs, String fat) {
+    return 'Your custom targets will be removed, and your targets will go back to $calories kcal: protein $protein g, carbs $carbs g, fat $fat g.';
+  }
+
+  @override
   String get macrosAdjustedNote =>
       'Your custom calories are below the safe minimum, so we raised them to it and adjusted your protein, carbs and fat. For a lower intake, talk to a doctor or dietitian.';
 

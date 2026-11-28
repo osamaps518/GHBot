@@ -219,6 +219,17 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get backToRecommended => 'العودة إلى الموصى بها';
+
+  @override
+  String get resetTitle => 'العودة إلى الأهداف الموصى بها؟';
+
+  @override
+  String resetBody(String calories, String protein, String carbs, String fat) {
+    return 'ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى $calories سعرة: بروتين $protein غ، كربوهيدرات $carbs غ، دهون $fat غ.';
+  }
+
+  @override
   String get macrosAdjustedNote =>
       'سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.';
 

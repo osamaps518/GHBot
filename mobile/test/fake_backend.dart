@@ -186,6 +186,15 @@ class FakeBackend {
           'macros_adjusted': false,
         };
         return _json(targets);
+      case 'DELETE /me/targets/custom':
+        targets = {
+          ...targets,
+          ...targets['recommended']! as Map<String, Object?>,
+          'at_minimum': false,
+          'custom': false,
+          'macros_adjusted': false,
+        };
+        return _json(targets);
     }
     return _notFound();
   }

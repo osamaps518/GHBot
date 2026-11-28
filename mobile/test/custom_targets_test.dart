@@ -96,6 +96,65 @@ void main() {
     expect(find.text(english.raisedToMinimum), findsNothing);
   });
 
+  group('back to recommended', () {
+    /// Opens alice's custom targets, stored on the phone in [storage].
+    Future<FakeBackend> openCustom(
+      WidgetTester tester,
+      PhoneStorage storage,
+    ) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = customTargets;
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      await openTargets(tester);
+      return backend;
+    }
+
+    testWidgets('asks first, then the recommended targets show, offline too', (
+      tester,
+    ) async {
+      final storage = PhoneStorage();
+      final backend = await openCustom(tester, storage);
+
+      await _tapText(tester, english.backToRecommended);
+      expect(
+        find.text(english.resetBody('2210', '176', '266', '49')),
+        findsOne,
+      );
+      await _tapText(tester, english.cancel);
+      expect(backend.requestsTo('DELETE', '/me/targets/custom'), isEmpty);
+      expect(find.text(english.customBadge), findsOneWidget);
+
+      await _tapText(tester, english.backToRecommended);
+      await _tapText(tester, english.backToRecommended);
+      expect(backend.requestsTo('DELETE', '/me/targets/custom'), hasLength(1));
+      expect(find.text(english.customBadge), findsNothing);
+      expect(find.text('2210'), findsOneWidget);
+
+      backend.offline = true;
+      await restartApp(tester, backend, storage);
+      await openTargets(tester);
+      expect(find.text(english.customBadge), findsNothing);
+      expect(find.text('2210'), findsOneWidget);
+    });
+
+    testWidgets('offline, shows the connection error and keeps the custom '
+        'targets; Retry resets them', (tester) async {
+      final storage = PhoneStorage();
+      final backend = await openCustom(tester, storage);
+
+      backend.offline = true;
+      await _tapText(tester, english.backToRecommended);
+      await _tapText(tester, english.backToRecommended);
+      expect(find.text(english.errorConnection), findsOneWidget);
+      expect(find.text(english.customBadge), findsOneWidget);
+
+      backend.offline = false;
+      await _tapText(tester, english.retry);
+      expect(find.text(english.customBadge), findsNothing);
+    });
+  });
+
   group('the targets form', () {
     testWidgets('opens on the targets in effect, saves on the server, and '
         'the custom targets it sends back show offline too', (tester) async {

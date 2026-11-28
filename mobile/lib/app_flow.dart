@@ -175,6 +175,10 @@ class AppFlow extends ChangeNotifier {
   Future<void> saveCustomTargets(TargetValues values) =>
       _storeTargets(() => _targetsApi.putCustom(values));
 
+  /// Goes back to the recommended targets on the server, then stores and
+  /// shows them. Offline, it throws and stores nothing.
+  Future<void> resetCustomTargets() => _storeTargets(_targetsApi.resetCustom);
+
   /// Stores and shows the targets [request] answers, with the profile shown
   /// now, unless a newer refresh or save was shown meanwhile.
   Future<void> _storeTargets(Future<Targets> Function() request) async {

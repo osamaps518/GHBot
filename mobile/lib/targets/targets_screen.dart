@@ -1,53 +1,64 @@
 import 'package:flutter/material.dart';
 
+import '../core/api_failure.dart';
+import '../core/error_views.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
+import 'choice_dialog.dart';
 import 'targets.dart';
 
 /// The daily calorie and macro targets, opened from the diary. [onEdit]
-/// opens Edit my info, [onEditTargets] the targets form.
+/// opens Edit my info, [onEditTargets] the targets form, and [onReset]
+/// goes back from custom targets to the recommended ones.
+///
+/// The screen has its own snackbars, so a failed reset's Retry goes when it
+/// closes.
 class TargetsScreen extends StatelessWidget {
   const TargetsScreen({
     super.key,
     required this.targets,
     required this.onEdit,
     required this.onEditTargets,
+    required this.onReset,
   });
 
   final Targets targets;
   final VoidCallback onEdit;
   final VoidCallback onEditTargets;
+  final Future<void> Function() onReset;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.targetsTitle)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            _CaloriesHero(targets: targets, onEditTargets: onEditTargets),
-            const SizedBox(height: 12),
-            if (targets.atMinimum) ...[
-              _MinimumNote(macrosAdjusted: targets.macrosAdjusted),
+    return ScaffoldMessenger(
+      child: Scaffold(
+        appBar: AppBar(title: Text(AppLocalizations.of(context)!.targetsTitle)),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              _CaloriesHero(targets: targets, onEditTargets: onEditTargets),
               const SizedBox(height: 12),
-            ],
-            _MacroCards(targets),
-            const SizedBox(height: 12),
-            if (targets.custom) ...[
-              _CustomNote(recommendedCalories: targets.recommendedCalories),
+              if (targets.atMinimum) ...[
+                _MinimumNote(macrosAdjusted: targets.macrosAdjusted),
+                const SizedBox(height: 12),
+              ],
+              _MacroCards(targets),
               const SizedBox(height: 12),
+              if (targets.custom) ...[
+                _CustomNote(targets: targets, onReset: onReset),
+                const SizedBox(height: 12),
+              ],
+              _HowWeCalculated(targets: targets),
             ],
-            _HowWeCalculated(targets: targets),
-          ],
+          ),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: OutlinedButton(
-            onPressed: onEdit,
-            child: Text(AppLocalizations.of(context)!.editMyInfo),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: OutlinedButton(
+              onPressed: onEdit,
+              child: Text(AppLocalizations.of(context)!.editMyInfo),
+            ),
           ),
         ),
       ),
@@ -222,20 +233,83 @@ class _MacroCards extends StatelessWidget {
 }
 
 /// Says the trainee set these targets, which stay when the profile changes,
-/// and what the recommended calories are now.
-class _CustomNote extends StatelessWidget {
-  const _CustomNote({required this.recommendedCalories});
+/// and what the recommended calories are now, with the way back to them.
+class _CustomNote extends StatefulWidget {
+  const _CustomNote({required this.targets, required this.onReset});
 
-  final int recommendedCalories;
+  final Targets targets;
+  final Future<void> Function() onReset;
+
+  @override
+  State<_CustomNote> createState() => _CustomNoteState();
+}
+
+class _CustomNoteState extends State<_CustomNote> {
+  var _busy = false;
+
+  /// Asks first, then goes back to the recommended targets.
+  Future<void> _confirmReset() async {
+    final targets = widget.targets;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return ChoiceDialog(
+          title: l10n.resetTitle,
+          body: l10n.resetBody(
+            '${targets.recommendedCalories}',
+            '${targets.recommendedProteinG}',
+            '${targets.recommendedCarbsG}',
+            '${targets.recommendedFatG}',
+          ),
+          confirm: l10n.backToRecommended,
+          cancel: l10n.cancel,
+        );
+      },
+    );
+    if ((confirmed ?? false) && mounted) await _reset();
+  }
+
+  /// Resets on the server. Once it's done, this card goes with the custom
+  /// targets. Offline, nothing changes and Retry tries again without asking,
+  /// unless a refresh took the custom targets away meanwhile.
+  Future<void> _reset() async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    setState(() => _busy = true);
+    try {
+      await widget.onReset();
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        failure is ConnectionFailure
+            ? connectionSnackBar(l10n, onRetry: _reset)
+            : SnackBar(content: Text(l10n.errorGeneral)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Text(
-          AppLocalizations.of(context)!
-              .customTargetsNote('$recommendedCalories'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12,
+          children: [
+            Text(
+              l10n.customTargetsNote('${widget.targets.recommendedCalories}'),
+            ),
+            OutlinedButton(
+              onPressed: _busy ? null : _confirmReset,
+              child: Text(l10n.backToRecommended),
+            ),
+          ],
         ),
       ),
     );
