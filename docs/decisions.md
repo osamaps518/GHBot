@@ -761,8 +761,8 @@ server's checks before every save, so refusals are rare.
   doubling up to 5 min, back to 30 s after a run that succeeds. There is no
   Android background job and no connectivity package: trying the call is the
   test for being online. The runner's own writes also start the 2 s timer.
-  After all rows are sent this costs an empty query; after a run that sent
-  some rows and then failed, it can retry the rest early.
+  That costs one more run, so one more pull; after a run that sent some rows
+  and then failed, it can retry the rest early.
 - **Each entry is its own call**, in the order logged. A deleted entry is sent
   as `DELETE` even if it was never sent: its `PUT` may have arrived with the
   answer lost. A failed call stops the run.
