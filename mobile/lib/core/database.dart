@@ -257,6 +257,23 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
 
+  /// Moves an entry to [diaryDay] (`YYYY-MM-DD`), in the same meal. Only
+  /// its diary day changes. Like a change, it raises the revision and
+  /// clears a refusal, so the entry is sent again. Moving an entry to the
+  /// day it is on changes nothing.
+  Future<void> moveEntry(String entryId, String diaryDay) =>
+      (update(foodLogEntryTable)..where(
+            (row) =>
+                row.id.equals(entryId) & row.diaryDay.equals(diaryDay).not(),
+          ))
+          .write(
+            FoodLogEntryTableCompanion.custom(
+              diaryDay: Variable(diaryDay),
+              revision: foodLogEntryTable.revision + const Constant(1),
+              refused: const Constant(false),
+            ),
+          );
+
   /// The entries with a change the server hasn't confirmed, deleted ones
   /// too, in the order they were logged.
   Future<List<FoodLogEntry>> unsentEntries() =>

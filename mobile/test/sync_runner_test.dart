@@ -195,6 +195,24 @@ void main() {
     });
   }
 
+  test('a moved entry is sent with its new day and nothing else changed, '
+      'even after a refusal', () async {
+    final id = await logRice();
+    answerEntries(422, refusal);
+    await runner.run();
+    backend.intercept = null;
+
+    await database.moveEntry(id, '2026-11-21');
+    await runner.run();
+
+    expect(backend.entries[id], {
+      ..._rice150Json(id),
+      'diary_day': '2026-11-21',
+      'revision': 2,
+    });
+    expect(await database.unsentEntries(), isEmpty);
+  });
+
   for (final (failure, status, body) in [
     ('a server error', 500, {'detail': 'Internal Server Error'}),
     ('a sign-in failure', 401, {'detail': 'Not authenticated'}),
