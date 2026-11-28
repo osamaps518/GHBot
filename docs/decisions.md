@@ -724,6 +724,18 @@ has an index on `(user_id, updated_at)` so each pull need not scan other
 trainees' diaries. There is no pagination yet: 15 entries per day for three
 years is about 16,000 rows, a few MB on the occasional full reinstall pull.
 
+The food query of a pull has no index of its own. Asking for the caller's own
+foods as well as the used ones (#65) stops PostgreSQL from looking up the used
+foods by primary key, and `foods` has no index on `owner_id`, so each pull with
+a marker scans the whole table; the cost grows with every trainee's own foods,
+not the caller's. Measured on 2026-11-28 in a local database with 20,000
+catalog foods, 40,000 own foods (2,000 trainees × 20) and 3,000 entries for one
+trainee: 1.4 ms before #65 (a primary-key lookup), 8.1 ms after (a scan of
+60,020 rows). A partial index on `owner_id` with a `UNION` brought it only to
+3–5.6 ms, since the catalog rows are still read. Today the catalog is 240 rows
+with few trainees, under a millisecond, so the query stays as it is. Revisit at
+about 100,000 food rows, or when a pull takes over ~20 ms.
+
 The seed loader commits each CSV file in its own transaction, and a changed row
 takes the time of the write. Each file's transaction is far shorter than the
 30-second margin, so a row commits within the margin of its timestamp and no
