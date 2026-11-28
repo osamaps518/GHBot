@@ -66,10 +66,7 @@ def adjusted_custom(profile: ProfileSnapshot, custom: CustomTargets) -> dict[str
             "fat_g": custom.fat_g,
             "carbs_g": custom.carbs_g,
         }
-    weight = Decimal(str(profile.weight_kg))
-    height_m = Decimal(str(profile.height_cm)) / Decimal("100")
-    if weight / height_m**2 >= Decimal("30"):
-        weight = Decimal("25") * height_m**2
+    weight = _protein_weight(profile)
     protein = max(custom.protein_g, _whole(Decimal("1.6") * weight))
     fat = max(custom.fat_g, _whole(Decimal(minimum) * Decimal("0.2") / 9))
     available = minimum - 4 * protein - 9 * fat
@@ -176,6 +173,15 @@ def _nearest_ten(value: Decimal) -> int:
     return _whole(value / Decimal("10")) * 10
 
 
+def _protein_weight(profile: ProfileSnapshot) -> Decimal:
+    """Return the weight for protein: the weight at BMI 25 when BMI is 30 or more."""
+    weight = Decimal(str(profile.weight_kg))
+    height_m = Decimal(str(profile.height_cm)) / Decimal("100")
+    if weight / height_m**2 >= Decimal("30"):
+        return Decimal("25") * height_m**2
+    return weight
+
+
 def calculate_targets(
     profile: ProfileSnapshot,
 ) -> Targets:
@@ -193,11 +199,7 @@ def calculate_targets(
     at_minimum = proposed < minimum
     calories = _nearest_ten(max(proposed, minimum))
 
-    height_m = height / Decimal("100")
-    protein_weight = weight
-    if weight / height_m**2 >= Decimal("30"):
-        protein_weight = Decimal("25") * height_m**2
-    protein_g = _whole(Decimal("2.2") * protein_weight)
+    protein_g = _whole(Decimal("2.2") * _protein_weight(profile))
     fat_g = _whole(Decimal(calories) * Decimal("0.2") / Decimal("9"))
     carbs = Decimal(calories - protein_g * 4 - fat_g * 9) / Decimal("4")
     if carbs < 0:
