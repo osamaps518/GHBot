@@ -21,9 +21,10 @@ class FoodLogApi {
   /// may have arrived with the answer lost. Once the server confirms, the
   /// row leaves the phone.
   ///
-  /// The answer is the copy the server kept. When it is the revision sent,
-  /// the entry is marked sent. When it is another one, or deleted, the
-  /// phone takes it. Either way, only if the entry is still the revision
+  /// The answer is the copy the server kept: the phone takes it, marked
+  /// sent, or removes the row when it is deleted. It takes it even at the
+  /// revision sent, since another phone may have sent its own change at that
+  /// revision first. Either way, only if the entry is still the revision
   /// sent: a newer change waits for the next send.
   ///
   /// A 422 or 409 is the server refusing the row itself: the entry is
@@ -56,11 +57,7 @@ class FoodLogApi {
     if (kept.deleted) {
       await (database.delete(table)..where(unchanged)).go();
     } else {
-      await (database.update(table)..where(unchanged)).write(
-        kept.revision == entry.revision
-            ? FoodLogEntryTableCompanion(sentRevision: Value(kept.revision))
-            : kept.columns!,
-      );
+      await (database.update(table)..where(unchanged)).write(kept.columns!);
     }
   }
 

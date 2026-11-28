@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show DatabaseConnection;
+import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/auth/auth_session.dart';
@@ -603,6 +603,54 @@ void main() {
         expect(await database.select(database.pullMarkerTable).get(), isEmpty);
       },
     );
+
+    test("a phone whose change lost to another phone's at the same revision "
+        "takes the server's copy, and keeps it", () async {
+      // Two phones means two databases at once, which Drift warns about.
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      addTearDown(
+        () => driftRuntimeOptions.dontWarnAboutMultipleDatabases = false,
+      );
+      final id = await logRice();
+      await runner.run();
+      final otherSession = AuthSession(
+        ApiClient(client: backend.client, baseUrl: 'http://backend.test'),
+      );
+      await otherSession.signIn('alice');
+      final otherDatabase = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(otherDatabase.close);
+      final otherRunner = SyncRunner(
+        session: otherSession,
+        userId: userIdFor('alice'),
+        database: otherDatabase,
+      );
+      await otherRunner.run();
+
+      await database.changeGrams(id, 2000);
+      await otherDatabase.changeGrams(id, 2500);
+      await runner.run();
+      await otherRunner.run();
+
+      Future<void> expectServerCopy() async {
+        final entry = (await otherDatabase.watchDiaryDay('2026-11-23').first)
+            .single
+            .entry;
+        expect(entry.grams, 2000);
+        expect(entry.totals.calories, 2600);
+        expect(entry.revision, 2);
+        expect(entry.sentRevision, 2);
+        expect(await otherDatabase.unsentEntries(), isEmpty);
+      }
+
+      await expectServerCopy();
+      await otherRunner.run();
+      await expectServerCopy();
+    });
 
     testWidgets('the rows each pull brings again start no more runs', (
       tester,

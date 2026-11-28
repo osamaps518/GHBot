@@ -699,7 +699,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, and backup.
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, answers at the same revision, and backup.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -767,11 +767,13 @@ server's checks before every save, so refusals are rare.
   as `DELETE` even if it was never sent: its `PUT` may have arrived with the
   answer lost. A failed call stops the run.
 - **Answers** are stored in one update that checks the entry is still the
-  revision sent. The same revision marks it sent. Another revision, or a
-  deleted row, is the server's copy, and the phone takes it; a deleted row
-  leaves the phone. If the entry changed since it was sent, the answer is
-  dropped and the newer revision goes next. A server copy whose food isn't
-  on the phone stays hidden until the pull after the sends brings the food.
+  revision sent. The answer is the server's copy, and the phone takes it as
+  confirmed, even at the revision sent: once a pull puts an entry on two
+  phones, each can send its own change at the same revision, and the server
+  keeps the first. A deleted row leaves the phone. If the entry changed since
+  it was sent, the answer is dropped and the newer revision goes next. A
+  server copy whose food isn't on the phone stays hidden until the pull after
+  the sends brings the food.
 - **Refused** is a 422 or 409: the entry is marked and not sent again until the
   trainee changes or deletes it. A refused `DELETE` leaves the phone as a
   confirmed one does: its 409 means another user owns the ID, its 422 an ID
@@ -797,9 +799,10 @@ so a pull that is interrupted keeps the old marker and is simply repeated.
   deleted on the phone. A pulled deleted entry removes the row even then:
   deletes are final, so the change would only come back deleted.
 - **Repeated rows:** an entry the phone has at the same revision isn't written
-  again. The 30-second margin sends recent rows with every pull, and writing
-  them would start the 2 s timer, then another pull, until they left the
-  margin.
+  again. A confirmed copy at that revision already has the server's values,
+  since every answer stores them. The 30-second margin sends recent rows with
+  every pull, and writing them would start the 2 s timer, then another pull,
+  until they left the margin.
 
 **Backup.** `user_data/` stays out of Android backup and device transfer
 (decision 25). Pulling adds a reason: it puts a trainee's entries on every
