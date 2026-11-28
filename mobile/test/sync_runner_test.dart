@@ -535,6 +535,34 @@ void main() {
       expect(await database.select(database.foodLogEntryTable).get(), isEmpty);
     });
 
+    test("a pulled change replaces the phone's confirmed copy", () async {
+      final id = await logRice();
+      await runner.run();
+      backend.storeEntry('alice', {
+        ..._rice150Json(id),
+        'revision': 2,
+        'grams': 200.0,
+        'totals': {
+          'calories': 260.0,
+          'protein': 5.4,
+          'carbs': 56.4,
+          'fat': 0.6,
+        },
+      });
+
+      await runner.run();
+
+      final entry =
+          (await database.watchDiaryDay('2026-11-23').first).single.entry;
+      expect(entry.id, id);
+      expect(entry.grams, 2000);
+      expect(entry.totals.calories, 2600);
+      expect(entry.totals.protein, 54);
+      expect(entry.revision, 2);
+      expect(entry.sentRevision, 2);
+      expect(await database.unsentEntries(), isEmpty);
+    });
+
     test('a fixed catalog food replaces the copy on the phone; entries keep '
         'the values they were logged with', () async {
       await logRice();
