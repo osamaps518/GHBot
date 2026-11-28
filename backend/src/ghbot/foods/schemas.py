@@ -37,15 +37,11 @@ class OwnFoodBody(BaseModel):
 
     @model_validator(mode="after")
     def check_food(self) -> Self:
-        """Require a visible name and at most 100 g of combined macros."""
-        if not any(
-            name is not None and name.strip() for name in (self.name_ar, self.name_en)
-        ):
-            raise ValueError("At least one nonblank name is required")
-        if any(
-            name is not None and not name.strip()
-            for name in (self.name_ar, self.name_en)
-        ):
+        """Require a name, no blank names, and at most 100 g of combined macros (decision 38)."""
+        names = [name for name in (self.name_ar, self.name_en) if name is not None]
+        if not names:
+            raise ValueError("At least one name is required")
+        if any(not name.strip() for name in names):
             raise ValueError("Given names cannot contain only spaces")
         if self.protein + self.carbs + self.fat > 100:
             raise ValueError("Combined macros cannot exceed 100 g")
