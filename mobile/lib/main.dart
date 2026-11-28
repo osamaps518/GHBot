@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import 'app_flow.dart';
 import 'auth/auth_session.dart';
@@ -89,9 +90,13 @@ class _GhbotAppState extends State<GhbotApp> {
   /// The targets and Edit my info open on top, so the back button returns.
   final _navigator = GlobalKey<NavigatorState>();
 
+  /// Flutter's own dates, such as the date picker's, take Western digits in
+  /// Arabic too, like the rest of the app. Set before the first build, which
+  /// loads them.
   @override
   void initState() {
     super.initState();
+    DateFormat.useNativeDigitsByDefaultFor('ar', false);
     _flow.start();
   }
 

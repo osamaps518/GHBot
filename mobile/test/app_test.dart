@@ -70,6 +70,19 @@ void main() {
         expect(_direction(tester), direction);
       });
     }
+
+    testWidgets("Flutter's own dates, as in the date picker, use Western "
+        'digits in Arabic too', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('ar')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester);
+
+      final material = MaterialLocalizations.of(
+        tester.element(find.byType(SignInScreen)),
+      );
+      expect(material.formatMediumDate(DateTime(2026, 11, 25)), contains('25'));
+    });
   });
 
   group('theme', () {
