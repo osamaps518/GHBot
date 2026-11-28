@@ -106,7 +106,7 @@ async def save_custom(
     values: dict[str, int],
     today: date,
 ) -> CustomTargets:
-    """Save values and their history together.
+    """Save values and their history row in one transaction.
 
     Raises BelowMinimum under the profile's minimum, and MacrosMismatch when the
     macro energy is 100 kcal or more from the calories.
@@ -135,7 +135,8 @@ async def reset_custom(
 ) -> None:
     """Remove an existing custom row and record its former values once.
 
-    Without a custom row, nothing changes.
+    The removal and its history row are one transaction. Without a custom row,
+    nothing changes.
     """
     previous = (
         await session.scalars(
