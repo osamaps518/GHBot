@@ -438,6 +438,56 @@ void main() {
       expect(find.text(english.eatenOfTarget('109', '2210')), findsOneWidget);
     });
 
+    testWidgets('at 4:00, a diary showing today moves to the new today', (
+      tester,
+    ) async {
+      var now = DateTime(2026, 11, 28, 3, 59);
+      final database = await _pumpDiary(
+        tester,
+        firstDay: '2026-11-01',
+        clock: () => now,
+      );
+      await logLunch(database, riceJson, 1500, '2026-11-27');
+      await logLunch(database, oilJson, 123, '2026-11-28');
+      await tester.pumpAndSettle();
+      expect(find.text(_dateText('2026-11-27')), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+
+      now = DateTime(2026, 11, 28, 4);
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.today), findsOneWidget);
+      expect(find.text(_dateText('2026-11-28')), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('109', '2210')), findsOneWidget);
+      expect(enabled(tester, english.nextDay), isFalse);
+    });
+
+    testWidgets('at 4:00, a diary showing a past day stays on it, and names '
+        'it from the new today', (tester) async {
+      var now = DateTime(2026, 11, 28, 3, 59);
+      final database = await _pumpDiary(
+        tester,
+        firstDay: '2026-11-01',
+        clock: () => now,
+      );
+      await logLunch(database, riceJson, 1500, '2026-11-26');
+      await tapArrow(tester, english.previousDay);
+      expect(find.text(english.yesterday), findsOneWidget);
+
+      now = DateTime(2026, 11, 28, 4);
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text(english.yesterday), findsNothing);
+      expect(find.text(_dateText('2026-11-26')), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+      await tester.tap(find.text(english.backToToday));
+      await tester.pumpAndSettle();
+      expect(find.text(english.today), findsOneWidget);
+      expect(find.text(_dateText('2026-11-28')), findsOneWidget);
+    });
+
     testWidgets('food logged on a past day goes on that day', (tester) async {
       final database = await _pumpDiary(tester);
       await tapArrow(tester, english.previousDay);
