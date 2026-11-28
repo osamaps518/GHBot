@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +32,26 @@ String _daysAgo(int days) => addDays(_today(), -days);
 
 /// A day as the diary writes it, such as "Monday, November 23".
 String _dateText(String day) => diaryDateText(english, day);
+
+/// An in-memory database whose diary for a day in [held] answers only once
+/// that day's completer completes, as a slow first read would.
+class _SlowDayDatabase extends AppDatabase {
+  _SlowDayDatabase()
+    : super(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+
+  final held = <String, Completer<void>>{};
+
+  @override
+  Stream<List<LoggedFood>> watchDiaryDay(String diaryDay) async* {
+    await held[diaryDay]?.future;
+    yield* super.watchDiaryDay(diaryDay);
+  }
+}
 
 /// Opens the diary for a signed-in user with [exampleTargets], whose account
 /// was created on [firstDay] (30 days ago unless given), on a new in-memory
@@ -389,6 +411,29 @@ void main() {
       expect(find.text(english.today), findsOneWidget);
       expect(find.text(english.backToToday), findsNothing);
       expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+    });
+
+    testWidgets("a day whose entries haven't loaded yet shows none of the "
+        "day before's", (tester) async {
+      final database = _SlowDayDatabase();
+      addTearDown(database.close);
+      await _pumpDiary(tester, database: database);
+      await logLunch(database, riceJson, 1500, _today());
+      await logLunch(database, oilJson, 123, _daysAgo(1));
+      await tester.pumpAndSettle();
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsOneWidget);
+
+      final yesterday = database.held[_daysAgo(1)] = Completer();
+      await tester.tap(find.byTooltip(english.previousDay));
+      await tester.pump();
+
+      expect(find.text(english.yesterday), findsOneWidget);
+      expect(find.text(english.eatenOfTarget('195', '2210')), findsNothing);
+      expect(find.text('Cooked white rice'), findsNothing);
+
+      yesterday.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(english.eatenOfTarget('109', '2210')), findsOneWidget);
     });
 
     testWidgets('food logged on a past day goes on that day', (tester) async {

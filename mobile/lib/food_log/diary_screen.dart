@@ -179,6 +179,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
     ]);
   }
 
+  /// Until a day's entries load, the day shows as empty. The builder keeps
+  /// the last stream's entries while it waits for a new one, and they belong
+  /// to the day shown before.
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -187,7 +190,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
         child: StreamBuilder(
           stream: _entries,
           builder: (context, snapshot) {
-            final entries = snapshot.data ?? const [];
+            final entries = snapshot.connectionState == ConnectionState.waiting
+                ? const <LoggedFood>[]
+                : snapshot.data ?? const [];
             final meals = groupByMeal(entries, newMealNames: _newMealNames);
             final dayTotals = Nutrients.sum(
               entries.map((logged) => logged.entry.totals),
