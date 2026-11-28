@@ -59,10 +59,15 @@ def test_create_replace_and_stale_revision_return_stored_food(client, auth_heade
         url, headers=headers, json=own_food(revision=2, name_en="Hummus")
     )
     stale = client.put(url, headers=headers, json=own_food())
+    equal = client.put(
+        url, headers=headers, json=own_food(revision=2, name_en="Ignored")
+    )
     assert newer.status_code == 200
     assert newer.json()["name_en"] == "Hummus"
     assert stale.status_code == 200
     assert stale.json() == newer.json()
+    assert equal.status_code == 200
+    assert equal.json() == newer.json()
 
 
 def test_own_food_is_private_in_search_and_pull(client, auth_headers):
