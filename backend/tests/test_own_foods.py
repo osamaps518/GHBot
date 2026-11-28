@@ -102,10 +102,15 @@ def test_catalog_and_other_trainees_ids_cannot_be_replaced(
 ):
     owner, other = auth_headers(), auth_headers()
     own_id = str(uuid7())
-    catalog_id = catalog_food
     original = client.put(f"/me/foods/{own_id}", headers=owner, json=own_food()).json()
 
-    for food_id in (own_id, catalog_id):
+    def catalog_row():
+        found = client.get("/foods", headers=owner, params={"q": "طعام عام"}).json()
+        return next(row for row in found if row["id"] == catalog_food)
+
+    catalog_before = catalog_row()
+
+    for food_id in (own_id, catalog_food):
         refused = client.put(
             f"/me/foods/{food_id}", headers=other, json=own_food(revision=2)
         )
@@ -115,8 +120,8 @@ def test_catalog_and_other_trainees_ids_cannot_be_replaced(
         client.put(f"/me/foods/{own_id}", headers=owner, json=own_food()).json()
         == original
     )
-    catalog = client.get("/foods", headers=owner, params={"q": "طعام عام"}).json()
-    assert next(row for row in catalog if row["id"] == catalog_id)["own"] is False
+    assert catalog_row() == catalog_before
+    assert catalog_before["revision"] == 0
 
 
 @pytest.mark.parametrize(
