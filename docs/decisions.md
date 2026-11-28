@@ -850,27 +850,14 @@ tell the screens about every change, so it would only pass them along.
 
 **Status:** Accepted, 2026-11-25 (#61). Amended 2026-11-28 (#62): pulling.
 
-The runner is tested in `mobile/test/sync_runner_test.dart` against the
-stand-in server in `mobile/test/fake_backend.dart` and an in-memory Drift
-database. The stand-in answers the entry calls and the pull as decision 31
-says. Its markers count its own changes, and the last change before a marker
-comes again with the next pull, like the 30-second margin. It can go offline,
-lose an answer after handling the request, hold a `PUT` or a pull, or answer
-anything a test chooses. The tests cover a lost answer then a retry, offline
-then online, an edit during a send, a refusal, a delete before the first send,
-another user's sign-in during a run, one run at a time, the server keeping
-another copy, and the retry timer. For pulling, they cover the marker sent
-back, a send before each pull, a change or delete on the phone during a pull,
-a refused entry, a delete from the server, a fixed catalog food, an entry
-whose food the phone lacks, a lost pull answer, another user's sign-in during a
-pull, and the rows each pull repeats.
-`mobile/test/app_sync_test.dart` checks when the app starts a run: at start, on
-return to the foreground, and 2 s after a change; and that a reinstall brings
-the diary back.
+The runner is tested against a stand-in server and an in-memory Drift database,
+not the real backend. The stand-in answers the entry calls and the pull as
+decision 31 says, and it can fail at the moment a test needs: go offline, lose
+an answer after handling the request, hold a call, or answer anything a test
+chooses. Those failures are what sync must survive, and a real server can't be
+made to produce them on cue. The in-memory database runs the runner's real
+queries, with nothing to clean up between tests.
 
-- The timer test runs in fake time (`testWidgets`). It makes its stand-in and
-  sign-in inside the test: calls to the stand-in started outside fake time never
-  finish inside it.
 - We accept that the stand-in can drift from the real API. The backend tests
   (#60) check the same calls from the server's side.
 - No automated test drives the app on an emulator.
