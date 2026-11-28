@@ -58,7 +58,12 @@ def _sent_foods(
 async def search_foods(
     session: AsyncSession, user_id: UUID, query: str
 ) -> list[dict[str, object]]:
-    """Search visible foods using the same SQL cleaning as stored names."""
+    """Search visible foods using the same SQL cleaning as stored names.
+
+    A food's `search` text is its cleaned names joined with " | ", so a name
+    that begins with the query starts the text or follows " | ". Cleaning
+    leaves pipes unchanged.
+    """
     cleaned = await session.scalar(select(func.food_search_clean(query)))
     if not cleaned:
         return []

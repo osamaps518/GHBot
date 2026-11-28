@@ -617,9 +617,9 @@ remove Arabic diacritics, Latin accents and tatweel, normalize أ إ آ ٱ to ا
 ء. NFD splits hamza from some letters before marks are removed; this also
 turns ؤ into و. #57 did not test ؤ, and no test has shown that this hurts.
 One immutable SQL function cleans both stored names and typed text. A stored
-generated column joins the Arabic, English and other names using a separator
-that cannot occur inside a cleaned name. This keeps all write paths and old
-rows consistent without duplicate cleaning code in Python.
+generated column combines the cleaned Arabic, English and other names. This
+keeps all write paths and old rows consistent without duplicate cleaning code in
+Python.
 
 Meaning lives in the data: every catalog food has an Arabic name, so a user can
 find the same row through Arabic or English without translating the query.
