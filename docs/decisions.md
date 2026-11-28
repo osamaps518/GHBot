@@ -685,7 +685,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, answers at the same revision, and backup.
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, answers at the same revision, and backup. Amended 2026-11-28 (#65): own foods, server side.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -694,6 +694,18 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
+
+**Own foods (#65, server).** `PUT /me/foods/{id}` uses the same revision rule:
+a higher revision replaces an owned row; a lower or equal revision returns the
+stored row. The server sets `owner_id` from the token and `source` to `trainee`.
+An insert with a conflicting catalog or another trainee's ID returns 409. The
+ownership and revision checks are in the `INSERT … ON CONFLICT DO UPDATE`
+statement, so a concurrent writer cannot pass a separate read and overwrite
+someone else's row. A successful write takes `clock_timestamp()` as its
+`updated_at`, so it can be picked up by a later pull. Pulls include the caller's
+changed own foods even if no diary entry uses them, so a reinstall recovers
+foods created but never logged. Food answers carry `own`, `revision` and
+`barcode` for the phone's local copy.
 
 **Pulling (#62, server).** A pull returns the caller's diary rows changed since
 a marker, deleted ones too, and the changed foods they use; without a marker,
@@ -899,3 +911,21 @@ offline. Like a profile save (decision 24), saving and resetting need internet:
 offline, they show the no-connection error and change nothing. The form checks
 the ranges and the 100 kcal rule before sending, for quicker errors. The phone
 has no copy of the minimum: the server's refusal carries it.
+
+---
+
+## 38. Own food checks
+
+**Status:** Accepted, 2026-11-28 (#65).
+
+An own food needs at least one Arabic or English name. Each name given has 1 to
+80 characters, is not only spaces and contains no NUL. Its per-100 g calories
+are 0–900; protein, carbs and fat are each 0–100 g, with at most one decimal
+place. Their sum is at most 100 g. A barcode, when given, has 8 to 14 digits.
+The server and phone apply the same checks so an offline save can get quick
+feedback and a later send receives the same decision.
+
+Calories are not checked against the macros: food labels round their values,
+and fiber and alcohol can add calories the three macros do not show. The
+limits match the diary's per-100 g ranges (decision 30), rather than adding a
+second scale for the same kind of value.
