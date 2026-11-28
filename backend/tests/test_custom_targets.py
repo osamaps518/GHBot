@@ -10,6 +10,13 @@ from ghbot.profiles import utc_today
 from ghbot.targets.models import CustomTargets, TargetHistory
 
 
+@pytest.fixture
+def engine():
+    engine = create_engine(Settings().database_url.get_secret_value())
+    yield engine
+    engine.dispose()
+
+
 def save_profile(client, headers, *, sex="female", weight_kg=60, height_cm=165):
     return client.put(
         "/me/profile",
@@ -82,7 +89,7 @@ def test_save_rejects_minimum_and_macro_gap(app, client, auth_headers):
 
 
 def test_reset_restores_recommended_and_records_only_real_changes(
-    app, client, auth_headers
+    app, client, auth_headers, engine
 ):
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
     headers = auth_headers()
@@ -104,7 +111,7 @@ def test_reset_restores_recommended_and_records_only_real_changes(
     assert reset.json() == recommended
     assert client.delete("/me/targets/custom", headers=headers).json() == recommended
     user_id = UUID(client.get("/me", headers=headers).json()["id"])
-    with Session(create_engine(Settings().database_url.get_secret_value())) as session:
+    with Session(engine) as session:
         rows = session.scalars(
             select(TargetHistory)
             .where(TargetHistory.user_id == user_id)
@@ -140,12 +147,12 @@ def test_custom_targets_are_private_and_survive_profile_changes(
     )
 
 
-def test_read_raises_older_custom_targets_to_minimum(app, client, auth_headers):
+def test_read_raises_older_custom_targets_to_minimum(app, client, auth_headers, engine):
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
     headers = auth_headers()
     assert save_profile(client, headers, weight_kg=60).status_code == 201
     user_id = UUID(client.get("/me", headers=headers).json()["id"])
-    with Session(create_engine(Settings().database_url.get_secret_value())) as session:
+    with Session(engine) as session:
         session.add(
             CustomTargets(
                 user_id=user_id, calories=1100, protein_g=85, fat_g=24, carbs_g=136
@@ -165,12 +172,12 @@ def test_read_raises_older_custom_targets_to_minimum(app, client, auth_headers):
     assert response.json()["at_minimum"] is True
 
 
-def test_read_rounds_filled_carbs_half_up(app, client, auth_headers):
+def test_read_rounds_filled_carbs_half_up(app, client, auth_headers, engine):
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
     headers = auth_headers()
     assert save_profile(client, headers, weight_kg=60).status_code == 201
     user_id = UUID(client.get("/me", headers=headers).json()["id"])
-    with Session(create_engine(Settings().database_url.get_secret_value())) as session:
+    with Session(engine) as session:
         session.add(
             CustomTargets(
                 user_id=user_id, calories=1100, protein_g=85, fat_g=29, carbs_g=125
@@ -187,7 +194,7 @@ def test_read_rounds_filled_carbs_half_up(app, client, auth_headers):
 
 
 def test_read_uses_bmi_25_weight_and_reduces_carbs_when_needed(
-    app, client, auth_headers
+    app, client, auth_headers, engine
 ):
     app.dependency_overrides[utc_today] = lambda: date(2026, 11, 28)
     headers = auth_headers()
@@ -198,7 +205,7 @@ def test_read_uses_bmi_25_weight_and_reduces_carbs_when_needed(
         == 201
     )
     user_id = UUID(client.get("/me", headers=headers).json()["id"])
-    with Session(create_engine(Settings().database_url.get_secret_value())) as session:
+    with Session(engine) as session:
         session.add(
             CustomTargets(
                 user_id=user_id, calories=1400, protein_g=100, fat_g=30, carbs_g=183
