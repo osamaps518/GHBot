@@ -48,8 +48,9 @@ class SyncRunner {
   AppLifecycleListener? _lifecycle;
 
   /// Runs now, then whenever the app returns to the foreground, and 2 s
-  /// after the last local change to the diary, until [close]. There is no
-  /// background job: the app runs it only while open.
+  /// after the last local change to the diary, its own writes included,
+  /// until [close]. There is no background job: the app runs it only while
+  /// open.
   void start() {
     _localChanges = _database
         .tableUpdates(TableUpdateQuery.onTable(_database.foodLogEntryTable))

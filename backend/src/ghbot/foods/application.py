@@ -22,7 +22,7 @@ async def changed_foods(
 
     These are the foods it uses that changed since the marker, and the foods
     in `pulled`, those of the entries the pull returns, changed or not: the
-    phone may not have them.
+    phone may not have them. They are ordered by ID.
     """
     statement = _sent_foods(user_id).where(Food.id.in_(used)).order_by(Food.id)
     if since is not None:

@@ -694,16 +694,10 @@ answer carries the stored row so the phone learns when its copy was not kept;
 otherwise it could mark an ignored entry as sent.
 
 The server checks totals against the entry's own per-100 g values (decision 21).
-`food_log` uses `foods` to check that a logged food is visible to the trainee
-and to get changed foods for a pull, passing its used-food IDs query to `foods`.
-It does not use `targets`.
 
-**Pulling (#62, server).** `GET /me/food-log/changes` returns the caller's diary
-rows, including deleted rows, and the changed foods used by those rows. Without
-`since`, it returns all of them. With a time-zone-aware ISO timestamp, it returns
-entries and foods whose `updated_at` is at or after that timestamp. Entries are
-ordered by update time and ID; foods are unique and ordered by ID. The foods
-query uses `visible_foods`, so another trainee's own foods cannot appear.
+**Pulling (#62, server).** A pull returns the caller's diary rows changed since
+a marker, deleted ones too, and the changed foods they use; without a marker,
+all of them.
 
 It also returns the foods of the entries it returns, changed or not. An entry
 that changed on the server can use a food that didn't, one the phone may not
@@ -711,83 +705,58 @@ have, and the diary hides an entry without its food. We rejected a call for
 foods by ID, a second request per pull, and a full pull whenever a food is
 missing.
 
-The server takes `next_marker` from the database's `clock_timestamp()` minus
-30 seconds before reading the changes. The phone sends this marker back exactly
-as text. The overlap lets a later pull catch writes that commit after the read
-but began inside the margin; repeated rows replace by ID. The entry query has
-an index on `(user_id, updated_at)` so each pull need not scan other trainees'
-diaries. There is no pagination yet: 15 entries per day for three years is about
-16,000 rows, a few MB on the occasional full reinstall pull.
+The next marker is the database's time minus 30 seconds, taken before reading
+the changes. The overlap lets a later pull catch writes that commit after the
+read but began inside the margin; repeated rows replace by ID. The entry query
+has an index on `(user_id, updated_at)` so each pull need not scan other
+trainees' diaries. There is no pagination yet: 15 entries per day for three
+years is about 16,000 rows, a few MB on the occasional full reinstall pull.
 
-The seed loader validates all files first and commits each CSV file in its own
-transaction. Changed rows use `clock_timestamp()`, the time of the write, and
-each file's transaction is far shorter than the 30-second margin, so a row
-commits within the margin of its timestamp and no marker can pass it unseen.
-A real load of the 239-row `open_food_facts.csv` into a local database took
-**0.140 seconds** on 2026-11-24, measured inside the loader call
-with `time.perf_counter()`; this is one local run, not a throughput guarantee.
+The seed loader commits each CSV file in its own transaction, and a changed row
+takes the time of the write. Each file's transaction is far shorter than the
+30-second margin, so a row commits within the margin of its timestamp and no
+marker can pass it unseen. A real load of the 239-row `open_food_facts.csv`
+into a local database took **0.140 seconds** on 2026-11-24, measured inside the
+loader call with `time.perf_counter()`; this is one local run, not a throughput
+guarantee.
 
-**Sending (#61, phone).** Each entry on the phone has a revision (1 when
-logged, plus 1 on every change and on delete), the last revision the server
-confirmed, and two marks: deleted and refused. An entry is unsent when its
-revision is above the confirmed one and it isn't refused. The phone runs the
-server's checks before every save, so refusals are rare.
+**Sending (#61, phone).** Each entry on the phone keeps its revision and the
+last revision the server confirmed; an entry with a newer revision is unsent.
+One runner for each user and their database sends the unsent entries, each in
+its own call, then pulls, one run at a time. It stops when another user signs
+in, so one user's rows never go out with another's sign-in.
 
-- **One runner** in `mobile/lib/core/sync_runner.dart`, made for one user ID and
-  their database. Before each call it checks that the session's user is still
-  that one, and stops if not, so one user's rows never go out with another's
-  sign-in. The session doesn't retry a 401 once another user has signed in,
-  and a new sign-in changes the session's name, ID and token only together,
-  after `GET /me`. The calls and the handling of answers are in
-  `food_log/food_log_api.dart`. One run at a time; asking during a run queues
-  one more. `AppFlow` starts the runner when it opens the user's database and
-  stops it before closing the database.
-- **When it runs:** at start, when the app returns to the foreground, 2 s after
-  the last write to the entries table, and after a failed run on a timer: 30 s,
-  doubling up to 5 min, back to 30 s after a run that succeeds. There is no
-  Android background job and no connectivity package: trying the call is the
-  test for being online. The runner's own writes also start the 2 s timer.
-  That costs one more run, so one more pull; after a run that sent some rows
-  and then failed, it can retry the rest early.
-- **Each entry is its own call**, in the order logged. A deleted entry is sent
-  as `DELETE` even if it was never sent: its `PUT` may have arrived with the
-  answer lost. A failed call stops the run.
-- **Answers** are stored in one update that checks the entry is still the
-  revision sent. The answer is the server's copy, and the phone takes it as
-  confirmed, even at the revision sent: once a pull puts an entry on two
-  phones, each can send its own change at the same revision, and the server
-  keeps the first. A deleted row leaves the phone. If the entry changed since
-  it was sent, the answer is dropped and the newer revision goes next. A
-  server copy whose food isn't on the phone stays hidden until the pull after
-  the sends brings the food.
-- **Refused** is a 422 or 409: the entry is marked and not sent again until the
-  trainee changes or deletes it. A refused `DELETE` leaves the phone as a
-  confirmed one does: its 409 means another user owns the ID, its 422 an ID
-  the phone never sends, and the trainee can't fix either. Connection
-  failures, 5xx, a 401 after the session's own retry, and unexpected answers
-  are retried.
+- **When it runs:** at start, when the app returns to the foreground, shortly
+  after a write to the diary, and after a failed run on a timer that backs off.
+  There is no Android background job and no connectivity package: trying the
+  call is the test for being online. The runner's own writes also count as
+  writes to the diary. That costs one more run, so one more pull; after a run
+  that sent some rows and then failed, it can retry the rest early.
+- **Deletes:** a deleted entry is sent as `DELETE` even if it was never sent:
+  its `PUT` may have arrived with the answer lost.
+- **Answers:** the phone takes the server's copy as confirmed, even at the
+  revision sent: once a pull puts an entry on two phones, each can send its own
+  change at the same revision, and the server keeps the first.
+- **Refused** entries, a 422 or 409, wait until the trainee changes or deletes
+  them. The phone runs the server's checks before every save, so refusals are
+  rare. A refused `DELETE` leaves the phone as a confirmed one does: its 409
+  means another user owns the ID, its 422 an ID the phone never sends, and the
+  trainee can't fix either.
 
-**Pulling (#62, phone).** Each run sends, then pulls; after a failed send the
-pull waits for the next run. Like a send, the pull stops if the session's user
-changed, checked before the call and again before storing. The phone keeps the
-last marker in a one-row table and sends it back as text, in a query built with
-`Uri` (a raw `+` would arrive as a space). With no marker, a new install or a
-new database, it asks for everything: that is how a reinstall gets the diary
-back. The foods, the entries and the new marker are stored in one transaction,
-so a pull that is interrupted keeps the old marker and is simply repeated.
+**Pulling (#62, phone).** With no marker, a new install or a new database, the
+phone asks for everything: that is how a reinstall gets the diary back.
 
-- **Foods** are stored first, as search stores them, so a fixed catalog food
-  replaces the phone's copy. Entries keep the values they were logged with
-  (decision 21).
-- **A pulled entry** replaces the phone's copy, as confirmed, unless the
-  phone's has a change the server hasn't confirmed, refused or not. That keeps
-  the trainee's edits and pending deletes: a pull never brings back an entry
-  deleted on the phone. A pulled deleted entry removes the row even then:
-  deletes are final, so the change would only come back deleted.
+- **Foods:** a fixed catalog food replaces the phone's copy. Entries keep the
+  values they were logged with (decision 21).
+- **A pulled entry** replaces the phone's copy, unless the phone's has a change
+  the server hasn't confirmed, refused or not. That keeps the trainee's edits
+  and pending deletes: a pull never brings back an entry deleted on the phone.
+  A pulled deleted entry removes the row even then: deletes are final, so the
+  change would only come back deleted.
 - **Repeated rows:** an entry the phone has at the same revision isn't written
   again. A confirmed copy at that revision already has the server's values,
   since every answer stores them. The 30-second margin sends recent rows with
-  every pull, and writing them would start the 2 s timer, then another pull,
+  every pull, and writing them would start another run, then another pull,
   until they left the margin.
 
 **Backup.** `user_data/` stays out of Android backup and device transfer
