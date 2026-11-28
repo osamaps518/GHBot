@@ -11,6 +11,7 @@ For wiring the app (main.py):
     router:
         GET /foods?q=: up to 20 catalog and own foods whose Arabic or English
             name matches q, own foods first.
+        PUT /me/foods/{id}: create or replace the caller's own food.
 """
 
 from ghbot.foods.application import changed_foods, visible_foods

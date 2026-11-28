@@ -79,6 +79,9 @@ def test_full_pull_returns_owned_entries_and_used_food(client, auth_headers, foo
             "protein": 2.7,
             "carbs": 28.2,
             "fat": 0.3,
+            "barcode": None,
+            "own": False,
+            "revision": 0,
         }
     ]
     assert response.json()["next_marker"].endswith("Z")
