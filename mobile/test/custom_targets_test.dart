@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -345,6 +346,66 @@ void main() {
 
       expect(find.text(english.errorBelowMinimum('1500')), findsOneWidget);
       expect(find.text(english.customBadge), findsNothing);
+    });
+  });
+
+  group('a refresh that started earlier does not replace', () {
+    testWidgets('a custom save', (tester) async {
+      final backend = FakeBackend()..profile = savedProfile();
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      final refreshReply = Completer<void>();
+      backend.holdNextTargets = refreshReply;
+      await restartApp(tester, backend, storage);
+
+      await _openForm(tester);
+      await _typeTargets(
+        tester,
+        calories: '2400',
+        protein: '160',
+        carbs: '296',
+        fat: '64',
+      );
+      await _tapText(tester, english.save);
+      expect(find.text(english.customBadge), findsOneWidget);
+
+      refreshReply.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(english.customBadge), findsOneWidget);
+      expect(find.text('2400'), findsOneWidget);
+
+      backend.offline = true;
+      await restartApp(tester, backend, storage);
+      await openTargets(tester);
+      expect(find.text(english.customBadge), findsOneWidget);
+      expect(find.text('2400'), findsOneWidget);
+    });
+
+    testWidgets('a reset', (tester) async {
+      final backend = FakeBackend()
+        ..profile = savedProfile()
+        ..targets = customTargets;
+      final storage = PhoneStorage();
+      await pumpApp(tester, backend, storedName: 'alice', storage: storage);
+      final refreshReply = Completer<void>();
+      backend.holdNextTargets = refreshReply;
+      await restartApp(tester, backend, storage);
+
+      await openTargets(tester);
+      await _tapText(tester, english.backToRecommended);
+      await _tapText(tester, english.backToRecommended);
+      expect(find.text(english.customBadge), findsNothing);
+
+      refreshReply.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(english.customBadge), findsNothing);
+      expect(find.text('2210'), findsOneWidget);
+
+      backend.offline = true;
+      await restartApp(tester, backend, storage);
+      await openTargets(tester);
+      expect(find.text(english.customBadge), findsNothing);
+      expect(find.text('2210'), findsOneWidget);
     });
   });
 }
