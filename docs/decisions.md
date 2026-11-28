@@ -181,9 +181,7 @@ The earlier Arabic fallback was considered, but it would show Arabic when the ph
 **Status:** Superseded, 2026-10-26 by 14 for the age limit; other choices remain accepted.
 
 Store each user's onboarding profile in a separate `profiles` table keyed by their
-user ID. A missing row means onboarding has not been completed. `PUT /me/profile`
-creates or fully replaces that row; `GET /me/profile` reads it for the signed-in
-user only.
+user ID. A missing row means onboarding has not been completed.
 
 The API and database use English text codes for sex, activity level, and goal;
 the app translates their labels. Height and weight are stored in metric units as
