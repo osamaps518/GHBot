@@ -20,9 +20,10 @@ The server sets a new food's owner and `trainee` source from the caller, never
 from the request. A write checks ownership and revision in one database
 statement; catalog and other trainees' IDs return 409 without a change
 (`test_own_food_is_private_in_search_and_pull`,
-`test_catalog_and_other_trainees_ids_cannot_be_replaced`). A pull includes only
-the caller's own foods, even when they have no diary entry
-(`test_changed_own_food_is_pulled_without_an_entry`).
+`test_catalog_and_other_trainees_ids_cannot_be_replaced`). A pull includes the
+caller's own foods even when no entry uses them, and never another trainee's
+(`test_changed_own_food_is_pulled_without_an_entry`,
+`test_pull_never_returns_other_trainees_own_foods`).
 
 Diary entries are private to each trainee. The owner comes from the token, and
 the ownership check and write are one database statement, so another trainee
