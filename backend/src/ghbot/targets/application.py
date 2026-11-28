@@ -12,7 +12,7 @@ that, the app warns that the estimate may be less accurate.
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TypedDict
 
-from ghbot.profiles import Goal, ProfileSnapshot
+from ghbot.profiles import Goal, ProfileSnapshot, Sex
 
 
 class Targets(TypedDict):
@@ -43,6 +43,11 @@ GOAL_FACTORS = {
 }
 
 
+def calorie_minimum(sex: Sex) -> int:
+    """Return the agreed daily calorie floor for this profile."""
+    return 1500 if sex == "male" else 1200
+
+
 def _whole(value: Decimal) -> int:
     return int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
@@ -64,7 +69,7 @@ def calculate_targets(
     )
     maintenance = bmr * ACTIVITY_FACTORS[profile.activity_level]
     proposed = maintenance * GOAL_FACTORS[profile.goal]
-    minimum = Decimal("1500") if profile.sex == "male" else Decimal("1200")
+    minimum = Decimal(calorie_minimum(profile.sex))
     at_minimum = proposed < minimum
     calories = _nearest_ten(max(proposed, minimum))
 
