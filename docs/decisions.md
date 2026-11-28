@@ -897,9 +897,12 @@ If an older custom row is below today's minimum, the read raises calories to
 the minimum, then raises protein to 1.6 g/kg and fat to 20% of calories. It
 fills remaining calories in order: carbs to 65%, protein to 2.2 g/kg, fat to
 35%. If the first raises need more than the calorie increase, carbs fall no
-lower than zero. At BMI 30 or higher, the protein limits use weight at BMI 25.
-The response marks adjusted macros and keeps the recommended values alongside
-the effective values.
+lower than zero. Carbs also come down whenever the macros add up to more than
+the raised calories, even when protein and fat needed no raise. That only
+happens inside the 99 kcal gap a save allows, and it keeps the macros matching
+the calories shown. At BMI 30 or higher, the protein limits use weight at BMI
+25. The response marks adjusted macros and keeps the recommended values
+alongside the effective values.
 
 The phone caches the effective targets with `custom`, `macros_adjusted` and the
 recommended values (schema version 4), so custom targets show offline. Like a
