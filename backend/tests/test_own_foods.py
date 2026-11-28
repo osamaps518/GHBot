@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import uuid7
 
 import pytest
@@ -165,7 +166,7 @@ def test_english_only_food_accepts_range_edges_without_calorie_macro_rule(
     assert response.json()["barcode"] == "12345678901234"
 
 
-def test_changed_own_food_is_pulled_without_an_entry(client, auth_headers):
+def test_own_food_is_pulled_without_an_entry_only_when_changed(client, auth_headers):
     headers = auth_headers()
     food_id = str(uuid7())
     marker = client.get("/me/food-log/changes", headers=headers).json()["next_marker"]
@@ -175,6 +176,21 @@ def test_changed_own_food_is_pulled_without_an_entry(client, auth_headers):
         "/me/food-log/changes", headers=headers, params={"since": marker}
     )
     assert [row["id"] for row in changed.json()["foods"]] == [food_id]
+
+    now = datetime.now(UTC)
+    engine = create_engine(Settings().database_url.get_secret_value())
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE foods SET updated_at = :old WHERE id = :id"),
+            {"old": now - timedelta(minutes=10), "id": food_id},
+        )
+    engine.dispose()
+    unchanged = client.get(
+        "/me/food-log/changes",
+        headers=headers,
+        params={"since": (now - timedelta(minutes=5)).isoformat()},
+    )
+    assert unchanged.json()["foods"] == []
 
 
 def test_entry_cannot_use_another_trainees_new_food(client, auth_headers):

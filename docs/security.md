@@ -22,7 +22,7 @@ statement; catalog and other trainees' IDs return 409 without a change
 (`test_own_food_is_private_in_search_and_pull`,
 `test_catalog_and_other_trainees_ids_cannot_be_replaced`). A pull includes the
 caller's own foods even when no entry uses them, and never another trainee's
-(`test_changed_own_food_is_pulled_without_an_entry`,
+(`test_own_food_is_pulled_without_an_entry_only_when_changed`,
 `test_pull_never_returns_other_trainees_own_foods`).
 
 Diary entries are private to each trainee. The owner comes from the token, and
