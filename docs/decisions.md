@@ -699,7 +699,7 @@ A food stored with protein 2.75 and fat 0.15 is sent by the API as 2.8 and 0.2.
 
 ## 31. Sync calls
 
-**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side.
+**Status:** Accepted, 2026-11-22 (#60). Amended 2026-11-24 (#62): pulling, server side. Amended 2026-11-25 (#61): sending, phone side. Amended 2026-11-28 (#62): pulling, phone side, and backup.
 
 The phone makes each diary row's ID, so repeating a call is harmless. A higher
 revision replaces an active row; a lower or equal one leaves it unchanged.
@@ -772,6 +772,35 @@ server's checks before every save, so refusals are rare.
   the phone never sends, and the trainee can't fix either. Connection
   failures, 5xx, a 401 after the session's own retry, and unexpected answers
   are retried.
+
+**Pulling (#62, phone).** Each run sends, then pulls; after a failed send the
+pull waits for the next run. Like a send, the pull stops if the session's user
+changed, checked before the call and again before storing. The phone keeps the
+last marker in a one-row table and sends it back as text, in a query built with
+`Uri` (a raw `+` would arrive as a space). With no marker, a new install or a
+new database, it asks for everything: that is how a reinstall gets the diary
+back. The foods, the entries and the new marker are stored in one transaction,
+so a pull that is interrupted keeps the old marker and is simply repeated.
+
+- **Foods** are stored first, as search stores them, so a fixed catalog food
+  replaces the phone's copy. Entries keep the values they were logged with
+  (decision 21).
+- **A pulled entry** replaces the phone's copy, as confirmed, unless the
+  phone's has a change the server hasn't confirmed, refused or not. That keeps
+  the trainee's edits and pending deletes: a pull never brings back an entry
+  deleted on the phone. A pulled deleted entry removes the row even then:
+  deletes are final, so the change would only come back deleted.
+- **Repeated rows:** an entry the phone has at the same revision isn't written
+  again. The 30-second margin sends recent rows with every pull, and writing
+  them would start the 2 s timer, then another pull, until they left the
+  margin.
+
+**Backup.** `user_data/` stays out of Android backup and device transfer
+(decision 25). Pulling adds a reason: it puts a trainee's entries on every
+phone they sign in on, so a revision no longer orders changes across copies. A
+restored copy's old unsent change can carry a higher revision than a newer
+change made on another phone, and would replace it. Signing in again brings
+the diary back without a backup.
 
 Rejected: a queue of every change on the phone, which needs a second table and
 more code for one device per user; PowerSync self-hosted, which adds a service,
@@ -858,18 +887,24 @@ tell the screens about every change, so it would only pass them along.
 
 ## 36. How sync is tested
 
-**Status:** Accepted, 2026-11-25 (#61).
+**Status:** Accepted, 2026-11-25 (#61). Amended 2026-11-28 (#62): pulling.
 
 The runner is tested in `mobile/test/sync_runner_test.dart` against the
 stand-in server in `mobile/test/fake_backend.dart` and an in-memory Drift
-database. The stand-in answers the entry calls as decision 31 says, and can go
-offline, lose an answer after handling the request, hold a `PUT`, or answer
+database. The stand-in answers the entry calls and the pull as decision 31
+says. Its markers count its own changes, and the last change before a marker
+comes again with the next pull, like the 30-second margin. It can go offline,
+lose an answer after handling the request, hold a `PUT` or a pull, or answer
 anything a test chooses. The tests cover a lost answer then a retry, offline
 then online, an edit during a send, a refusal, a delete before the first send,
 another user's sign-in during a run, one run at a time, the server keeping
-another copy, and the retry timer. `mobile/test/app_sync_test.dart` checks when
-the app starts a run: at start, on return to the foreground, and 2 s after a
-change.
+another copy, and the retry timer. For pulling, they cover the marker sent
+back, a send before each pull, a change or delete on the phone during a pull,
+a refused entry, a delete from the server, a fixed catalog food, a lost pull
+answer, another user's sign-in during a pull, and the rows each pull repeats.
+`mobile/test/app_sync_test.dart` checks when the app starts a run: at start, on
+return to the foreground, and 2 s after a change; and that a reinstall brings
+the diary back.
 
 - The timer test runs in fake time (`testWidgets`). It makes its stand-in and
   sign-in inside the test: calls to the stand-in started outside fake time never
