@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -15,11 +16,17 @@ async def changed_foods(
     user_id: UUID,
     since: datetime | None,
     used: Select[tuple[UUID | None]],
+    pulled: Collection[UUID],
 ) -> list[dict[str, object]]:
-    """Return distinct visible changed foods used by this trainee's diary."""
+    """Return distinct visible foods for a pull of this trainee's diary.
+
+    These are the foods it uses that changed since the marker, and the foods
+    in `pulled`, those of the entries the pull returns, changed or not: the
+    phone may not have them.
+    """
     statement = _sent_foods(user_id).where(Food.id.in_(used)).order_by(Food.id)
     if since is not None:
-        statement = statement.where(Food.updated_at >= since)
+        statement = statement.where(or_(Food.updated_at >= since, Food.id.in_(pulled)))
     return [dict(row) for row in (await session.execute(statement)).mappings().all()]
 
 

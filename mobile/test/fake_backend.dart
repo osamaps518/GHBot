@@ -59,8 +59,9 @@ const oilJson = {
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, targets and
-/// custom targets, food search, and diary entries. Custom targets are saved
-/// as sent: tests that need a refusal answer it with [intercept].
+/// custom targets, food search, and diary entries and their pull. Custom
+/// targets are saved as sent: tests that need a refusal answer it with
+/// [intercept].
 class FakeBackend {
   /// The saved profile, as the backend's JSON. Null until one is saved.
   Map<String, Object?>? profile;
@@ -91,6 +92,9 @@ class FakeBackend {
   /// or English name contains the query, ignoring case.
   List<Map<String, Object?>> foods = [riceJson, oilJson];
 
+  /// While set, a pull waits for it before answering what it read.
+  Completer<void>? holdPull;
+
   /// Holds the answer to a search for a query until its completer completes.
   final holdSearches = <String, Completer<void>>{};
 
@@ -99,6 +103,16 @@ class FakeBackend {
   /// here belongs to whoever sends it first.
   final entries = <String, Map<String, Object?>>{};
   final _entryOwners = <String, String>{};
+
+  /// The server's clock for pulls: each change to an entry or a food takes
+  /// the next tick. Rows a test put in [entries] or [foods] directly are at
+  /// tick 0. A marker names the tick it was given at, and a pull returns
+  /// the rows changed at or after it, so, like the server's 30-second
+  /// margin, the last change before a marker comes again with the next pull.
+  var _clock = 0;
+  final _entryTicks = <String, int>{};
+  final _foodTicks = <String, int>{};
+  final _markers = <String, int>{};
 
   /// The subject each valid token was issued for.
   final _validTokens = <String, String>{};
@@ -109,6 +123,24 @@ class FakeBackend {
     if (loseAnswers) throw http.ClientException('Connection reset');
     return response;
   });
+
+  /// Stores [entry] as [subject]'s, as if they sent it from another phone.
+  void storeEntry(String subject, Map<String, Object?> entry) {
+    final id = entry['id']! as String;
+    entries[id] = entry;
+    _entryOwners[id] = subject;
+    _entryTicks[id] = ++_clock;
+  }
+
+  /// Replaces the catalog food with [food]'s ID, as when the catalog is
+  /// fixed.
+  void changeFood(Map<String, Object?> food) {
+    foods = [
+      for (final old in foods)
+        if (old['id'] == food['id']) food else old,
+    ];
+    _foodTicks[food['id']! as String] = ++_clock;
+  }
 
   /// Makes every token issued so far invalid, as when they expire. Tokens last
   /// 15 minutes; the app may stay open longer.
@@ -148,6 +180,8 @@ class FakeBackend {
     switch (route) {
       case 'GET /me':
         return _json({'id': userIdFor(subject)});
+      case 'GET /me/food-log/changes':
+        return _changes(request, subject);
       case 'GET /me/profile':
         final saved = profile;
         return saved == null ? _notFound() : _json(saved);
@@ -210,6 +244,7 @@ class FakeBackend {
       return _json({'detail': 'Entry belongs to another user'}, 409);
     }
     if (request.method == 'DELETE') {
+      if (stored?['deleted'] != true) _entryTicks[id] = ++_clock;
       return _json(
         entries[id] = stored == null
             ? {
@@ -238,7 +273,54 @@ class FakeBackend {
       return _json(stored);
     }
     entries[id] = {'id': id, 'deleted': false, ...sent};
+    _entryTicks[id] = ++_clock;
     return _json(entries[id], stored == null ? 201 : 200);
+  }
+
+  /// Answers `GET /me/food-log/changes` as the server does
+  /// (docs/decisions.md, 31): the subject's entries changed at or after the
+  /// marker, deleted ones too, the changed foods they use, the foods of
+  /// the entries it answers, changed or not, and the next marker. The marker has a `+`, as the server's can. Without one, it
+  /// answers everything; a marker it didn't give gets 422.
+  Future<http.Response> _changes(http.Request request, String subject) async {
+    final since = request.url.queryParameters['since'];
+    final from = since == null ? 0 : _markers[since];
+    if (from == null) {
+      return _json({
+        'detail': [
+          {'type': 'datetime_from_date_parsing'},
+        ],
+      }, 422);
+    }
+    final marker = DateTime.utc(2026, 11, 28)
+        .add(Duration(seconds: _clock))
+        .toIso8601String()
+        .replaceFirst('Z', '+00:00');
+    _markers[marker] = _clock;
+    final owned = [
+      for (final id in entries.keys)
+        if (_entryOwners[id] == subject) id,
+    ];
+    int tick(String id) => _entryTicks[id] ?? 0;
+    final changed = [
+      for (final id in owned)
+        if (tick(id) >= from) id,
+    ]..sort((a, b) => tick(a) != tick(b) ? tick(a) - tick(b) : a.compareTo(b));
+    final used = {for (final id in owned) entries[id]!['food_id']};
+    final pulled = {for (final id in changed) entries[id]!['food_id']};
+    final body = {
+      'entries': [for (final id in changed) entries[id]],
+      'foods': [
+        for (final food in foods)
+          if (pulled.contains(food['id']) ||
+              (used.contains(food['id']) &&
+                  (_foodTicks[food['id']] ?? 0) >= from))
+            food,
+      ]..sort((a, b) => '${a['id']}'.compareTo('${b['id']}')),
+      'next_marker': marker,
+    };
+    await holdPull?.future;
+    return _json(body);
   }
 }
 

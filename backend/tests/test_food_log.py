@@ -115,6 +115,10 @@ def test_pull_filters_changed_foods_by_time_and_usage(
             text("UPDATE foods SET updated_at = :old WHERE id = :id"),
             {"old": marker - timedelta(seconds=1), "id": food},
         )
+        connection.execute(
+            text("UPDATE food_log_entries SET updated_at = :old WHERE id = :id"),
+            {"old": marker - timedelta(seconds=1), "id": mine_id},
+        )
     assert (
         client.get(
             "/me/food-log/changes", headers=mine, params={"since": marker.isoformat()}
@@ -139,6 +143,25 @@ def test_pull_filters_changed_foods_by_time_and_usage(
         ).json()["foods"]
         == []
     )
+
+
+def test_pull_returns_the_unchanged_food_of_a_changed_entry(
+    client, auth_headers, engine, food
+):
+    headers = auth_headers()
+    marker = datetime.now(UTC) - timedelta(minutes=5)
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE foods SET updated_at = :old WHERE id = :id"),
+            {"old": marker - timedelta(seconds=1), "id": food},
+        )
+    client.put(f"/me/food-log/entries/{uuid7()}", headers=headers, json=entry(food))
+
+    response = client.get(
+        "/me/food-log/changes", headers=headers, params={"since": marker.isoformat()}
+    )
+
+    assert [row["id"] for row in response.json()["foods"]] == [food]
 
 
 def test_pull_returns_rows_inside_margin_and_skips_older_rows(

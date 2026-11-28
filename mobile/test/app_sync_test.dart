@@ -79,4 +79,22 @@ void main() {
 
     expect(backend.entries, hasLength(1));
   });
+
+  testWidgets('after a reinstall, signing in with the same name brings the '
+      'diary back', (tester) async {
+    final (backend, _) = await openDiary(tester);
+    await logRice(tester, backend);
+    await tester.pump(const Duration(seconds: 2));
+    expect(backend.entries, hasLength(1));
+
+    await storeSignedInUser(null);
+    await restartApp(tester, backend, PhoneStorage());
+    await tester.enterText(find.byType(TextField), 'alice');
+    // The button reads the field's text when it rebuilds.
+    await tester.pump();
+    await tester.tap(find.text(english.continueButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cooked white rice'), findsOneWidget);
+  });
 }

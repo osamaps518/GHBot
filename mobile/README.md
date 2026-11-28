@@ -17,7 +17,7 @@ flutter run --dart-define-from-file=config.json
 
 Start the backend first (see `backend/README.md`). On first run:
 
-1. Type any name on the sign-in screen. The same name gets you back to the same account, even after a reinstall.
+1. Type any name on the sign-in screen. The same name gets you back to the same account and diary, even after a reinstall.
 2. Fill in your details and tap **Calculate my targets**.
 3. The app opens on today's diary. **Add food** under a meal searches for a food and logs it. **Targets** shows your targets, and **Edit my info** there changes your details.
 

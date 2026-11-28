@@ -2,8 +2,9 @@
 
 For other modules:
     Food: the persisted food row.
-    changed_foods: visible foods changed since a marker and selected by a
-        trainee's used-food IDs, rounded like search.
+    changed_foods: visible foods for a pull, rounded like search: those a
+        trainee's used-food IDs select that changed since a marker, and
+        those of the pulled entries, changed or not.
     visible_foods: select the catalog and a trainee's own foods.
 
 For wiring the app (main.py):
