@@ -119,9 +119,9 @@ class AppFlow extends ChangeNotifier {
     }
   }
 
-  /// Gets the profile and targets from the server and stores them. The
-  /// server is the authority for the profile: when it has none, the stored
-  /// one is cleared.
+  /// Gets the profile and targets from the server and stores them. When the
+  /// server has no profile, the stored one is cleared and onboarding opens
+  /// (decision 24).
   Future<void> _refresh(AppDatabase database) async {
     final version = ++_startedVersion;
     final results = await Future.wait([

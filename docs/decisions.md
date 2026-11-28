@@ -415,8 +415,8 @@ nothing.
   Dart. A health rule must have one copy.
 - A profile changes a few times a year; a meal is logged several times a day.
 
-The server is the authority. A refresh replaces what is stored, and if the
-server has no profile, the stored one is cleared and onboarding opens.
+The server is the authority: a refresh replaces what is stored, even when the
+server has no profile.
 
 ---
 
