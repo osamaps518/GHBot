@@ -28,6 +28,22 @@ AppDatabase openUserDatabase(String userId) => AppDatabase(
   ),
 );
 
+/// [food] as a `foods` row, every column set.
+FoodTableCompanion foodRow(Food food) => FoodTableCompanion.insert(
+  id: food.id,
+  nameAr: Value(food.nameAr),
+  nameEn: Value(food.nameEn),
+  caloriesPer100g: food.per100g.calories,
+  proteinPer100g: food.per100g.protein,
+  carbsPer100g: food.per100g.carbs,
+  fatPer100g: food.per100g.fat,
+  own: Value(food.own),
+  barcode: Value(food.barcode),
+  revision: Value(food.revision),
+  sentRevision: Value(food.sentRevision),
+  refused: Value(food.refused),
+);
+
 /// One user's data on the phone, in its own file (decision 25).
 @DriftDatabase(
   tables: [
@@ -162,20 +178,7 @@ class AppDatabase extends _$AppDatabase {
   /// confirmed, refused or not: the trainee's change waits to be sent
   /// (decision 31).
   Future<void> storeFood(Food food) {
-    final row = FoodTableCompanion.insert(
-      id: food.id,
-      nameAr: Value(food.nameAr),
-      nameEn: Value(food.nameEn),
-      caloriesPer100g: food.per100g.calories,
-      proteinPer100g: food.per100g.protein,
-      carbsPer100g: food.per100g.carbs,
-      fatPer100g: food.per100g.fat,
-      own: Value(food.own),
-      barcode: Value(food.barcode),
-      revision: Value(food.revision),
-      sentRevision: Value(food.sentRevision),
-      refused: Value(food.refused),
-    );
+    final row = foodRow(food);
     return into(foodTable).insert(
       row,
       onConflict: DoUpdate(

@@ -793,6 +793,121 @@ void main() {
       await runner.close();
     });
   });
+
+  group('own foods', () {
+    /// Adds date maamoul, from the mockups, as an own food and returns it.
+    Future<Food> addMaamoul() => database.addOwnFood(
+      nameAr: 'معمول بالتمر',
+      nameEn: null,
+      per100g: const Nutrients(
+        calories: 4420,
+        protein: 56,
+        carbs: 640,
+        fat: 182,
+      ),
+      barcode: '6251003451205',
+    );
+
+    /// Date maamoul as the server stores it.
+    Map<String, Object?> maamoulJson(String id) => {
+      'id': id,
+      'revision': 1,
+      'name_ar': 'معمول بالتمر',
+      'name_en': null,
+      'calories': 442.0,
+      'protein': 5.6,
+      'carbs': 64.0,
+      'fat': 18.2,
+      'barcode': '6251003451205',
+      'own': true,
+    };
+
+    /// Answers every own food call with [status] and [body].
+    void answerOwnFoods(int status, Object? body) {
+      backend.intercept = (request) => request.url.path.startsWith('/me/foods/')
+          ? http.Response(jsonEncode(body), status)
+          : null;
+    }
+
+    test('a new own food is sent, and marked sent once the server keeps '
+        'it', () async {
+      final food = await addMaamoul();
+
+      await runner.run();
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(await database.unsentOwnFoods(), isEmpty);
+    });
+
+    test('a lost answer leaves the own food unsent; the retry marks it '
+        'sent', () async {
+      final food = await addMaamoul();
+      backend.loseAnswers = true;
+
+      await runner.run();
+
+      expect(await database.unsentOwnFoods(), hasLength(1));
+
+      backend.loseAnswers = false;
+      await runner.run();
+
+      expect(await database.unsentOwnFoods(), isEmpty);
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(backend.ownFoodRequests, hasLength(2));
+    });
+
+    for (final status in [422, 409]) {
+      test('a $status refuses the own food: it is marked and not sent '
+          'again', () async {
+        final food = await addMaamoul();
+        answerOwnFoods(status, refusal);
+
+        await runner.run();
+        await runner.run();
+
+        expect(backend.ownFoodRequests, hasLength(1));
+        expect(await database.unsentOwnFoods(), isEmpty);
+        final stored = (await database.searchStoredFoods('معمول')).single;
+        expect([stored.id, stored.refused], [food.id, isTrue]);
+      });
+    }
+
+    test('a server error is tried again', () async {
+      await addMaamoul();
+      answerOwnFoods(500, {'detail': 'Internal Server Error'});
+
+      await runner.run();
+      await runner.run();
+
+      expect(backend.ownFoodRequests, hasLength(2));
+      expect(await database.unsentOwnFoods(), hasLength(1));
+    });
+
+    test('a new install pulls the own foods, logged or not', () async {
+      final food = await addMaamoul();
+      await runner.run();
+      final reinstalled = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(reinstalled.close);
+
+      await SyncRunner(
+        session: session,
+        userId: userIdFor('alice'),
+        database: reinstalled,
+      ).run();
+
+      final pulled = (await reinstalled.searchStoredFoods('معمول')).single;
+      expect(
+        [pulled.id, pulled.own, pulled.barcode, pulled.per100g.fat],
+        [food.id, true, '6251003451205', 182],
+      );
+      expect(await reinstalled.unsentOwnFoods(), isEmpty);
+    });
+  });
 }
 
 /// Holds the first read of the pull marker: [started] completes when it

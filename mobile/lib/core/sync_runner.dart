@@ -5,11 +5,13 @@ import 'package:flutter/widgets.dart';
 
 import '../auth/auth_session.dart';
 import '../food_log/food_log_api.dart';
+import '../foods/foods_api.dart';
 import 'api_failure.dart';
 import 'database.dart';
 
-/// Sends one user's unsent diary entries from their database to the server,
-/// each with its own call, then brings down what changed there (decision 31).
+/// Sends one user's unsent own foods and diary entries from their database
+/// to the server, each with its own call, then brings down what changed
+/// there (decision 31).
 class SyncRunner {
   /// Callers pass `session:` and `database:`; private named parameters keep
   /// the fields private.
@@ -17,13 +19,15 @@ class SyncRunner {
     required this._session,
     required this.userId,
     required this._database,
-  }) : _foodLogApi = FoodLogApi(_session);
+  }) : _foodsApi = FoodsApi(_session),
+       _foodLogApi = FoodLogApi(_session);
 
   final AuthSession _session;
 
   /// The user whose database this is.
   final String userId;
   final AppDatabase _database;
+  final FoodsApi _foodsApi;
   final FoodLogApi _foodLogApi;
 
   /// The run in progress, if any.
@@ -62,9 +66,9 @@ class SyncRunner {
     run();
   }
 
-  /// Sends the unsent entries, then pulls, one run at a time. Asked for
-  /// during a run, it makes one more run after that one, however often it
-  /// was asked. The future completes when no run is left.
+  /// Sends the unsent own foods and entries, then pulls, one run at a time.
+  /// Asked for during a run, it makes one more run after that one, however
+  /// often it was asked. The future completes when no run is left.
   Future<void> run() {
     if (_closed) return Future.value();
     if (_running case final running?) {
@@ -96,13 +100,17 @@ class SyncRunner {
     }
   }
 
-  /// Sends each unsent entry in turn, then pulls. A failed call stops the
-  /// run, and the retry timer starts: after a failed send, the pull waits
-  /// for the next run. Another user's sign-in stops it too: this user's
-  /// entries are never sent or pulled with it.
+  /// Sends each unsent own food in turn, then each unsent entry, then
+  /// pulls. A failed call stops the run, and the retry timer starts: after
+  /// a failed send, the pull waits for the next run. Another user's sign-in
+  /// stops it too: this user's rows are never sent or pulled with it.
   Future<void> _runOnce() async {
     _retry?.cancel();
     try {
+      for (final food in await _database.unsentOwnFoods()) {
+        if (_closed || _session.userId != userId) return;
+        await _foodsApi.send(_database, food);
+      }
       for (final entry in await _database.unsentEntries()) {
         if (_closed || _session.userId != userId) return;
         await _foodLogApi.send(_database, entry);

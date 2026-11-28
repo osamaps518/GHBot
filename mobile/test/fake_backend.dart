@@ -65,9 +65,9 @@ const oilJson = {
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, targets and
-/// custom targets, food search, and diary entries and their pull. Custom
-/// targets are saved as sent: tests that need a refusal answer it with
-/// [intercept].
+/// custom targets, food search, own foods, and diary entries and their
+/// pull. Custom targets and own foods are saved as sent: tests that need a
+/// refusal answer it with [intercept].
 class FakeBackend {
   /// The saved profile, as the backend's JSON. Null until one is saved.
   Map<String, Object?>? profile;
@@ -86,8 +86,9 @@ class FakeBackend {
   /// Answers a request before the normal routes when it returns a response.
   http.Response? Function(http.Request request)? intercept;
 
-  /// While set, every PUT (a profile or a diary entry) and DELETE waits for
-  /// it before answering, so a test can act while a save is pending.
+  /// While set, every PUT (a profile, an own food or a diary entry) and
+  /// DELETE waits for it before answering, so a test can act while a save
+  /// is pending.
   Completer<void>? holdSave;
 
   /// Holds one targets response with the values captured when requested,
@@ -97,6 +98,12 @@ class FakeBackend {
   /// The catalog for `GET /foods`. A search answers the foods whose Arabic
   /// or English name contains the query, ignoring case.
   List<Map<String, Object?>> foods = [riceJson, oilJson];
+
+  /// The trainees' own foods, by ID, as the server answers them, with the
+  /// subject each belongs to in [_ownFoodOwners]. Only their owner finds
+  /// them, before the catalog, and gets them in a pull.
+  final ownFoods = <String, Map<String, Object?>>{};
+  final _ownFoodOwners = <String, String>{};
 
   /// While set, a pull waits for it before answering what it read.
   Completer<void>? holdPull;
@@ -160,6 +167,17 @@ class FakeBackend {
     (request) => request.url.path.startsWith('/me/food-log/entries/'),
   );
 
+  /// The PUT calls for own foods.
+  Iterable<http.Request> get ownFoodRequests =>
+      requests.where((request) => request.url.path.startsWith('/me/foods/'));
+
+  /// The catalog foods and [subject]'s own foods, own first.
+  List<Map<String, Object?>> _visibleFoods(String subject) => [
+    for (final MapEntry(key: id, value: food) in ownFoods.entries)
+      if (_ownFoodOwners[id] == subject) food,
+    ...foods,
+  ];
+
   Future<http.Response> _handle(http.Request request) async {
     requests.add(request);
     if (request.method case 'PUT' || 'DELETE') await holdSave?.future;
@@ -183,6 +201,11 @@ class FakeBackend {
     final entryId = RegExp(r'^/me/food-log/entries/([^/]+)$')
         .firstMatch(request.url.path)?[1];
     if (entryId != null) return _entry(request, entryId, subject);
+    final foodId = RegExp(r'^/me/foods/([^/]+)$')
+        .firstMatch(request.url.path)?[1];
+    if (foodId != null && request.method == 'PUT') {
+      return _ownFood(request, foodId, subject);
+    }
     switch (route) {
       case 'GET /me':
         return _json({
@@ -202,7 +225,7 @@ class FakeBackend {
         final query = request.url.queryParameters['q']!.toLowerCase();
         await holdSearches[query]?.future;
         return _json([
-          for (final food in foods)
+          for (final food in _visibleFoods(subject))
             if ([
               food['name_ar'],
               food['name_en'],
@@ -245,7 +268,8 @@ class FakeBackend {
   /// Answers `PUT` and `DELETE /me/food-log/entries/{id}` as the server does
   /// (docs/decisions.md, 31): a higher revision replaces an active entry, a
   /// delete is final and recorded even for an unknown ID, and every answer
-  /// is the stored entry. Another subject's ID answers 409.
+  /// is the stored entry. Another subject's ID answers 409, and a food the
+  /// subject can't see answers 422.
   http.Response _entry(http.Request request, String id, String subject) {
     final stored = entries[id];
     final owner = _entryOwners.putIfAbsent(id, () => subject);
@@ -281,16 +305,45 @@ class FakeBackend {
             (stored['revision'] as int) >= (sent['revision'] as int))) {
       return _json(stored);
     }
+    if (!_visibleFoods(subject).any((food) => food['id'] == sent['food_id'])) {
+      return _json({
+        'detail': [
+          {'type': 'food_not_visible'},
+        ],
+      }, 422);
+    }
     entries[id] = {'id': id, 'deleted': false, ...sent};
     _entryTicks[id] = ++_clock;
     return _json(entries[id], stored == null ? 201 : 200);
   }
 
+  /// Answers `PUT /me/foods/{id}` as the server does (docs/decisions.md,
+  /// 31): a higher revision replaces the subject's own food, and every
+  /// answer is the stored food. A catalog food's or another subject's ID
+  /// answers 409.
+  http.Response _ownFood(http.Request request, String id, String subject) {
+    final owner = _ownFoodOwners.putIfAbsent(id, () => subject);
+    if (owner != subject || foods.any((food) => food['id'] == id)) {
+      return _json({'detail': 'Food ID is not owned'}, 409);
+    }
+    final stored = ownFoods[id];
+    final sent = (jsonDecode(request.body) as Map).cast<String, Object?>();
+    if (stored != null &&
+        (stored['revision'] as int) >= (sent['revision'] as int)) {
+      return _json(stored);
+    }
+    ownFoods[id] = {'id': id, ...sent, 'own': true};
+    _foodTicks[id] = ++_clock;
+    return _json(ownFoods[id], stored == null ? 201 : 200);
+  }
+
   /// Answers `GET /me/food-log/changes` as the server does
   /// (docs/decisions.md, 31): the subject's entries changed at or after the
-  /// marker, deleted ones too, the changed foods they use, the foods of
-  /// the entries it answers, changed or not, and the next marker. The marker has a `+`, as the server's can. Without one, it
-  /// answers everything; a marker it didn't give gets 422.
+  /// marker, deleted ones too, the changed foods they use, their changed
+  /// own foods, used or not, the foods of the entries it answers, changed
+  /// or not, and the next marker. The marker has a `+`, as the server's
+  /// can. Without one, it answers everything; a marker it didn't give gets
+  /// 422.
   Future<http.Response> _changes(http.Request request, String subject) async {
     final since = request.url.queryParameters['since'];
     final from = since == null ? 0 : _markers[since];
@@ -320,9 +373,9 @@ class FakeBackend {
     final body = {
       'entries': [for (final id in changed) entries[id]],
       'foods': [
-        for (final food in foods)
+        for (final food in _visibleFoods(subject))
           if (pulled.contains(food['id']) ||
-              (used.contains(food['id']) &&
+              ((used.contains(food['id']) || food['own'] == true) &&
                   (_foodTicks[food['id']] ?? 0) >= from))
             food,
       ]..sort((a, b) => '${a['id']}'.compareTo('${b['id']}')),
