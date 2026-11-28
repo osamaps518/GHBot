@@ -2,7 +2,7 @@ import '../foods/food.dart';
 import '../l10n/app_localizations.dart';
 import 'entry.dart';
 
-/// The server's meal codes (decision 31).
+/// The server's meal codes.
 enum Meal { breakfast, lunch, dinner, extra }
 
 /// A diary day (`YYYY-MM-DD`) as the diary shows it, such as "Monday,
