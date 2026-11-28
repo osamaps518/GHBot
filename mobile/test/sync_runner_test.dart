@@ -952,6 +952,31 @@ void main() {
       });
     }
 
+    testWidgets('a saved own food is sent 2 s later, without an entry; the '
+        'pulls that bring it again start no more runs', (tester) async {
+      await database.close();
+      await startAsAlice();
+      runner.start();
+      await tester.pump(const Duration(seconds: 10));
+      Iterable<http.Request> pulls() =>
+          backend.requestsTo('GET', '/me/food-log/changes');
+
+      final food = await addMaamoul();
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(backend.ownFoods, {food.id: maamoulJson(food.id)});
+      expect(await database.unsentOwnFoods(), isEmpty);
+      final settled = pulls().length;
+
+      // The stand-in sends the own food again with every pull, as the
+      // server does inside its 30-second margin.
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(pulls(), hasLength(settled));
+      expect(backend.ownFoodRequests, hasLength(1));
+      await runner.close();
+    });
+
     test('a new install pulls the own foods, logged or not', () async {
       final food = await addMaamoul();
       await runner.run();

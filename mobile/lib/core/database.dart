@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -59,6 +61,19 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 6;
+
+  /// Sends once each time [addOwnFood] saves a food, so the sync runner can
+  /// send it soon. Storing a food the server sent doesn't: pulls store foods
+  /// on every run (decision 31).
+  Stream<void> get ownFoodSaved => _ownFoodSaved.stream;
+  final _ownFoodSaved = StreamController<void>.broadcast();
+
+  /// Closes the database as before, and [ownFoodSaved] with it.
+  @override
+  Future<void> close() {
+    unawaited(_ownFoodSaved.close());
+    return super.close();
+  }
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
@@ -191,7 +206,8 @@ class AppDatabase extends _$AppDatabase {
   /// Adds the trainee's own food on the phone and returns it, at revision
   /// 1 and waiting to be sent (decision 31). Its ID is a UUIDv7, made here.
   /// A name not given is null. Throws an [ArgumentError] and saves nothing
-  /// when the server would refuse it (decision 38).
+  /// when the server would refuse it (decision 38). Once saved, it sends on
+  /// [ownFoodSaved].
   Future<Food> addOwnFood({
     required String? nameAr,
     required String? nameEn,
@@ -216,6 +232,7 @@ class AppDatabase extends _$AppDatabase {
       revision: 1,
     );
     await storeFood(food);
+    _ownFoodSaved.add(null);
     return food;
   }
 

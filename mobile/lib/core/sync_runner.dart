@@ -48,22 +48,28 @@ class SyncRunner {
   var _closed = false;
 
   StreamSubscription<void>? _localChanges;
+  StreamSubscription<void>? _ownFoodSaves;
   Timer? _afterChange;
   AppLifecycleListener? _lifecycle;
 
   /// Runs now, then whenever the app returns to the foreground, and 2 s
-  /// after the last local change to the diary, its own writes included,
-  /// until [close]. There is no background job: the app runs it only while
-  /// open.
+  /// after the last local change to the diary, its own writes included, or
+  /// after an own food is saved on the phone, until [close]. Other writes to
+  /// foods don't count: pulls store foods on every run (decision 31). There
+  /// is no background job: the app runs it only while open.
   void start() {
     _localChanges = _database
         .tableUpdates(TableUpdateQuery.onTable(_database.foodLogEntryTable))
-        .listen((_) {
-          _afterChange?.cancel();
-          _afterChange = Timer(const Duration(seconds: 2), run);
-        });
+        .listen((_) => _runSoon());
+    _ownFoodSaves = _database.ownFoodSaved.listen((_) => _runSoon());
     _lifecycle = AppLifecycleListener(onResume: run);
     run();
+  }
+
+  /// Runs 2 s after the last call, so a burst of changes makes one run.
+  void _runSoon() {
+    _afterChange?.cancel();
+    _afterChange = Timer(const Duration(seconds: 2), run);
   }
 
   /// Sends the unsent own foods and entries, then pulls, one run at a time.
@@ -86,6 +92,7 @@ class SyncRunner {
     _afterChange?.cancel();
     _lifecycle?.dispose();
     unawaited(_localChanges?.cancel());
+    unawaited(_ownFoodSaves?.cancel());
     return _running ?? Future.value();
   }
 

@@ -797,10 +797,13 @@ the server's answer taken at the revision sent. Catalog foods are at revision
   a delete doesn't need the food.
 - **Search and pulls:** storing a food the server sent never overwrites an own
   food with such a change, as for entries above.
-- **When it runs:** writes to foods don't start a run. Every pull writes the
-  foods it brings, and a catalog food's revision stays 0 when it is fixed, so
-  repeated foods can't be skipped as entries are: a run would follow every
-  pull. A new own food goes with the next run, and logging it starts one.
+- **When it runs:** saving an own food on the phone starts a run 2 s later,
+  as a diary write does, so a food saved without an entry is backed up and
+  findable online at once. Other writes to foods don't: every pull writes
+  the foods it brings, and a catalog food's revision stays 0 when it is
+  fixed, so repeated foods can't be skipped as entries are, and a run would
+  follow every pull. So the database announces only its own saves of own
+  foods, not every write to the table.
 
 **Backup.** `user_data/` stays out of Android backup and device transfer
 (decision 25). Pulling adds a reason: it puts a trainee's entries on every
