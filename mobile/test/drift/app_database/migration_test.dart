@@ -7,6 +7,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 const _profileV1 = v1.ProfileData(
   birthYear: 1996,
@@ -55,6 +56,49 @@ const _entryV2 = v2.FoodLogEntriesData(
   carbs: 423,
   fat: 5,
   loggedAt: 1795435200,
+);
+
+const _riceV3 = v3.FoodsData(
+  id: 'rice',
+  nameAr: 'أرز أبيض مطبوخ',
+  nameEn: 'Cooked white rice',
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+);
+
+const _entryV3 = v3.FoodLogEntriesData(
+  id: 'entry-1',
+  foodId: 'rice',
+  meal: 'lunch',
+  diaryDay: '2026-11-23',
+  grams: 1500,
+  caloriesPer100g: 1300,
+  proteinPer100g: 27,
+  carbsPer100g: 282,
+  fatPer100g: 3,
+  calories: 1950,
+  protein: 41,
+  carbs: 423,
+  fat: 5,
+  loggedAt: 1795435200,
+  revision: 2,
+  sentRevision: 1,
+  deleted: 0,
+  refused: 0,
+);
+
+const _targetsV3 = v3.TargetsData(
+  calories: 2210,
+  proteinG: 176,
+  fatG: 49,
+  carbsG: 266,
+  maintenanceCalories: 2760,
+  atMinimum: 0,
+  aboveTestedAge: 1,
+  goal: 'lose',
+  goalAdjustmentPercent: -20,
 );
 
 /// Upgrades each exported schema to every later one, and checks that the
@@ -126,6 +170,37 @@ void main() {
           'sentRevision': 0,
           'deleted': 0,
           'refused': 0,
+        });
+      },
+    );
+  });
+
+  test('upgrading from 3 to 4 keeps the entries, and the targets as '
+      'recommended ones', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.foods, _riceV3);
+        batch.insert(oldDb.foodLogEntries, _entryV3);
+        batch.insert(oldDb.targets, _targetsV3);
+      },
+      validateItems: (newDb) async {
+        expect(
+          (await newDb.select(newDb.foodLogEntries).getSingle()).toJson(),
+          _entryV3.toJson(),
+        );
+        expect((await newDb.select(newDb.targets).getSingle()).toJson(), {
+          ..._targetsV3.toJson(),
+          'custom': 0,
+          'macrosAdjusted': 0,
+          'recommendedCalories': 2210,
+          'recommendedProteinG': 176,
+          'recommendedFatG': 49,
+          'recommendedCarbsG': 266,
         });
       },
     );

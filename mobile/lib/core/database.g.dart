@@ -429,6 +429,74 @@ class $TargetsTableTable extends TargetsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _customMeta = const VerificationMeta('custom');
+  @override
+  late final GeneratedColumn<bool> custom = GeneratedColumn<bool>(
+    'custom',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("custom" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _macrosAdjustedMeta = const VerificationMeta(
+    'macrosAdjusted',
+  );
+  @override
+  late final GeneratedColumn<bool> macrosAdjusted = GeneratedColumn<bool>(
+    'macros_adjusted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("macros_adjusted" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _recommendedCaloriesMeta =
+      const VerificationMeta('recommendedCalories');
+  @override
+  late final GeneratedColumn<int> recommendedCalories = GeneratedColumn<int>(
+    'recommended_calories',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recommendedProteinGMeta =
+      const VerificationMeta('recommendedProteinG');
+  @override
+  late final GeneratedColumn<int> recommendedProteinG = GeneratedColumn<int>(
+    'recommended_protein_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recommendedFatGMeta = const VerificationMeta(
+    'recommendedFatG',
+  );
+  @override
+  late final GeneratedColumn<int> recommendedFatG = GeneratedColumn<int>(
+    'recommended_fat_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recommendedCarbsGMeta = const VerificationMeta(
+    'recommendedCarbsG',
+  );
+  @override
+  late final GeneratedColumn<int> recommendedCarbsG = GeneratedColumn<int>(
+    'recommended_carbs_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     calories,
@@ -440,6 +508,12 @@ class $TargetsTableTable extends TargetsTable
     aboveTestedAge,
     goal,
     goalAdjustmentPercent,
+    custom,
+    macrosAdjusted,
+    recommendedCalories,
+    recommendedProteinG,
+    recommendedFatG,
+    recommendedCarbsG,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -526,6 +600,69 @@ class $TargetsTableTable extends TargetsTable
     } else if (isInserting) {
       context.missing(_goalAdjustmentPercentMeta);
     }
+    if (data.containsKey('custom')) {
+      context.handle(
+        _customMeta,
+        custom.isAcceptableOrUnknown(data['custom']!, _customMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_customMeta);
+    }
+    if (data.containsKey('macros_adjusted')) {
+      context.handle(
+        _macrosAdjustedMeta,
+        macrosAdjusted.isAcceptableOrUnknown(
+          data['macros_adjusted']!,
+          _macrosAdjustedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_macrosAdjustedMeta);
+    }
+    if (data.containsKey('recommended_calories')) {
+      context.handle(
+        _recommendedCaloriesMeta,
+        recommendedCalories.isAcceptableOrUnknown(
+          data['recommended_calories']!,
+          _recommendedCaloriesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recommendedCaloriesMeta);
+    }
+    if (data.containsKey('recommended_protein_g')) {
+      context.handle(
+        _recommendedProteinGMeta,
+        recommendedProteinG.isAcceptableOrUnknown(
+          data['recommended_protein_g']!,
+          _recommendedProteinGMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recommendedProteinGMeta);
+    }
+    if (data.containsKey('recommended_fat_g')) {
+      context.handle(
+        _recommendedFatGMeta,
+        recommendedFatG.isAcceptableOrUnknown(
+          data['recommended_fat_g']!,
+          _recommendedFatGMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recommendedFatGMeta);
+    }
+    if (data.containsKey('recommended_carbs_g')) {
+      context.handle(
+        _recommendedCarbsGMeta,
+        recommendedCarbsG.isAcceptableOrUnknown(
+          data['recommended_carbs_g']!,
+          _recommendedCarbsGMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recommendedCarbsGMeta);
+    }
     return context;
   }
 
@@ -573,6 +710,30 @@ class $TargetsTableTable extends TargetsTable
         DriftSqlType.int,
         data['${effectivePrefix}goal_adjustment_percent'],
       )!,
+      custom: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}custom'],
+      )!,
+      macrosAdjusted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}macros_adjusted'],
+      )!,
+      recommendedCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recommended_calories'],
+      )!,
+      recommendedProteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recommended_protein_g'],
+      )!,
+      recommendedFatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recommended_fat_g'],
+      )!,
+      recommendedCarbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recommended_carbs_g'],
+      )!,
     );
   }
 
@@ -595,6 +756,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
   final Value<bool> aboveTestedAge;
   final Value<Goal> goal;
   final Value<int> goalAdjustmentPercent;
+  final Value<bool> custom;
+  final Value<bool> macrosAdjusted;
+  final Value<int> recommendedCalories;
+  final Value<int> recommendedProteinG;
+  final Value<int> recommendedFatG;
+  final Value<int> recommendedCarbsG;
   final Value<int> rowid;
   const TargetsTableCompanion({
     this.calories = const Value.absent(),
@@ -606,6 +773,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
     this.aboveTestedAge = const Value.absent(),
     this.goal = const Value.absent(),
     this.goalAdjustmentPercent = const Value.absent(),
+    this.custom = const Value.absent(),
+    this.macrosAdjusted = const Value.absent(),
+    this.recommendedCalories = const Value.absent(),
+    this.recommendedProteinG = const Value.absent(),
+    this.recommendedFatG = const Value.absent(),
+    this.recommendedCarbsG = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TargetsTableCompanion.insert({
@@ -618,6 +791,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
     required bool aboveTestedAge,
     required Goal goal,
     required int goalAdjustmentPercent,
+    required bool custom,
+    required bool macrosAdjusted,
+    required int recommendedCalories,
+    required int recommendedProteinG,
+    required int recommendedFatG,
+    required int recommendedCarbsG,
     this.rowid = const Value.absent(),
   }) : calories = Value(calories),
        proteinG = Value(proteinG),
@@ -627,8 +806,14 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
        atMinimum = Value(atMinimum),
        aboveTestedAge = Value(aboveTestedAge),
        goal = Value(goal),
-       goalAdjustmentPercent = Value(goalAdjustmentPercent);
-  static Insertable<Targets> custom({
+       goalAdjustmentPercent = Value(goalAdjustmentPercent),
+       custom = Value(custom),
+       macrosAdjusted = Value(macrosAdjusted),
+       recommendedCalories = Value(recommendedCalories),
+       recommendedProteinG = Value(recommendedProteinG),
+       recommendedFatG = Value(recommendedFatG),
+       recommendedCarbsG = Value(recommendedCarbsG);
+  static Insertable<Targets> createCustom({
     Expression<int>? calories,
     Expression<int>? proteinG,
     Expression<int>? fatG,
@@ -638,6 +823,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
     Expression<bool>? aboveTestedAge,
     Expression<String>? goal,
     Expression<int>? goalAdjustmentPercent,
+    Expression<bool>? custom,
+    Expression<bool>? macrosAdjusted,
+    Expression<int>? recommendedCalories,
+    Expression<int>? recommendedProteinG,
+    Expression<int>? recommendedFatG,
+    Expression<int>? recommendedCarbsG,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -652,6 +843,14 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
       if (goal != null) 'goal': goal,
       if (goalAdjustmentPercent != null)
         'goal_adjustment_percent': goalAdjustmentPercent,
+      if (custom != null) 'custom': custom,
+      if (macrosAdjusted != null) 'macros_adjusted': macrosAdjusted,
+      if (recommendedCalories != null)
+        'recommended_calories': recommendedCalories,
+      if (recommendedProteinG != null)
+        'recommended_protein_g': recommendedProteinG,
+      if (recommendedFatG != null) 'recommended_fat_g': recommendedFatG,
+      if (recommendedCarbsG != null) 'recommended_carbs_g': recommendedCarbsG,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -666,6 +865,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
     Value<bool>? aboveTestedAge,
     Value<Goal>? goal,
     Value<int>? goalAdjustmentPercent,
+    Value<bool>? custom,
+    Value<bool>? macrosAdjusted,
+    Value<int>? recommendedCalories,
+    Value<int>? recommendedProteinG,
+    Value<int>? recommendedFatG,
+    Value<int>? recommendedCarbsG,
     Value<int>? rowid,
   }) {
     return TargetsTableCompanion(
@@ -679,6 +884,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
       goal: goal ?? this.goal,
       goalAdjustmentPercent:
           goalAdjustmentPercent ?? this.goalAdjustmentPercent,
+      custom: custom ?? this.custom,
+      macrosAdjusted: macrosAdjusted ?? this.macrosAdjusted,
+      recommendedCalories: recommendedCalories ?? this.recommendedCalories,
+      recommendedProteinG: recommendedProteinG ?? this.recommendedProteinG,
+      recommendedFatG: recommendedFatG ?? this.recommendedFatG,
+      recommendedCarbsG: recommendedCarbsG ?? this.recommendedCarbsG,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -717,6 +928,24 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
         goalAdjustmentPercent.value,
       );
     }
+    if (custom.present) {
+      map['custom'] = Variable<bool>(custom.value);
+    }
+    if (macrosAdjusted.present) {
+      map['macros_adjusted'] = Variable<bool>(macrosAdjusted.value);
+    }
+    if (recommendedCalories.present) {
+      map['recommended_calories'] = Variable<int>(recommendedCalories.value);
+    }
+    if (recommendedProteinG.present) {
+      map['recommended_protein_g'] = Variable<int>(recommendedProteinG.value);
+    }
+    if (recommendedFatG.present) {
+      map['recommended_fat_g'] = Variable<int>(recommendedFatG.value);
+    }
+    if (recommendedCarbsG.present) {
+      map['recommended_carbs_g'] = Variable<int>(recommendedCarbsG.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -735,6 +964,12 @@ class TargetsTableCompanion extends UpdateCompanion<Targets> {
           ..write('aboveTestedAge: $aboveTestedAge, ')
           ..write('goal: $goal, ')
           ..write('goalAdjustmentPercent: $goalAdjustmentPercent, ')
+          ..write('custom: $custom, ')
+          ..write('macrosAdjusted: $macrosAdjusted, ')
+          ..write('recommendedCalories: $recommendedCalories, ')
+          ..write('recommendedProteinG: $recommendedProteinG, ')
+          ..write('recommendedFatG: $recommendedFatG, ')
+          ..write('recommendedCarbsG: $recommendedCarbsG, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2112,6 +2347,12 @@ typedef $$TargetsTableTableCreateCompanionBuilder =
       required bool aboveTestedAge,
       required Goal goal,
       required int goalAdjustmentPercent,
+      required bool custom,
+      required bool macrosAdjusted,
+      required int recommendedCalories,
+      required int recommendedProteinG,
+      required int recommendedFatG,
+      required int recommendedCarbsG,
       Value<int> rowid,
     });
 typedef $$TargetsTableTableUpdateCompanionBuilder =
@@ -2125,6 +2366,12 @@ typedef $$TargetsTableTableUpdateCompanionBuilder =
       Value<bool> aboveTestedAge,
       Value<Goal> goal,
       Value<int> goalAdjustmentPercent,
+      Value<bool> custom,
+      Value<bool> macrosAdjusted,
+      Value<int> recommendedCalories,
+      Value<int> recommendedProteinG,
+      Value<int> recommendedFatG,
+      Value<int> recommendedCarbsG,
       Value<int> rowid,
     });
 
@@ -2182,6 +2429,36 @@ class $$TargetsTableTableFilterComposer
     column: $table.goalAdjustmentPercent,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get custom => $composableBuilder(
+    column: $table.custom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get macrosAdjusted => $composableBuilder(
+    column: $table.macrosAdjusted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recommendedCalories => $composableBuilder(
+    column: $table.recommendedCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recommendedProteinG => $composableBuilder(
+    column: $table.recommendedProteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recommendedFatG => $composableBuilder(
+    column: $table.recommendedFatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get recommendedCarbsG => $composableBuilder(
+    column: $table.recommendedCarbsG,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$TargetsTableTableOrderingComposer
@@ -2237,6 +2514,36 @@ class $$TargetsTableTableOrderingComposer
     column: $table.goalAdjustmentPercent,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get custom => $composableBuilder(
+    column: $table.custom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get macrosAdjusted => $composableBuilder(
+    column: $table.macrosAdjusted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recommendedCalories => $composableBuilder(
+    column: $table.recommendedCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recommendedProteinG => $composableBuilder(
+    column: $table.recommendedProteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recommendedFatG => $composableBuilder(
+    column: $table.recommendedFatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recommendedCarbsG => $composableBuilder(
+    column: $table.recommendedCarbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TargetsTableTableAnnotationComposer
@@ -2280,6 +2587,34 @@ class $$TargetsTableTableAnnotationComposer
     column: $table.goalAdjustmentPercent,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get custom =>
+      $composableBuilder(column: $table.custom, builder: (column) => column);
+
+  GeneratedColumn<bool> get macrosAdjusted => $composableBuilder(
+    column: $table.macrosAdjusted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recommendedCalories => $composableBuilder(
+    column: $table.recommendedCalories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recommendedProteinG => $composableBuilder(
+    column: $table.recommendedProteinG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recommendedFatG => $composableBuilder(
+    column: $table.recommendedFatG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get recommendedCarbsG => $composableBuilder(
+    column: $table.recommendedCarbsG,
+    builder: (column) => column,
+  );
 }
 
 class $$TargetsTableTableTableManager
@@ -2319,6 +2654,12 @@ class $$TargetsTableTableTableManager
                 Value<bool> aboveTestedAge = const Value.absent(),
                 Value<Goal> goal = const Value.absent(),
                 Value<int> goalAdjustmentPercent = const Value.absent(),
+                Value<bool> custom = const Value.absent(),
+                Value<bool> macrosAdjusted = const Value.absent(),
+                Value<int> recommendedCalories = const Value.absent(),
+                Value<int> recommendedProteinG = const Value.absent(),
+                Value<int> recommendedFatG = const Value.absent(),
+                Value<int> recommendedCarbsG = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TargetsTableCompanion(
                 calories: calories,
@@ -2330,6 +2671,12 @@ class $$TargetsTableTableTableManager
                 aboveTestedAge: aboveTestedAge,
                 goal: goal,
                 goalAdjustmentPercent: goalAdjustmentPercent,
+                custom: custom,
+                macrosAdjusted: macrosAdjusted,
+                recommendedCalories: recommendedCalories,
+                recommendedProteinG: recommendedProteinG,
+                recommendedFatG: recommendedFatG,
+                recommendedCarbsG: recommendedCarbsG,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2343,6 +2690,12 @@ class $$TargetsTableTableTableManager
                 required bool aboveTestedAge,
                 required Goal goal,
                 required int goalAdjustmentPercent,
+                required bool custom,
+                required bool macrosAdjusted,
+                required int recommendedCalories,
+                required int recommendedProteinG,
+                required int recommendedFatG,
+                required int recommendedCarbsG,
                 Value<int> rowid = const Value.absent(),
               }) => TargetsTableCompanion.insert(
                 calories: calories,
@@ -2354,6 +2707,12 @@ class $$TargetsTableTableTableManager
                 aboveTestedAge: aboveTestedAge,
                 goal: goal,
                 goalAdjustmentPercent: goalAdjustmentPercent,
+                custom: custom,
+                macrosAdjusted: macrosAdjusted,
+                recommendedCalories: recommendedCalories,
+                recommendedProteinG: recommendedProteinG,
+                recommendedFatG: recommendedFatG,
+                recommendedCarbsG: recommendedCarbsG,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

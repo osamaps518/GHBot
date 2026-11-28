@@ -527,6 +527,14 @@ void main() {
         'above_tested_age': false,
         'goal': 'lose',
         'goal_adjustment_percent': -20,
+        'custom': false,
+        'macros_adjusted': false,
+        'recommended': {
+          'calories': 1200,
+          'protein_g': 114,
+          'fat_g': 27,
+          'carbs_g': 125,
+        },
       };
 
     await pumpApp(tester, backend, storedName: 'alice');

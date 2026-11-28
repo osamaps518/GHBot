@@ -26,6 +26,14 @@ const exampleTargets = {
   'above_tested_age': false,
   'goal': 'lose',
   'goal_adjustment_percent': -20,
+  'custom': false,
+  'macros_adjusted': false,
+  'recommended': {
+    'calories': 2210,
+    'protein_g': 176,
+    'fat_g': 49,
+    'carbs_g': 266,
+  },
 };
 
 /// Cooked white rice from decision 30, as `GET /foods` sends it.
