@@ -721,7 +721,8 @@ loader call with `time.perf_counter()`; this is one local run, not a throughput
 guarantee.
 
 **Sending (#61, phone).** Each entry on the phone keeps its revision and the
-last revision the server confirmed; an entry with a newer revision is unsent.
+last revision the server confirmed; an entry is unsent when its revision is
+newer and it isn't refused.
 One runner for each user and their database sends the unsent entries, each in
 its own call, then pulls, one run at a time. It stops when another user signs
 in, so one user's rows never go out with another's sign-in.
