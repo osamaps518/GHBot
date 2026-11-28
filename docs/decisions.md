@@ -831,11 +831,9 @@ the trainee logged it, and the diary day already says which day it belongs to.
 
 There is no setting for the day start yet.
 
-**Past days (#64).** The diary goes back to the day the account was created:
-`GET /me` sends `created_at`, and the phone takes its diary day in the phone's
-time zone. No entry can be older. The phone stores it with the user ID and
-fetches both when either is missing, so an install from before #64 needs a
-connection at its next start, once.
+**Past days (#64).** The diary goes back to the account's first diary day
+in the phone's time zone. Installs from before #64 need one online start
+to learn that boundary; later starts can use the stored value offline.
 
 Moving an entry changes only its diary day, so it is sent like any other
 change (decision 31). It keeps its meal, an extra meal's name too.
