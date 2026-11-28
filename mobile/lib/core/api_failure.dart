@@ -11,8 +11,12 @@ class ConnectionFailure extends ApiFailure {
 /// The backend rejected the request body. [types] are the errors' codes,
 /// such as `age_out_of_range`.
 class ValidationFailure extends ApiFailure {
-  const ValidationFailure(this.types);
+  const ValidationFailure(this.types, {this.ctx = const {}});
   final List<String> types;
+
+  /// The context of each error that has one, by its code: for
+  /// `below_minimum`, `{'minimum': 1500}`.
+  final Map<String, Map<String, Object?>> ctx;
 }
 
 /// Any other unexpected status.
