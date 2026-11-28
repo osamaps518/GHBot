@@ -69,6 +69,15 @@ def test_save_rejects_minimum_and_macro_gap(app, client, auth_headers):
     )
     assert refused.status_code == 422
     assert refused.json()["detail"][0]["type"] == "macros_mismatch"
+    refused_below = client.put(
+        "/me/targets/custom", headers=headers, json={**baseline, "calories": 1300}
+    )
+    assert refused_below.status_code == 422
+    assert refused_below.json()["detail"][0]["type"] == "macros_mismatch"
+    allowed = client.put(
+        "/me/targets/custom", headers=headers, json={**baseline, "calories": 1299}
+    )
+    assert allowed.status_code == 200
     assert client.get("/me/targets", headers=headers).json() == allowed.json()
 
 
