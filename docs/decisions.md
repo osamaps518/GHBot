@@ -384,8 +384,7 @@ stable file format. Drift checks queries before the app runs and has tools for
 testing migrations.
 
 Each module declares its own tables, with typed columns rather than JSON, so
-Drift checks them. The database class is in `mobile/lib/core/database.dart`.
-Each schema version is exported to `mobile/drift_schemas/`, so upgrades can be
+Drift checks them. Each schema version is exported to `mobile/drift_schemas/`, so upgrades can be
 tested against it.
 
 Options ruled out:
