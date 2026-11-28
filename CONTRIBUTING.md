@@ -50,7 +50,7 @@ Name branches `<type>/<issue-number>-<short-description>`:
 1. Keep PRs small: one issue per PR. A PR that's quick to review gets merged quickly.
 2. In the description, write **`Closes #12`** (with your issue number). Merging the PR then closes the issue automatically.
 3. Explain *what* changed and *why*. Add screenshots for anything visible in the app.
-4. Move the card to **In Review** and wait for **1 approval** from someone else.
+4. Move the card to **In Review**. A maintainer (repo admin) can merge their own PR without an approval. Everyone else waits for **1 approval** from a maintainer.
 5. Merge with **Squash and merge**, then delete the branch.
 
 When reviewing, ask about anything you don't understand. That's part of the review, not a waste of the author's time.
