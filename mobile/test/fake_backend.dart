@@ -179,7 +179,10 @@ class FakeBackend {
     if (entryId != null) return _entry(request, entryId, subject);
     switch (route) {
       case 'GET /me':
-        return _json({'id': userIdFor(subject)});
+        return _json({
+          'id': userIdFor(subject),
+          'created_at': accountCreatedAt,
+        });
       case 'GET /me/food-log/changes':
         return _changes(request, subject);
       case 'GET /me/profile':
@@ -327,6 +330,10 @@ class FakeBackend {
 /// The user ID the fake backend gives a name.
 String userIdFor(String name) => 'id-$name';
 
+/// When the fake backend says every account was created, as `GET /me`
+/// sends it.
+const accountCreatedAt = '2026-01-05T09:30:00.123456Z';
+
 http.Response _json(Object? body, [int status = 200]) => http.Response(
   jsonEncode(body),
   status,
@@ -367,13 +374,15 @@ class PhoneStorage {
 
 /// Starts the app on a phone-sized screen. [storedName] is the name saved by
 /// an earlier sign-in, with its ID unless [storedId] is false (an install
-/// from before IDs were stored); without a name, this is a fresh install.
-/// [storage] starts empty unless given.
+/// from before IDs were stored) and when its account was created unless
+/// [storedCreatedAt] is false (from before that was stored); without a name,
+/// this is a fresh install. [storage] starts empty unless given.
 Future<void> pumpApp(
   WidgetTester tester,
   FakeBackend backend, {
   String? storedName,
   bool storedId = true,
+  bool storedCreatedAt = true,
   bool ageWarningSeen = false,
   PhoneStorage? storage,
 }) async {
@@ -384,6 +393,8 @@ Future<void> pumpApp(
       InMemorySharedPreferencesAsync.withData({
         'dev_subject': ?storedName,
         if (storedName != null && storedId) 'user_id': userIdFor(storedName),
+        if (storedName != null && storedCreatedAt)
+          'user_created_at': accountCreatedAt,
         if (storedName != null && ageWarningSeen)
           'age_warning_seen_${userIdFor(storedName)}': true,
       });
@@ -409,17 +420,19 @@ Future<void> restartApp(
   await tester.pumpAndSettle();
 }
 
-/// Stores [name] and its ID as the signed-in user for the next start, or
-/// forgets the user when [name] is null. There is no sign-out yet, so tests
-/// switch users this way.
+/// Stores [name], its ID and when its account was created as the signed-in
+/// user for the next start, or forgets the user when [name] is null. There
+/// is no sign-out yet, so tests switch users this way.
 Future<void> storeSignedInUser(String? name) async {
   final preferences = SharedPreferencesAsync();
   if (name == null) {
     await preferences.remove('dev_subject');
     await preferences.remove('user_id');
+    await preferences.remove('user_created_at');
   } else {
     await preferences.setString('dev_subject', name);
     await preferences.setString('user_id', userIdFor(name));
+    await preferences.setString('user_created_at', accountCreatedAt);
   }
 }
 

@@ -10,8 +10,9 @@ import '../core/api_failure.dart';
 /// the token (decision 17). A token is fetched on the first call that needs
 /// one, and again on a 401.
 ///
-/// The user's ID from `GET /me` is stored with the name: it names the user's
-/// database file (decision 25).
+/// The user's ID and when their account was created, from `GET /me`, are
+/// stored with the name. The ID names the user's database file (decision
+/// 25); the diary goes back no further than the day the account was created.
 class AuthSession {
   AuthSession(this._client);
 
@@ -19,25 +20,34 @@ class AuthSession {
   final _preferences = SharedPreferencesAsync();
   static const _subjectKey = 'dev_subject';
   static const _userIdKey = 'user_id';
+  static const _createdAtKey = 'user_created_at';
 
   String? _subject;
   String? _userId;
+  DateTime? _createdAt;
   Future<String>? _token;
 
   /// The signed-in user's ID. Null before sign-in, and for a name stored
-  /// before IDs were, until [fetchUserId].
+  /// before IDs were, until [fetchUser].
   String? get userId => _userId;
 
-  /// Loads the name and ID from an earlier sign-in. False on a fresh install.
+  /// When the signed-in user's account was created, in UTC. Null before
+  /// sign-in, and for a sign-in stored before this was, until [fetchUser].
+  DateTime? get createdAt => _createdAt;
+
+  /// Loads the name, ID and account creation time from an earlier sign-in.
+  /// False on a fresh install.
   Future<bool> restoreSignIn() async {
     _subject = await _preferences.getString(_subjectKey);
     _userId = await _preferences.getString(_userIdKey);
+    final createdAt = await _preferences.getString(_createdAtKey);
+    _createdAt = createdAt == null ? null : DateTime.parse(createdAt);
     return _subject != null;
   }
 
-  /// Signs in and stores the name and ID only once both calls succeed. Until
-  /// then, calls keep the previous user's name, ID and token, so no call
-  /// sees the new token with the old ID.
+  /// Signs in and stores the name, ID and account creation time only once
+  /// both calls succeed. Until then, calls keep the previous user's name, ID
+  /// and token, so no call sees the new token with the old ID.
   Future<void> signIn(String name) async {
     final token = await _requestToken(name);
     final response = await _client.send(
@@ -45,19 +55,35 @@ class AuthSession {
       '/me',
       headers: {'authorization': 'Bearer $token'},
     );
-    final id = _parse(() => _client.decode(response)['id'] as String);
-    await _preferences.setString(_userIdKey, id);
+    final user = _parse(() => _parseUser(_client.decode(response)));
+    await _storeUser(user);
     await _preferences.setString(_subjectKey, name);
     _subject = name;
-    _userId = id;
+    _userId = user.id;
+    _createdAt = user.createdAt;
     _token = Future.value(token);
   }
 
-  /// Gets the signed-in user's ID from the server and stores it.
-  Future<void> fetchUserId() async {
-    final id = await get('/me', (json) => json['id'] as String);
-    await _preferences.setString(_userIdKey, id!);
-    _userId = id;
+  /// Gets the signed-in user's ID and account creation time from the
+  /// server and stores them.
+  Future<void> fetchUser() async {
+    final user = (await get('/me', _parseUser))!;
+    await _storeUser(user);
+    _userId = user.id;
+    _createdAt = user.createdAt;
+  }
+
+  ({String id, DateTime createdAt}) _parseUser(Map<String, Object?> json) => (
+    id: json['id'] as String,
+    createdAt: DateTime.parse(json['created_at'] as String).toUtc(),
+  );
+
+  Future<void> _storeUser(({String id, DateTime createdAt}) user) async {
+    await _preferences.setString(_userIdKey, user.id);
+    await _preferences.setString(
+      _createdAtKey,
+      user.createdAt.toIso8601String(),
+    );
   }
 
   Future<T?> get<T>(
