@@ -211,6 +211,99 @@ class AppLocalizationsAr extends AppLocalizations {
   String get raisedToMinimum => 'رُفع إلى الحد الأدنى الآمن';
 
   @override
+  String get customBadge => 'مخصّصة';
+
+  @override
+  String customTargetsNote(String calories) {
+    return 'حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن $calories سعرة.';
+  }
+
+  @override
+  String get backToRecommended => 'العودة إلى الموصى بها';
+
+  @override
+  String get resetTitle => 'العودة إلى الأهداف الموصى بها؟';
+
+  @override
+  String resetBody(String calories, String protein, String carbs, String fat) {
+    return 'ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى $calories سعرة: بروتين $protein غ، كربوهيدرات $carbs غ، دهون $fat غ.';
+  }
+
+  @override
+  String get macrosAdjustedNote =>
+      'سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.';
+
+  @override
+  String get howWeCalculatedRecommended => 'كيف حسبنا الأهداف الموصى بها';
+
+  @override
+  String get editTargets => 'تعديل الأهداف';
+
+  @override
+  String targetsFieldLabel(String field) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'السعرات',
+      'protein': 'البروتين',
+      'carbs': 'الكربوهيدرات',
+      'fat': 'الدهون',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String recommendedValue(String field, String value) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'الموصى بها: $value سعرة',
+      'protein': 'الموصى به: $value غ',
+      'other': 'الموصى بها: $value غ',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String macroCaloriesLine(String calories) {
+    return 'البروتين والكربوهيدرات والدهون تعطي $calories سعرة.';
+  }
+
+  @override
+  String macrosTooFar(String calories, String difference) {
+    return 'البروتين والكربوهيدرات والدهون تعطي $calories سعرة، أي بفرق $difference عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.';
+  }
+
+  @override
+  String get saveNeedsInternet => 'الحفظ يحتاج إلى الإنترنت';
+
+  @override
+  String macrosApartTitle(String difference) {
+    return 'الأرقام مختلفة بـ $difference سعرة';
+  }
+
+  @override
+  String macrosApartBody(String calories, String macroCalories) {
+    return 'أدخلت $calories سعرة، لكن البروتين والكربوهيدرات والدهون تعطي $macroCalories سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.';
+  }
+
+  @override
+  String get keepNumbers => 'حفظ كما هي';
+
+  @override
+  String get fixNumbers => 'تعديل الأرقام';
+
+  @override
+  String get errorCaloriesRange => 'أدخل عددًا صحيحًا حتى 6000';
+
+  @override
+  String errorGramsRange(String max) {
+    return 'أدخل عددًا صحيحًا من 0 إلى $max';
+  }
+
+  @override
+  String errorBelowMinimum(String minimum) {
+    return 'الحد الأدنى الآمن $minimum سعرة';
+  }
+
+  @override
   String get editMyInfo => 'تعديل معلوماتي';
 
   @override

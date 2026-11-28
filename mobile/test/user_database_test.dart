@@ -52,6 +52,12 @@ void main() {
           aboveTestedAge: false,
           goal: Goal.gain,
           goalAdjustmentPercent: 10,
+          custom: false,
+          macrosAdjusted: false,
+          recommendedCalories: 2210,
+          recommendedProteinG: 176,
+          recommendedFatG: 49,
+          recommendedCarbsG: 266,
         ),
       );
       await alice.close();

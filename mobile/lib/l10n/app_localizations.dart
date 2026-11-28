@@ -368,6 +368,126 @@ abstract class AppLocalizations {
   /// **'رُفع إلى الحد الأدنى الآمن'**
   String get raisedToMinimum;
 
+  /// Badge beside the calories when the trainee set the targets by hand.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخصّصة'**
+  String get customBadge;
+
+  /// No description provided for @customTargetsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن {calories} سعرة.'**
+  String customTargetsNote(String calories);
+
+  /// No description provided for @backToRecommended.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى الموصى بها'**
+  String get backToRecommended;
+
+  /// No description provided for @resetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى الأهداف الموصى بها؟'**
+  String get resetTitle;
+
+  /// Asks before removing custom targets. The values are the recommended targets, in Western digits.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى {calories} سعرة: بروتين {protein} غ، كربوهيدرات {carbs} غ، دهون {fat} غ.'**
+  String resetBody(String calories, String protein, String carbs, String fat);
+
+  /// Shown when the server raised custom calories to the minimum and adjusted the macros.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.'**
+  String get macrosAdjustedNote;
+
+  /// The How we calculated panel's title while custom targets are in effect.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف حسبنا الأهداف الموصى بها'**
+  String get howWeCalculatedRecommended;
+
+  /// No description provided for @editTargets.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الأهداف'**
+  String get editTargets;
+
+  /// No description provided for @targetsFieldLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'{field, select, calories{السعرات} protein{البروتين} carbs{الكربوهيدرات} fat{الدهون} other{}}'**
+  String targetsFieldLabel(String field);
+
+  /// Under each field of the targets form.
+  ///
+  /// In ar, this message translates to:
+  /// **'{field, select, calories{الموصى بها: {value} سعرة} protein{الموصى به: {value} غ} other{الموصى بها: {value} غ}}'**
+  String recommendedValue(String field, String value);
+
+  /// No description provided for @macroCaloriesLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'البروتين والكربوهيدرات والدهون تعطي {calories} سعرة.'**
+  String macroCaloriesLine(String calories);
+
+  /// The form can't save: the server refuses macros 100 kcal or more from the calories.
+  ///
+  /// In ar, this message translates to:
+  /// **'البروتين والكربوهيدرات والدهون تعطي {calories} سعرة، أي بفرق {difference} عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.'**
+  String macrosTooFar(String calories, String difference);
+
+  /// No description provided for @saveNeedsInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحفظ يحتاج إلى الإنترنت'**
+  String get saveNeedsInternet;
+
+  /// No description provided for @macrosApartTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام مختلفة بـ {difference} سعرة'**
+  String macrosApartTitle(String difference);
+
+  /// No description provided for @macrosApartBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخلت {calories} سعرة، لكن البروتين والكربوهيدرات والدهون تعطي {macroCalories} سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.'**
+  String macrosApartBody(String calories, String macroCalories);
+
+  /// No description provided for @keepNumbers.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كما هي'**
+  String get keepNumbers;
+
+  /// No description provided for @fixNumbers.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الأرقام'**
+  String get fixNumbers;
+
+  /// No description provided for @errorCaloriesRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عددًا صحيحًا حتى 6000'**
+  String get errorCaloriesRange;
+
+  /// No description provided for @errorGramsRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عددًا صحيحًا من 0 إلى {max}'**
+  String errorGramsRange(String max);
+
+  /// On the calories field when the server refused calories below the minimum.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى الآمن {minimum} سعرة'**
+  String errorBelowMinimum(String minimum);
+
   /// No description provided for @editMyInfo.
   ///
   /// In ar, this message translates to:

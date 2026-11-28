@@ -35,12 +35,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
   /// what sending entries needs (docs/decisions.md, 31); entries logged
-  /// before it are unsent.
+  /// before it are unsent. Version 4 adds custom targets (docs/decisions.md,
+  /// 37); targets stored before it are recommended ones, so they are their
+  /// own recommended values. SQLite can't add a column without a default,
+  /// so the step copies the table with the new columns filled in.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -55,6 +58,30 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(entries, entries.sentRevision);
         await m.addColumn(entries, entries.deleted);
         await m.addColumn(entries, entries.refused);
+      },
+      from3To4: (m, schema) async {
+        final targets = schema.targets;
+        await m.alterTable(
+          TableMigration(
+            targets,
+            columnTransformer: {
+              targets.custom: const Constant(0),
+              targets.macrosAdjusted: const Constant(0),
+              targets.recommendedCalories: targets.calories,
+              targets.recommendedProteinG: targets.proteinG,
+              targets.recommendedFatG: targets.fatG,
+              targets.recommendedCarbsG: targets.carbsG,
+            },
+            newColumns: [
+              targets.custom,
+              targets.macrosAdjusted,
+              targets.recommendedCalories,
+              targets.recommendedProteinG,
+              targets.recommendedFatG,
+              targets.recommendedCarbsG,
+            ],
+          ),
+        );
       },
     ),
   );
@@ -99,6 +126,12 @@ class AppDatabase extends _$AppDatabase {
             aboveTestedAge: targets.aboveTestedAge,
             goal: targets.goal,
             goalAdjustmentPercent: targets.goalAdjustmentPercent,
+            custom: targets.custom,
+            macrosAdjusted: targets.macrosAdjusted,
+            recommendedCalories: targets.recommendedCalories,
+            recommendedProteinG: targets.recommendedProteinG,
+            recommendedFatG: targets.recommendedFatG,
+            recommendedCarbsG: targets.recommendedCarbsG,
           ),
         );
       });

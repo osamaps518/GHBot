@@ -17,6 +17,7 @@ from ghbot.database import Base
 from ghbot.food_log import FoodLogEntry  # noqa: F401
 from ghbot.foods import Food  # noqa: F401
 from ghbot.profiles import Profile  # noqa: F401
+from ghbot.targets import CustomTargets, TargetHistory  # noqa: F401
 
 target_metadata = Base.metadata
 

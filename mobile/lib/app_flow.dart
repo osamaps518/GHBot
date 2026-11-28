@@ -53,10 +53,14 @@ class AppFlow extends ChangeNotifier {
   Exception? failure;
   bool ageWarningSeen = false;
 
-  /// Each refresh and save takes a number when it starts. Only results newer
-  /// than the ones shown are stored and shown.
+  /// Each refresh and save takes a number when it starts. The profile and
+  /// the targets each keep the number of the result they show, and only a
+  /// newer result replaces them. A custom save or reset answers only targets,
+  /// so an earlier profile save that answers after it still shows its
+  /// profile.
   int _startedVersion = 0;
-  int _shownVersion = 0;
+  int _profileVersion = 0;
+  int _targetsVersion = 0;
 
   /// Set when the app closes. Work still pending then stops before it uses
   /// the database or notifies listeners.
@@ -130,9 +134,9 @@ class AppFlow extends ChangeNotifier {
     if (loadedProfile != null && loadedTargets == null) {
       throw const ServerFailure(404);
     }
-    if (version < _shownVersion) return;
-    _shownVersion = version;
     if (loadedProfile == null) {
+      if (version < _profileVersion || version < _targetsVersion) return;
+      _profileVersion = _targetsVersion = version;
       await database.clearProfileAndTargets();
       if (_disposed) return;
       profile = null;
@@ -141,9 +145,29 @@ class AppFlow extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    await database.storeProfileAndTargets(loadedProfile, loadedTargets!);
+    await _storeNewer(database, version, loadedProfile, loadedTargets!);
+  }
+
+  /// Stores and shows [newProfile] and [newTargets] from the work numbered
+  /// [version], each only when nothing newer is shown for it. Without
+  /// [newProfile], the profile shown stays.
+  Future<void> _storeNewer(
+    AppDatabase database,
+    int version,
+    Profile? newProfile,
+    Targets newTargets,
+  ) async {
     if (_disposed) return;
-    _showDiary(loadedProfile, loadedTargets);
+    final profileNewer = newProfile != null && version > _profileVersion;
+    final targetsNewer = version > _targetsVersion;
+    if (!profileNewer && !targetsNewer) return;
+    if (profileNewer) _profileVersion = version;
+    if (targetsNewer) _targetsVersion = version;
+    final shownProfile = profileNewer ? newProfile : profile!;
+    final shownTargets = targetsNewer ? newTargets : targets!;
+    await database.storeProfileAndTargets(shownProfile, shownTargets);
+    if (_disposed) return;
+    _showDiary(shownProfile, shownTargets);
   }
 
   void _showDiary(Profile shownProfile, Targets shownTargets) {
@@ -162,11 +186,26 @@ class AppFlow extends ChangeNotifier {
     final savedProfile = await _profilesApi.putProfile(changed);
     final updatedTargets = await _targetsApi.getTargets();
     if (updatedTargets == null) throw const ServerFailure(404);
-    if (_disposed || version < _shownVersion) return;
-    _shownVersion = version;
-    await database.storeProfileAndTargets(savedProfile, updatedTargets);
-    if (_disposed) return;
-    _showDiary(savedProfile, updatedTargets);
+    await _storeNewer(database, version, savedProfile, updatedTargets);
+  }
+
+  /// Saves custom targets on the server, then stores and shows the targets
+  /// it sends back (docs/decisions.md, 37). Offline, it throws and stores
+  /// nothing.
+  Future<void> saveCustomTargets(TargetValues values) =>
+      _storeTargets(() => _targetsApi.putCustom(values));
+
+  /// Goes back to the recommended targets on the server, then stores and
+  /// shows them. Offline, it throws and stores nothing.
+  Future<void> resetCustomTargets() => _storeTargets(_targetsApi.resetCustom);
+
+  /// Stores and shows the targets [request] answers, with the profile shown
+  /// now, unless newer targets were shown meanwhile.
+  Future<void> _storeTargets(Future<Targets> Function() request) async {
+    final database = _database!;
+    final version = ++_startedVersion;
+    final updatedTargets = await request();
+    await _storeNewer(database, version, null, updatedTargets);
   }
 
   Future<void> acceptAgeWarning() async {

@@ -449,7 +449,9 @@ name. At start:
 Each user has their own database, `<userId>.sqlite` in a `user_data/` folder
 under the app support folder. Each refresh and save writes only to the database
 it started with, and a refresh that started before a save never replaces what
-the save returned. The age-warning mark is kept for each user too. `user_data/`
+the save returned. The profile and the targets are each checked on their own:
+a custom targets save or reset returns only targets (decision 37), so a profile
+save that started before it still stores its profile. The age-warning mark is kept for each user too. `user_data/`
 is left out of Android backup and device transfer; the name and ID stay in backup.
 
 Rejected:
@@ -875,3 +877,41 @@ change.
 - We accept that the stand-in can drift from the real API. The backend tests
   (#60) check the same calls from the server's side.
 - No automated test drives the app on an emulator.
+
+---
+
+## 37. Custom targets
+
+**Status:** Accepted, 2026-11-28 (#21).
+
+The backend keeps one custom row per trainee and inserts a history row for each
+save or real reset in the same transaction. A reset without a custom row does
+nothing. Profile edits leave custom values in place. Recommended targets are
+still calculated from the current profile on every read.
+
+One server function gives the calorie minimum: 1500 for male and 1200 for
+female profiles. Save and read use it. A save below it returns 422 with code
+`below_minimum`. A save whose macro energy differs from calories by 100 kcal or
+more returns 422 with code `macros_mismatch`. The API accepts whole numbers up
+to 6000 calories, 500 g protein, 300 g fat and 1000 g carbs.
+
+If an older custom row is below today's minimum, the read raises calories to
+the minimum, then raises protein to 1.6 g/kg and fat to 20% of calories. It
+fills remaining calories in order: carbs to 65%, protein to 2.2 g/kg, fat to
+35%. If the first raises need more than the calorie increase, carbs fall no
+lower than zero. Carbs also come down whenever the macros add up to more than
+the raised calories, even when protein and fat needed no raise. That only
+happens inside the 99 kcal gap a save allows, and it keeps the macros matching
+the calories shown. At BMI 30 or higher, the protein limits use weight at BMI
+25. The response marks adjusted macros and keeps the recommended values
+alongside the effective values.
+
+The phone caches the effective targets with `custom`, `macros_adjusted` and the
+recommended values (schema version 4), so custom targets show offline. Like a
+profile save (decision 24), saving and resetting need internet: offline, they
+show the no-connection error and change nothing, and the form keeps the typed
+numbers. The form checks the ranges and the 100 kcal rule before sending: at
+100 kcal or more it shows an error and can't save, and under 100 it shows the
+difference and asks to fix the numbers or keep them. The phone has no copy of
+the minimum: the `below_minimum` 422 carries it in `ctx`, and the form shows it
+on the calories field.

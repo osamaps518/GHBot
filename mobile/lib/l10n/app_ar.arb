@@ -126,6 +126,139 @@
     "description": "Shown when the target was raised to the minimum, from #8 answer 13."
   },
   "raisedToMinimum": "رُفع إلى الحد الأدنى الآمن",
+  "customBadge": "مخصّصة",
+  "@customBadge": {
+    "description": "Badge beside the calories when the trainee set the targets by hand."
+  },
+  "customTargetsNote": "حدّدت هذه الأهداف بنفسك، فلا تتغيّر حين تعدّل معلوماتك. الأهداف الموصى بها لك الآن {calories} سعرة.",
+  "@customTargetsNote": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The recommended calories, in Western digits."
+      }
+    }
+  },
+  "backToRecommended": "العودة إلى الموصى بها",
+  "resetTitle": "العودة إلى الأهداف الموصى بها؟",
+  "resetBody": "ستُحذف أهدافك المخصّصة، وتعود أهدافك إلى {calories} سعرة: بروتين {protein} غ، كربوهيدرات {carbs} غ، دهون {fat} غ.",
+  "@resetBody": {
+    "description": "Asks before removing custom targets. The values are the recommended targets, in Western digits.",
+    "placeholders": {
+      "calories": {
+        "type": "String"
+      },
+      "protein": {
+        "type": "String"
+      },
+      "carbs": {
+        "type": "String"
+      },
+      "fat": {
+        "type": "String"
+      }
+    }
+  },
+  "macrosAdjustedNote": "سعراتك المخصّصة أقل من الحد الأدنى الآمن، فرفعناها إليه وعدّلنا البروتين والكربوهيدرات والدهون. إذا أردت سعرات أقل، فاستشر طبيبًا أو أخصائي تغذية.",
+  "@macrosAdjustedNote": {
+    "description": "Shown when the server raised custom calories to the minimum and adjusted the macros."
+  },
+  "howWeCalculatedRecommended": "كيف حسبنا الأهداف الموصى بها",
+  "@howWeCalculatedRecommended": {
+    "description": "The How we calculated panel's title while custom targets are in effect."
+  },
+  "editTargets": "تعديل الأهداف",
+  "targetsFieldLabel": "{field, select, calories{السعرات} protein{البروتين} carbs{الكربوهيدرات} fat{الدهون} other{}}",
+  "@targetsFieldLabel": {
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "description": "calories, protein, carbs or fat."
+      }
+    }
+  },
+  "recommendedValue": "{field, select, calories{الموصى بها: {value} سعرة} protein{الموصى به: {value} غ} other{الموصى بها: {value} غ}}",
+  "@recommendedValue": {
+    "description": "Under each field of the targets form.",
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "description": "calories, protein, carbs or fat."
+      },
+      "value": {
+        "type": "String",
+        "description": "The recommended value, in Western digits."
+      }
+    }
+  },
+  "macroCaloriesLine": "البروتين والكربوهيدرات والدهون تعطي {calories} سعرة.",
+  "@macroCaloriesLine": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "4 × protein + 4 × carbs + 9 × fat, in Western digits."
+      }
+    }
+  },
+  "macrosTooFar": "البروتين والكربوهيدرات والدهون تعطي {calories} سعرة، أي بفرق {difference} عن السعرات. قرّب الأرقام ليصبح الفرق أقل من 100 سعرة.",
+  "@macrosTooFar": {
+    "description": "The form can't save: the server refuses macros 100 kcal or more from the calories.",
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The calories the macros give, in Western digits."
+      },
+      "difference": {
+        "type": "String",
+        "description": "How far that is from the typed calories, in Western digits."
+      }
+    }
+  },
+  "saveNeedsInternet": "الحفظ يحتاج إلى الإنترنت",
+  "macrosApartTitle": "الأرقام مختلفة بـ {difference} سعرة",
+  "@macrosApartTitle": {
+    "placeholders": {
+      "difference": {
+        "type": "String",
+        "description": "Under 100, in Western digits."
+      }
+    }
+  },
+  "macrosApartBody": "أدخلت {calories} سعرة، لكن البروتين والكربوهيدرات والدهون تعطي {macroCalories} سعرة. يمكنك تعديل الأرقام أو حفظها كما هي.",
+  "@macrosApartBody": {
+    "placeholders": {
+      "calories": {
+        "type": "String",
+        "description": "The typed calories, in Western digits."
+      },
+      "macroCalories": {
+        "type": "String",
+        "description": "The calories the macros give, in Western digits."
+      }
+    }
+  },
+  "keepNumbers": "حفظ كما هي",
+  "fixNumbers": "تعديل الأرقام",
+  "errorCaloriesRange": "أدخل عددًا صحيحًا حتى 6000",
+  "errorGramsRange": "أدخل عددًا صحيحًا من 0 إلى {max}",
+  "@errorGramsRange": {
+    "placeholders": {
+      "max": {
+        "type": "String",
+        "description": "The server's highest grams for this macro, in Western digits."
+      }
+    }
+  },
+  "errorBelowMinimum": "الحد الأدنى الآمن {minimum} سعرة",
+  "@errorBelowMinimum": {
+    "description": "On the calories field when the server refused calories below the minimum.",
+    "placeholders": {
+      "minimum": {
+        "type": "String",
+        "description": "The server's minimum for this profile, in Western digits."
+      }
+    }
+  },
   "editMyInfo": "تعديل معلوماتي",
   "ageWarning": "جُرّبت تقديراتنا للسعرات على بالغين حتى عمر 78 سنة، لذا قد تكون أقل دقة في حالتك. يُرجى استشارة طبيبك قبل البدء بحمية أو برنامج تمارين جديد.",
   "@ageWarning": {

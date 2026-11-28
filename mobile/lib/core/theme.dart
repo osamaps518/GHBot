@@ -83,6 +83,14 @@ ButtonStyle stepButtonStyle(ThemeData theme) => IconButton.styleFrom(
   foregroundColor: theme.colorScheme.onSurface,
 );
 
+/// A text button on the daily calories card: Edit targets, in the card's
+/// text color.
+ButtonStyle heroLinkStyle(TargetsColors colors) => TextButton.styleFrom(
+  foregroundColor: colors.onHero,
+  minimumSize: const Size(0, 44),
+  padding: const EdgeInsets.symmetric(horizontal: 8),
+);
+
 /// A text button that deletes: Delete on the entry screen and in its
 /// confirmation, in the error color.
 ButtonStyle deleteButtonStyle(ThemeData theme) =>

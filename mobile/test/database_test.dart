@@ -27,6 +27,12 @@ const _targets = Targets(
   aboveTestedAge: true,
   goal: Goal.lose,
   goalAdjustmentPercent: -20,
+  custom: true,
+  macrosAdjusted: true,
+  recommendedCalories: 1990,
+  recommendedProteinG: 150,
+  recommendedFatG: 44,
+  recommendedCarbsG: 240,
 );
 
 List<Object> _targetsValues(Targets targets) => [
@@ -39,6 +45,12 @@ List<Object> _targetsValues(Targets targets) => [
   targets.aboveTestedAge,
   targets.goal,
   targets.goalAdjustmentPercent,
+  targets.custom,
+  targets.macrosAdjusted,
+  targets.recommendedCalories,
+  targets.recommendedProteinG,
+  targets.recommendedFatG,
+  targets.recommendedCarbsG,
 ];
 
 void main() {

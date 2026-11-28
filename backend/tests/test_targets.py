@@ -148,6 +148,14 @@ def test_get_targets_uses_saved_profile_and_utc_age(app, client, auth_headers):
         "above_tested_age": False,
         "goal": "maintain",
         "goal_adjustment_percent": 0,
+        "custom": False,
+        "macros_adjusted": False,
+        "recommended": {
+            "calories": 3380,
+            "protein_g": 176,
+            "fat_g": 75,
+            "carbs_g": 500,
+        },
     }
 
 

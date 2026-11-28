@@ -83,13 +83,18 @@ class ApiClient {
         throw const UnexpectedResponseFailure();
       }
       final types = <String>[];
+      final ctx = <String, Map<String, Object?>>{};
       for (final error in body['detail'] as List) {
         if (error is! Map<String, dynamic> || error['type'] is! String) {
           throw const UnexpectedResponseFailure();
         }
-        types.add(error['type'] as String);
+        final type = error['type'] as String;
+        types.add(type);
+        if (error['ctx'] case final Map<String, dynamic> context) {
+          ctx[type] = context;
+        }
       }
-      throw ValidationFailure(types);
+      throw ValidationFailure(types, ctx: ctx);
     }
     return body;
   }

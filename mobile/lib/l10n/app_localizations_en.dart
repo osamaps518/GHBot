@@ -211,6 +211,99 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raisedToMinimum => 'Raised to the safe minimum';
 
   @override
+  String get customBadge => 'Custom';
+
+  @override
+  String customTargetsNote(String calories) {
+    return 'You set these targets yourself, so they don\'t change when you edit your info. Your recommended target is now $calories calories.';
+  }
+
+  @override
+  String get backToRecommended => 'Back to recommended';
+
+  @override
+  String get resetTitle => 'Go back to your recommended targets?';
+
+  @override
+  String resetBody(String calories, String protein, String carbs, String fat) {
+    return 'Your custom targets will be removed, and your targets will go back to $calories kcal: protein $protein g, carbs $carbs g, fat $fat g.';
+  }
+
+  @override
+  String get macrosAdjustedNote =>
+      'Your custom calories are below the safe minimum, so we raised them to it and adjusted your protein, carbs and fat. For a lower intake, talk to a doctor or dietitian.';
+
+  @override
+  String get howWeCalculatedRecommended =>
+      'How we calculated your recommended targets';
+
+  @override
+  String get editTargets => 'Edit targets';
+
+  @override
+  String targetsFieldLabel(String field) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'Calories',
+      'protein': 'Protein',
+      'carbs': 'Carbs',
+      'fat': 'Fat',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String recommendedValue(String field, String value) {
+    String _temp0 = intl.Intl.selectLogic(field, {
+      'calories': 'Recommended: $value kcal',
+      'other': 'Recommended: $value g',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String macroCaloriesLine(String calories) {
+    return 'Protein, carbs and fat give $calories kcal.';
+  }
+
+  @override
+  String macrosTooFar(String calories, String difference) {
+    return 'Protein, carbs and fat give $calories kcal, $difference away from your calories. Bring the numbers closer, to under 100 kcal apart.';
+  }
+
+  @override
+  String get saveNeedsInternet => 'Saving needs an internet connection';
+
+  @override
+  String macrosApartTitle(String difference) {
+    return 'The numbers are $difference kcal apart';
+  }
+
+  @override
+  String macrosApartBody(String calories, String macroCalories) {
+    return 'You entered $calories kcal, but protein, carbs and fat give $macroCalories kcal. You can fix the numbers or save them as they are.';
+  }
+
+  @override
+  String get keepNumbers => 'Save as they are';
+
+  @override
+  String get fixNumbers => 'Fix the numbers';
+
+  @override
+  String get errorCaloriesRange => 'Enter a whole number up to 6000';
+
+  @override
+  String errorGramsRange(String max) {
+    return 'Enter a whole number from 0 to $max';
+  }
+
+  @override
+  String errorBelowMinimum(String minimum) {
+    return 'The safe minimum is $minimum kcal';
+  }
+
+  @override
   String get editMyInfo => 'Edit my info';
 
   @override

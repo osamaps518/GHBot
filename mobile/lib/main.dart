@@ -17,6 +17,7 @@ import 'profiles/profiles_api.dart';
 import 'targets/age_warning_screen.dart';
 import 'targets/targets.dart';
 import 'targets/targets_api.dart';
+import 'targets/targets_edit_screen.dart';
 import 'targets/targets_screen.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
@@ -112,7 +113,12 @@ class _GhbotAppState extends State<GhbotApp> {
             shown = _flow.targets ?? shown;
             return _ageWarningDue(shown)
                 ? AgeWarningScreen(onUnderstood: _flow.acceptAgeWarning)
-                : TargetsScreen(targets: shown, onEdit: _edit);
+                : TargetsScreen(
+                    targets: shown,
+                    onEdit: _edit,
+                    onEditTargets: _editTargets,
+                    onReset: _flow.resetCustomTargets,
+                  );
           },
         ),
       ),
@@ -131,6 +137,23 @@ class _GhbotAppState extends State<GhbotApp> {
           initial: _flow.profile,
           onSubmit: (profile) async {
             await _flow.save(profile);
+            if (context.mounted && ModalRoute.of(context)!.isCurrent) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Opens the targets form. Like [_edit], a save closes only this form.
+  void _editTargets() {
+    _navigator.currentState!.push(
+      MaterialPageRoute<void>(
+        builder: (context) => TargetsEditScreen(
+          targets: _flow.targets!,
+          onSave: (values) async {
+            await _flow.saveCustomTargets(values);
             if (context.mounted && ModalRoute.of(context)!.isCurrent) {
               Navigator.pop(context);
             }

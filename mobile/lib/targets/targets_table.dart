@@ -19,4 +19,10 @@ class TargetsTable extends Table {
   BoolColumn get aboveTestedAge => boolean()();
   TextColumn get goal => textEnum<Goal>()();
   IntColumn get goalAdjustmentPercent => integer()();
+  BoolColumn get custom => boolean()();
+  BoolColumn get macrosAdjusted => boolean()();
+  IntColumn get recommendedCalories => integer()();
+  IntColumn get recommendedProteinG => integer()();
+  IntColumn get recommendedFatG => integer()();
+  IntColumn get recommendedCarbsG => integer()();
 }
