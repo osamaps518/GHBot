@@ -45,6 +45,9 @@ const riceJson = {
   'protein': 2.7,
   'carbs': 28.2,
   'fat': 0.3,
+  'barcode': null,
+  'own': false,
+  'revision': 0,
 };
 
 /// Olive oil from decision 30, as `GET /foods` sends it.
@@ -56,6 +59,9 @@ const oilJson = {
   'protein': 0.0,
   'carbs': 0.0,
   'fat': 100.0,
+  'barcode': null,
+  'own': false,
+  'revision': 0,
 };
 
 /// A stand-in for the backend: dev tokens, one user's profile, targets and

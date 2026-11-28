@@ -157,9 +157,12 @@ class AppDatabase extends _$AppDatabase {
         );
       });
 
-  /// Adds [food] to the phone's foods, or updates the copy stored before.
-  Future<void> storeFood(Food food) => into(foodTable).insertOnConflictUpdate(
-    FoodTableCompanion.insert(
+  /// Adds [food] to the phone's foods, or updates the copy stored before,
+  /// unless that copy is an own food with a change the server hasn't
+  /// confirmed, refused or not: the trainee's change waits to be sent
+  /// (decision 31).
+  Future<void> storeFood(Food food) {
+    final row = FoodTableCompanion.insert(
       id: food.id,
       nameAr: Value(food.nameAr),
       nameEn: Value(food.nameEn),
@@ -167,8 +170,20 @@ class AppDatabase extends _$AppDatabase {
       proteinPer100g: food.per100g.protein,
       carbsPer100g: food.per100g.carbs,
       fatPer100g: food.per100g.fat,
-    ),
-  );
+      own: Value(food.own),
+      barcode: Value(food.barcode),
+      revision: Value(food.revision),
+      sentRevision: Value(food.sentRevision),
+      refused: Value(food.refused),
+    );
+    return into(foodTable).insert(
+      row,
+      onConflict: DoUpdate(
+        (_) => row,
+        where: (old) => old.revision.isSmallerOrEqual(old.sentRevision),
+      ),
+    );
+  }
 
   /// The phone's foods whose Arabic or English name contains [query],
   /// ignoring case. This is the search without a connection (decision 20).

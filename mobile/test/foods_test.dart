@@ -27,6 +27,9 @@ void main() {
       'protein': 2.7,
       'carbs': 28.2,
       'fat': 0.3,
+      'barcode': null,
+      'own': false,
+      'revision': 0,
     });
 
     expect(
@@ -60,6 +63,9 @@ void main() {
             'protein': 2.7,
             'carbs': 28.2,
             'fat': 0.3,
+            'barcode': null,
+            'own': false,
+            'revision': 0,
           },
         ]),
         200,
@@ -75,6 +81,79 @@ void main() {
 
     expect(searched, ['أرز & rice']);
     expect(foods.single.name('ar'), 'أرز أبيض مطبوخ');
+  });
+
+  test("an own food from the API is the server's copy, confirmed at its "
+      'revision', () {
+    final food = Food.fromJson({
+      'id': 'maamoul',
+      'name_ar': 'معمول بالتمر',
+      'name_en': null,
+      'calories': 442.0,
+      'protein': 5.6,
+      'carbs': 64.0,
+      'fat': 18.2,
+      'barcode': '6251003451205',
+      'own': true,
+      'revision': 3,
+    });
+
+    expect(
+      [food.own, food.barcode, food.revision, food.sentRevision, food.refused],
+      [true, '6251003451205', 3, 3, false],
+    );
+  });
+
+  group('storing a food from the server', () {
+    late AppDatabase database;
+
+    setUp(() {
+      database = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+    });
+    tearDown(() => database.close());
+
+    Food maamoul({
+      required int revision,
+      int? sentRevision,
+      int calories = 0,
+    }) => Food(
+      id: 'maamoul',
+      nameAr: 'معمول بالتمر',
+      nameEn: null,
+      per100g: Nutrients(calories: calories, protein: 0, carbs: 0, fat: 0),
+      own: true,
+      revision: revision,
+      sentRevision: sentRevision ?? revision,
+    );
+
+    Future<Food> stored() async =>
+        (await database.select(database.foodTable).get()).single;
+
+    test("doesn't overwrite an own food with a change the server hasn't "
+        'confirmed', () async {
+      await database.storeFood(maamoul(revision: 2, sentRevision: 1));
+
+      await database.storeFood(maamoul(revision: 1, calories: 4420));
+
+      final food = await stored();
+      expect([food.revision, food.sentRevision], [2, 1]);
+      expect(food.per100g.calories, 0);
+    });
+
+    test('replaces a confirmed own food', () async {
+      await database.storeFood(maamoul(revision: 1));
+
+      await database.storeFood(maamoul(revision: 2, calories: 4420));
+
+      final food = await stored();
+      expect([food.revision, food.sentRevision], [2, 2]);
+      expect(food.per100g.calories, 4420);
+    });
   });
 
   group('the offline filter', () {

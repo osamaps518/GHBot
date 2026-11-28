@@ -49,10 +49,13 @@ class Food {
     this.refused = false,
   });
 
-  /// Reads a food from `GET /foods`. The API sends values with 1 decimal;
-  /// `round` keeps 28.2, which is 281.99… as a double, at 282 tenths.
+  /// Reads a food the server sent: from search, a pull or the answer to a
+  /// send. It is the server's copy, so it is confirmed at its revision. The
+  /// API sends values with 1 decimal; `round` keeps 28.2, which is 281.99…
+  /// as a double, at 282 tenths.
   factory Food.fromJson(Map<String, Object?> json) {
     int tenths(String key) => ((json[key] as num) * 10).round();
+    final revision = json['revision'] as int;
     return Food(
       id: json['id'] as String,
       nameAr: json['name_ar'] as String?,
@@ -63,6 +66,10 @@ class Food {
         carbs: tenths('carbs'),
         fat: tenths('fat'),
       ),
+      own: json['own'] as bool,
+      barcode: json['barcode'] as String?,
+      revision: revision,
+      sentRevision: revision,
     );
   }
 
