@@ -34,13 +34,19 @@ int roundTenths(int tenths) => (tenths + 5) ~/ 10;
 String formatTenths(int tenths) =>
     tenths % 10 == 0 ? '${tenths ~/ 10}' : '${tenths ~/ 10}.${tenths % 10}';
 
-/// A food kept on the phone or found by search.
+/// A food kept on the phone or found by search: a catalog food, or one of
+/// the trainee's own.
 class Food {
   const Food({
     required this.id,
     required this.nameAr,
     required this.nameEn,
     required this.per100g,
+    this.own = false,
+    this.barcode,
+    this.revision = 0,
+    this.sentRevision = 0,
+    this.refused = false,
   });
 
   /// Reads a food from `GET /foods`. The API sends values with 1 decimal;
@@ -69,6 +75,11 @@ class Food {
     required int proteinPer100g,
     required int carbsPer100g,
     required int fatPer100g,
+    required this.own,
+    required this.barcode,
+    required this.revision,
+    required this.sentRevision,
+    required this.refused,
   }) : per100g = Nutrients(
          calories: caloriesPer100g,
          protein: proteinPer100g,
@@ -82,6 +93,22 @@ class Food {
   final String? nameAr;
   final String? nameEn;
   final Nutrients per100g;
+
+  /// The trainee's own food, which only they see.
+  final bool own;
+
+  /// 8 to 14 digits, or null.
+  final String? barcode;
+
+  /// 0 for a catalog food. An own food starts at 1, plus 1 on every change.
+  final int revision;
+
+  /// The last revision the server confirmed, 0 if never.
+  final int sentRevision;
+
+  /// The server refused this own food; it waits for the trainee to change
+  /// it.
+  final bool refused;
 
   /// The name in the app's language ([languageCode]), or the other one when
   /// the food has no name in it.

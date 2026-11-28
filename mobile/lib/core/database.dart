@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Each step brings the file from one exported schema (`drift_schemas/`)
   /// to the next. Version 2 adds the foods and the diary. Version 3 adds
@@ -52,6 +52,8 @@ class AppDatabase extends _$AppDatabase {
   /// values. SQLite can't add a column without a default, so the step copies
   /// the table with the new columns filled in. Version 5 adds the pull marker
   /// (decision 31); with none stored, the first pull brings everything.
+  /// Version 6 adds own foods (#65); foods stored before it are catalog
+  /// foods at revision 0, with nothing to send.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
@@ -93,6 +95,14 @@ class AppDatabase extends _$AppDatabase {
       },
       from4To5: (m, schema) async {
         await m.createTable(schema.pullMarker);
+      },
+      from5To6: (m, schema) async {
+        final foods = schema.foods;
+        await m.addColumn(foods, foods.own);
+        await m.addColumn(foods, foods.barcode);
+        await m.addColumn(foods, foods.revision);
+        await m.addColumn(foods, foods.sentRevision);
+        await m.addColumn(foods, foods.refused);
       },
     ),
   );
