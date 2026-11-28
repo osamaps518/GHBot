@@ -1,7 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
+import 'package:drift/drift.dart'
+    show
+        ApplyInterceptorConnection,
+        DatabaseConnection,
+        QueryExecutor,
+        QueryInterceptor,
+        driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ghbot/auth/auth_session.dart';
@@ -604,6 +610,32 @@ void main() {
       },
     );
 
+    test("a pull isn't sent when another user signs in while the phone reads "
+        'its marker', () async {
+      await database.close();
+      final markerRead = _HoldMarkerRead();
+      database = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ).interceptWith(markerRead),
+      );
+      addTearDown(database.close);
+      runner = SyncRunner(
+        session: session,
+        userId: userIdFor('alice'),
+        database: database,
+      );
+      final pulling = runner.run();
+      await markerRead.started.future;
+
+      await session.signIn('bob');
+      markerRead.release.complete();
+      await pulling;
+
+      expect(pulls(), isEmpty);
+    });
+
     test("a phone whose change lost to another phone's at the same revision "
         "takes the server's copy, and keeps it", () async {
       // Two phones means two databases at once, which Drift warns about.
@@ -672,4 +704,24 @@ void main() {
       await runner.close();
     });
   });
+}
+
+/// Holds the first read of the pull marker: [started] completes when it
+/// begins, and it goes on when [release] completes.
+class _HoldMarkerRead extends QueryInterceptor {
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    if (statement.contains('pull_marker') && !started.isCompleted) {
+      started.complete();
+      await release.future;
+    }
+    return executor.runSelect(statement, args);
+  }
 }

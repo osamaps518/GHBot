@@ -64,8 +64,9 @@ class FoodLogApi {
   /// Brings down what changed on the server since the last pull, and stores
   /// it in [database] with the new marker in one transaction: a pull that is
   /// interrupted keeps the old marker, so the next one asks again. Throws an
-  /// `ApiFailure` when the call should be tried again. Stores nothing when
-  /// a user other than [userId] signed in during the call.
+  /// `ApiFailure` when the call should be tried again. Makes no call when a
+  /// user other than [userId] signed in while it read the marker, and stores
+  /// nothing when one signed in during the call.
   ///
   /// Foods are stored first. A pulled entry replaces the phone's copy,
   /// unless that has a change the server hasn't confirmed, refused or not:
@@ -77,6 +78,7 @@ class FoodLogApi {
     final marker =
         (await database.select(database.pullMarkerTable).getSingleOrNull())
             ?.marker;
+    if (_session.userId != userId) return;
     final changes = (await _session.get(
       Uri(
         path: '/me/food-log/changes',
