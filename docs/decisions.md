@@ -719,6 +719,12 @@ entries and foods whose `updated_at` is at or after that timestamp. Entries are
 ordered by update time and ID; foods are unique and ordered by ID. The foods
 query uses `visible_foods`, so another trainee's own foods cannot appear.
 
+It also returns the foods of the entries it returns, changed or not. An entry
+that changed on the server can use a food that didn't, one the phone may not
+have, and the diary hides an entry without its food. We rejected a call for
+foods by ID, a second request per pull, and a full pull whenever a food is
+missing.
+
 The server takes `next_marker` from the database's `clock_timestamp()` minus
 30 seconds before reading the changes. The phone sends this marker back exactly
 as text. The overlap lets a later pull catch writes that commit after the read
@@ -765,7 +771,7 @@ server's checks before every save, so refusals are rare.
   deleted row, is the server's copy, and the phone takes it; a deleted row
   leaves the phone. If the entry changed since it was sent, the answer is
   dropped and the newer revision goes next. A server copy whose food isn't
-  on the phone stays hidden until pulling (#62) brings the food.
+  on the phone stays hidden until the pull after the sends brings the food.
 - **Refused** is a 422 or 409: the entry is marked and not sent again until the
   trainee changes or deletes it. A refused `DELETE` leaves the phone as a
   confirmed one does: its 409 means another user owns the ID, its 422 an ID
@@ -900,8 +906,9 @@ then online, an edit during a send, a refusal, a delete before the first send,
 another user's sign-in during a run, one run at a time, the server keeping
 another copy, and the retry timer. For pulling, they cover the marker sent
 back, a send before each pull, a change or delete on the phone during a pull,
-a refused entry, a delete from the server, a fixed catalog food, a lost pull
-answer, another user's sign-in during a pull, and the rows each pull repeats.
+a refused entry, a delete from the server, a fixed catalog food, an entry
+whose food the phone lacks, a lost pull answer, another user's sign-in during a
+pull, and the rows each pull repeats.
 `mobile/test/app_sync_test.dart` checks when the app starts a run: at start, on
 return to the foreground, and 2 s after a change; and that a reinstall brings
 the diary back.

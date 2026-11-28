@@ -279,8 +279,8 @@ class FakeBackend {
 
   /// Answers `GET /me/food-log/changes` as the server does
   /// (docs/decisions.md, 31): the subject's entries changed at or after the
-  /// marker, deleted ones too, the changed foods they use, and the next
-  /// marker. The marker has a `+`, as the server's can. Without one, it
+  /// marker, deleted ones too, the changed foods they use, the foods of
+  /// the entries it answers, changed or not, and the next marker. The marker has a `+`, as the server's can. Without one, it
   /// answers everything; a marker it didn't give gets 422.
   Future<http.Response> _changes(http.Request request, String subject) async {
     final since = request.url.queryParameters['since'];
@@ -307,12 +307,14 @@ class FakeBackend {
         if (tick(id) >= from) id,
     ]..sort((a, b) => tick(a) != tick(b) ? tick(a) - tick(b) : a.compareTo(b));
     final used = {for (final id in owned) entries[id]!['food_id']};
+    final pulled = {for (final id in changed) entries[id]!['food_id']};
     final body = {
       'entries': [for (final id in changed) entries[id]],
       'foods': [
         for (final food in foods)
-          if (used.contains(food['id']) &&
-              (_foodTicks[food['id']] ?? 0) >= from)
+          if (pulled.contains(food['id']) ||
+              (used.contains(food['id']) &&
+                  (_foodTicks[food['id']] ?? 0) >= from))
             food,
       ]..sort((a, b) => '${a['id']}'.compareTo('${b['id']}')),
       'next_marker': marker,

@@ -543,6 +543,32 @@ void main() {
       expect(logged.entry.totals.calories, 1950);
     });
 
+    test('an entry pulled with a food the phone lacks shows in the diary, '
+        "though the food didn't change", () async {
+      await logRice();
+      await runner.run();
+      backend.storeEntry('alice', {
+        ..._rice150Json('from-another-phone'),
+        'food_id': 'oil',
+        'grams': 10.0,
+        'per_100g': {
+          'calories': 884.0,
+          'protein': 0.0,
+          'carbs': 0.0,
+          'fat': 100.0,
+        },
+        'totals': {'calories': 88.4, 'protein': 0.0, 'carbs': 0.0, 'fat': 10.0},
+      });
+
+      await runner.run();
+
+      final diary = await database.watchDiaryDay('2026-11-23').first;
+      expect(diary.map((logged) => logged.food.name('en')), [
+        'Cooked white rice',
+        'Olive oil',
+      ]);
+    });
+
     test('a pull whose answer is lost keeps the old marker, and the next one '
         'asks again from it', () async {
       await runner.run();

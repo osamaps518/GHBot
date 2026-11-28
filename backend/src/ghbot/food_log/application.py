@@ -28,7 +28,8 @@ async def pull_changes(
     marker = await _pull_marker(session)
     entries = await _pull_entries(session, user_id, since)
     used = select(FoodLogEntry.food_id).where(FoodLogEntry.user_id == user_id)
-    foods = await changed_foods(session, user_id, since, used)
+    pulled = {entry.food_id for entry in entries if entry.food_id is not None}
+    foods = await changed_foods(session, user_id, since, used, pulled)
     return marker, entries, foods
 
 

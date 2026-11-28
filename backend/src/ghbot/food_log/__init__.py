@@ -7,6 +7,7 @@ For wiring the app (main.py):
     router:
         GET /me/food-log/changes: return the caller's changed entries and used
             foods since an optional marker, plus the next overlapping marker.
+            The foods of the returned entries come too, changed or not.
         PUT /me/food-log/entries/{id}: save the entry if its revision is newer,
             else return the stored one; 409 if another trainee owns the id.
         DELETE /me/food-log/entries/{id}: mark the entry deleted for good, even
