@@ -56,11 +56,12 @@ class _SlowDayDatabase extends AppDatabase {
 /// Opens the diary for a signed-in user with [exampleTargets], whose account
 /// was created on [firstDay] (30 days ago unless given), on a new in-memory
 /// database unless [database] is given. Given one, it closes the open diary
-/// first, as when the app restarts.
+/// first, as when the app restarts. [clock] stands in for the phone's clock.
 Future<AppDatabase> _pumpDiary(
   WidgetTester tester, {
   AppDatabase? database,
   String? firstDay,
+  DateTime Function() clock = DateTime.now,
 }) async {
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 2.75;
@@ -92,6 +93,7 @@ Future<AppDatabase> _pumpDiary(
         foodsApi: FoodsApi(session),
         targets: Targets.fromJson(exampleTargets),
         firstDay: firstDay ?? _daysAgo(30),
+        clock: clock,
         onOpenTargets: () {},
       ),
     ),
@@ -674,6 +676,48 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(save(tester).onPressed, isNull);
+    });
+
+    testWidgets('the move sheet takes today from the clock each time it '
+        'opens, not when the entry opened', (tester) async {
+      var now = DateTime(2026, 11, 28, 3, 59);
+      final database = await _pumpDiary(
+        tester,
+        firstDay: '2026-11-01',
+        clock: () => now,
+      );
+      await database.logEntry(
+        food: Food.fromJson(riceJson),
+        meal: const DiaryMeal(Meal.lunch),
+        grams: 1500,
+        diaryDay: '2026-11-27',
+        loggedAt: now,
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.text('Cooked white rice'));
+      Finder rowWithDate(String name, String day) => find.descendant(
+        of: sheetRow(name),
+        matching: find.text(_dateText(day)),
+      );
+
+      now = DateTime(2026, 11, 28, 4, 1);
+      await tester.tap(find.text(_dateText('2026-11-27')));
+      await tester.pumpAndSettle();
+      expect(rowWithDate(english.today, '2026-11-28'), findsOne);
+      expect(rowWithDate(english.yesterday, '2026-11-27'), findsOne);
+      await tester.tap(find.text(english.cancel));
+      await tester.pumpAndSettle();
+
+      now = DateTime(2026, 11, 29, 4, 1);
+      await tester.tap(find.text(_dateText('2026-11-27')));
+      await tester.pumpAndSettle();
+      expect(rowWithDate(english.today, '2026-11-29'), findsOne);
+      await tester.tap(sheetRow(english.today));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(english.save));
+      await tester.pumpAndSettle();
+
+      expect((await database.unsentEntries()).single.diaryDay, '2026-11-29');
     });
   });
 }

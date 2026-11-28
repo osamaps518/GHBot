@@ -18,16 +18,19 @@ class EntryEditScreen extends StatefulWidget {
     super.key,
     required this.database,
     required this.logged,
-    required this.firstDay,
-    required this.today,
+    required this.accountDay,
+    required this.clock,
   });
 
   final AppDatabase database;
   final LoggedFood logged;
 
-  /// The earliest and latest days the entry can move to, `YYYY-MM-DD`.
-  final String firstDay;
-  final String today;
+  /// The diary day the account was created on, `YYYY-MM-DD`: the earliest
+  /// the entry can move to (decision 34).
+  final String accountDay;
+
+  /// The phone's clock, which gives the latest day the entry can move to.
+  final DateTime Function() clock;
 
   @override
   State<EntryEditScreen> createState() => _EntryEditScreenState();
@@ -67,14 +70,17 @@ class _EntryEditScreenState extends State<EntryEditScreen> {
     if (mounted && ModalRoute.of(context)!.isCurrent) Navigator.pop(context);
   }
 
-  /// Opens the move sheet and keeps the day chosen there until Save.
+  /// Opens the move sheet and keeps the day chosen there until Save. Today
+  /// is read when the sheet opens, so a screen left open past 4:00 offers
+  /// the new day.
   Future<void> _chooseDay() async {
     final l10n = AppLocalizations.of(context)!;
+    final today = diaryDayOf(widget.clock());
     final chosen = await showMoveDaySheet(
       context,
       day: _day,
-      firstDay: widget.firstDay,
-      today: widget.today,
+      firstDay: firstDiaryDay(widget.accountDay, today),
+      today: today,
       meal: DiaryMeal(_entry.meal, _entry.mealName).label(l10n),
     );
     if (chosen != null && mounted) setState(() => _day = chosen);

@@ -29,6 +29,7 @@ class DiaryScreen extends StatefulWidget {
     required this.targets,
     required this.firstDay,
     required this.onOpenTargets,
+    this.clock = DateTime.now,
   });
 
   final AppDatabase database;
@@ -39,6 +40,9 @@ class DiaryScreen extends StatefulWidget {
   /// the diary goes back to (decision 34).
   final String firstDay;
   final VoidCallback onOpenTargets;
+
+  /// The phone's clock, which gives today. Tests pass their own.
+  final DateTime Function() clock;
 
   @override
   State<DiaryScreen> createState() => _DiaryScreenState();
@@ -65,7 +69,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   @override
   void initState() {
     super.initState();
-    _today = diaryDayOf(DateTime.now());
+    _today = diaryDayOf(widget.clock());
     _show(_today);
     _waitForNextDay();
   }
@@ -76,10 +80,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
     super.dispose();
   }
 
-  /// The earliest day to go back to: the account's day, or today if a
-  /// wrong clock puts that after today.
-  String get _firstDay =>
-      widget.firstDay.compareTo(_today) < 0 ? widget.firstDay : _today;
+  String get _firstDay => firstDiaryDay(widget.firstDay, _today);
 
   void _show(String day) {
     _day = day;
@@ -90,11 +91,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
   /// When the next day starts, the diary moves to it if it showed today,
   /// and stays on a past day.
   void _waitForNextDay() {
-    final now = DateTime.now();
+    final now = widget.clock();
     _nextDay = Timer(nextDayStart(now).difference(now), () {
       setState(() {
         final showedToday = _day == _today;
-        _today = diaryDayOf(DateTime.now());
+        _today = diaryDayOf(widget.clock());
         if (showedToday) _show(_today);
       });
       _waitForNextDay();
@@ -158,8 +159,8 @@ class _DiaryScreenState extends State<DiaryScreen> {
         builder: (_) => EntryEditScreen(
           database: widget.database,
           logged: logged,
-          firstDay: _firstDay,
-          today: _today,
+          accountDay: widget.firstDay,
+          clock: widget.clock,
         ),
       ),
     );

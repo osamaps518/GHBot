@@ -32,6 +32,11 @@ String addDays(String day, int days) {
   return dayOfDate(DateTime.utc(date.year, date.month, date.day + days));
 }
 
+/// The earliest day the diary goes back to: [accountDay], or [today] when a
+/// wrong clock puts the account day after it. Both are `YYYY-MM-DD`.
+String firstDiaryDay(String accountDay, String today) =>
+    accountDay.compareTo(today) < 0 ? accountDay : today;
+
 /// When the diary day after the one at [localTime] starts.
 DateTime nextDayStart(DateTime localTime) {
   final todayStart = DateTime(
