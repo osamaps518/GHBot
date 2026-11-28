@@ -937,19 +937,21 @@ has no copy of the minimum: the server's refusal carries it.
 **Status:** Accepted, 2026-11-28 (#65).
 
 An own food needs at least one Arabic or English name. Each name given has 1 to
-80 characters, is not only spaces and contains no NUL. Its per-100 g calories
-are 0–900; protein, carbs and fat are each 0–100 g, with at most one decimal
-place. Their sum is at most 100 g. A barcode, when given, has 8 to 14 digits.
-The server and phone apply the same checks so an offline save can get quick
-feedback and a later send receives the same decision.
+80 characters (counted as Unicode code points), is not only spaces and contains
+no NUL. Its per-100 g calories are 0–900 and its protein, carbs and fat 0–100 g
+each, all with at most one decimal place. Their sum is at most 100 g. A
+barcode, when given, has 8 to 14 digits. The server and phone apply the same
+checks so an offline save can get quick feedback and a later send receives the
+same decision.
 
 Calories are not checked against the macros: food labels round their values,
-and fiber and alcohol can add calories the three macros do not show. The
-limits match the diary's per-100 g ranges (decision 30), rather than adding a
-second scale for the same kind of value.
+and fiber and alcohol can add calories the three macros do not show. The ranges
+are the ones a diary entry accepts for its per-100 g values, so every own food
+the server accepts can be logged.
 
-On the phone, a name's characters are counted as the server counts them, in
-code points, so 80 emoji fit on both sides. The form trims names and sends an
-empty one as none. Where Dart and Python disagree on what a space is, the phone
+The phone counts a name's characters in code points too, so 80 emoji fit on
+both sides; Dart's `String.length` counts UTF-16 units and would make them 160.
+The form trims names and sends an empty one as none, since the server keeps
+names as sent and refuses an empty one. Where Dart and Python disagree on what a space is, the phone
 takes the wider set: a refusal it shows at once is better than one from the
 server, which leaves the food and its entries waiting.
